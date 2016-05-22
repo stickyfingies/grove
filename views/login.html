@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+
+    <head>
+        <title>Login | The Grove</title>
+        <link rel='stylesheet' href='/bower_components/bootstrap/dist/css/bootstrap.min.css'>
+        <script src='/bower_components/jquery/dist/jquery.min.js'></script>
+        <script src='/bower_components/bootstrap/dist/js/bootstrap.min.js'></script>
+        <style>
+            body {
+                background-image: url('/img/forest.png');
+                background-size: cover;
+            }
+            
+            h1 {
+                color: white;
+                margin: 150px;
+                font-size: 70px;
+            }
+            
+            button {
+                margin-left: 150px;
+                margin-top: -100px;
+                padding: 15px 30px !important;
+            }
+        </style>
+    </head>
+
+    <body>
+        <form method='post' action='/ACCOUNT_DB_DATA' class='jumbotron' style='margin:100px;'>
+            <div class='container-fluid'>
+                <input name='username' placeholder='username' class='form-control'>
+                <br>
+                <input name='password' placeholder='password' type='password' class='form-control'>
+                <br>
+                <input type='submit' class='btn btn-primary'>
+            </div>
+        </form>
+    </body>
+
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "the-grove",
+  "version": "0.0.1",
+  "description": "The Grove!",
+  "dependencies": {
+    "body-parser": "^1.15.1",
+    "doge": "^19.9.9-much.party",
+    "express": "^4.13.4",
+    "mongoose": "^4.4.17",
+    "node-games": "^3.0.3",
+    "socket.io": "^1.4.5"
+  },
+  "scripts": {
+    "start": "echo ok && node app.js"
+  }
+}
