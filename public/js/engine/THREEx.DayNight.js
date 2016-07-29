@@ -2,7 +2,7 @@ var THREEx = THREEx || {}
 
 THREEx.DayNight = {}
 
-THREEx.DayNight.baseURL = '../'
+THREEx.DayNight.baseURL = '/'
 
 THREEx.DayNight.currentPhase = function (sunAngle) {
     if (Math.sin(sunAngle) > Math.sin(0)) {
@@ -23,18 +23,19 @@ THREEx.DayNight.currentPhase = function (sunAngle) {
 
 THREEx.DayNight.StarField = function () {
     // create the mesh
-    var texture = THREE.ImageUtils.loadTexture(THREEx.DayNight.baseURL + 'images/galaxy_starfield.png')
+    var texture = THREE.ImageUtils.loadTexture(THREEx.DayNight.baseURL + 'img/stars.png')
     var material = new THREE.MeshBasicMaterial({
         map: texture,
         side: THREE.BackSide,
         color: 0x808080,
+        fog: false
     })
-    var geometry = new THREE.SphereGeometry(100, 32, 32)
+    var geometry = new THREE.SphereGeometry(400, 32, 32)
     var mesh = new THREE.Mesh(geometry, material)
     this.object3d = mesh
 
     this.update = function (sunAngle) {
-        var phase = THREEx.DayNight.currentPhase(sunAngle)
+        window.phase = THREEx.DayNight.currentPhase(sunAngle)
         if (phase === 'day') {
             mesh.visible = false
         }
@@ -47,6 +48,7 @@ THREEx.DayNight.StarField = function () {
             var intensity = Math.abs(Math.sin(sunAngle))
             material.color.setRGB(intensity, intensity, intensity)
         }
+        mesh.position.set(player.shape.position.x, player.shape.position.y, player.shape.position.z)
     }
 }
 
@@ -66,7 +68,7 @@ THREEx.DayNight.SunLight = function () {
         light.position.z = Math.cos(sunAngle) * 90000;
         // console.log('Phase ', THREEx.DayNight.currentPhase(sunAngle));
 
-        var phase = THREEx.DayNight.currentPhase(sunAngle);
+        window.phase = THREEx.DayNight.currentPhase(sunAngle);
         if (phase === 'day') {
             light.color.set("rgb(255," + (Math.floor(Math.sin(sunAngle) * 200) + 55) + "," + (Math.floor(Math.sin(sunAngle) * 200)) + ")");
             Alight.color.set("rgb(" + (Math.floor(Math.sin(sunAngle) * 70) - 20) + "," + (Math.floor(Math.sin(sunAngle) * 70) - 20) + "," + (Math.floor(Math.sin(sunAngle) * 70) - 20) + ")");
@@ -133,7 +135,7 @@ THREEx.DayNight.Skydom = function () {
     this.object3d = mesh
 
     this.update = function (sunAngle) {
-        var phase = THREEx.DayNight.currentPhase(sunAngle)
+        window.phase = THREEx.DayNight.currentPhase(sunAngle)
         if (phase === 'day') {
             mesh.material.poacity = 1;
             uniforms.topColor.value.set("rgb(0,120,255)");

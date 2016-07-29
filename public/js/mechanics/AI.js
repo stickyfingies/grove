@@ -1,76 +1,79 @@
-function AI(p1, p2) {
-    this.p = [p1, p2];
-    this.dest = this.p[1];
-    this.g = new THREE.BoxGeometry(5, 15, 5);
-    this.m = new THREE.MeshLambertMaterial({
-        color: 0x00ff00
-    });
-    this.shape = new THREE.Mesh(this.g, this.m);
-    this.shape.position.set(this.p[0][0], this.p[0][1], this.p[0][2]);
-    scene.add(this.shape);
-    objects.push(this.shape);
-    var self = this;
-    this.update = function () {
-        var p = this.shape.position,
-            dest = this.dest;
-        if (p.distanceTo(cube.position) > 50) this.shape.lookAt(new THREE.Vector3(dest[0], dest[1], dest[2]));
-        else this.shape.lookAt(new THREE.Vector3(cube.position.x, 7.5, cube.position.z));
-        if (p.distanceTo(cube.position) > 50) this.shape.translateZ(0.5);
-        if (p.x == dest[0] && p.z == dest[2]) {
-            if (this.dest == this.p[1]) this.dest = this.p[0];
-            else if (this.dest == this.p[0]) this.dest = this.p[1];
-        }
+function ai(position, hp, speed, karma, loop, path) {
+    var o = this.o = {
+        hp: hp || 10,
+        speed: speed || 1,
+        loop: loop || function () {},
+        position: position || new THREE.Vector3(0, 0, 0),
+        last: 0,
+        karma: karma
     };
-    ais.push(this);
+    $.getJSON('//uinames.com/api/', function (json) {
+        o.name = json.name;
+    });
+    var _loader = new THREE.ObjectLoader();
+    _loader.load('/img/' + path + '.json', function (obj) {
+        obj.scale.set(5, 5, 5);
+        for (var key in obj.children) {
+            objects.push(obj.children[key]);
+            obj.children[key].callback = function () {
+                socket.emit('chat message', o.name + ': hi!');
+            };
+        }
+        obj.position.set(position.x || 0, position.y || 10, position.z || 0);
+        o.origin = new THREE.Vector3(position.x || 0, position.y || 10, position.z || 0);
+        obj.rotation.y = Math.PI / 2;
+        o.shape = o.shape || obj;
+        scene.add(o.shape);
+        setInterval(function () {
+            o.loop(o);
+        });
+    });
+    this.o = o;
+    ais.push(this.o);
+    return this.o;
 }
 
-function Enemy(p1, p2) {
-    this.p = [p1, p2];
-    this.dest = this.p[1];
-    this.g = new THREE.BoxGeometry(5, 15, 5);
-    this.m = new THREE.MeshLambertMaterial({
-        color: 0xff0000
-    });
-    this.shape = new THREE.Mesh(this.g, this.m);
-    this.shape.position.set(this.p[0][0], this.p[0][1], this.p[0][2]);
-    var self = this;
-    var mtlLoader = new THREE.MTLLoader();
-    mtlLoader.setBaseUrl('img/models/');
-    mtlLoader.setPath('img/models/');
-    mtlLoader.load('Zombie.mtl', 'lambert', function (materials) {
+var villager = function (pos) {
+    ai(pos, 10, 10, 'good', function (o) {
+        if (o.shape.position.distanceTo(player.shape.position) < 50)
+            o.shape.lookAt(new THREE.Vector3(player.shape.position.x, o.shape.position.y, player.shape.position.z));
+        // var tween = new TWEEN.Tween(o.shape.position)
+        //     .to(player.shape.position, 1000)
+        //     .onUpdate(function () {
+        //         o.shape.lookAt(player.shape.position);
+        //     })
+        //     .start();
 
-        materials.preload();
+        ////////////////////////////////////////////////////////
 
-        var objLoader = new THREE.OBJLoader();
-        objLoader.setMaterials(materials);
-        objLoader.setPath('img/models/');
-        objLoader.load('Zombie.obj', function (object) {
-            self.shape = object;
-            self.shape.scale.set(0.4, 0.4, 0.4);
-            self.shape.position.set(self.p[0][0], self.p[0][1], self.p[0][2]);
-            scene.add(self.shape);
-            for(var key in self.shape.children) {
-                objects.push(self.shape.children[key]);
-            }
-        });
-
-    });
-    var self = this;
-    this.update = function () {
-        var p = this.shape.position,
-            dest = this.dest;
-        var raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, 3);
-        raycaster.ray.origin.copy(this.shape.position);
+        var raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, 5);
+        raycaster.ray.origin.copy(o.shape.position);
         var intersections = raycaster.intersectObjects(objects);
         var isOnObject = intersections.length > 0;
-        if (!isOnObject) this.shape.translateY(-1.5);
-        if (p.distanceTo(cube.position) > 100) this.shape.lookAt(new THREE.Vector3(dest[0], p.y, dest[2]));
-        else this.shape.lookAt(new THREE.Vector3(cube.position.x, p.y, cube.position.z));
-        this.shape.translateZ(0.5);
-        if (p.x == dest[0] && p.z == dest[2]) {
-            if (this.dest == this.p[1]) this.dest = this.p[0];
-            else if (this.dest == this.p[0]) this.dest = this.p[1];
+        if (!isOnObject) o.shape.position.y--;
+    }, 'villager/villager');
+};
+
+var fox = function (pos) {
+    ai(pos, 25, 15, 'evil', function (o) {
+        var target = null;
+        for (var key in ais) {
+            if (!target || ais[key].shape.position.distanceTo(o.shape.position) < target.shape.position.distanceTo(o.shape.position) && ais[key].karma != o.karma) target = ais[key];
         }
-    };
-    ais.push(this);
-}
+        if (player.shape.position.distanceTo(o.shape.position) < target.shape.position.distanceTo(o.shape.position)) target = player;
+        var tween = new TWEEN.Tween(o.shape.position)
+            .to(target.shape.position, 1000)
+            .onUpdate(function () {
+                o.shape.lookAt(target.shape.position);
+            })
+            .start();
+
+        ////////////////////////////////////////////////////////
+
+        var raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, 5);
+        raycaster.ray.origin.copy(o.shape.position);
+        var intersections = raycaster.intersectObjects(objects);
+        var isOnObject = intersections.length > 0;
+        if (!isOnObject) o.shape.position.y--;
+    }, 'fox/fox');
+};

@@ -13,10 +13,16 @@ function Plant(o) {
         for (var key in obj.children) {
             objects.push(obj.children[key]);
             obj.children[key].callback = function () {
+                events.publish('harvest', {
+                    name: o.name
+                });
                 self.harvest(o);
-                obj.visible = false;
                 scene.remove(obj);
                 player.inventory.push(o.name);
+                socket.emit('inventory-update', {
+                    user: userdata,
+                    inv: player.inventory
+                });
             };
         }
         obj.position.set(o.x, o.y, o.z);

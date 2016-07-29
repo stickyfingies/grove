@@ -1,7 +1,7 @@
 function animate() {
     requestAnimationFrame(animate);
-    if (typeof controlsEnabled !== 'undefined' && window.keyboard !== undefined && window.player.shape !== undefined) {
-        raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, 3);
+    if (typeof controlsEnabled !== 'undefined' && window.keyboard !== undefined && window.player.shape !== undefined && window.camera instanceof THREE.Camera) {
+        raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, 5);
         raycaster.ray.origin.copy(player.shape.position);
         var intersections = raycaster.intersectObjects(objects);
         var isOnObject = intersections.length > 0;
@@ -10,58 +10,70 @@ function animate() {
         var delta = (time - prevTime) / 1000;
         var moveDistance = 75 * delta; // 200 pixels per second
         var rotateAngle = Math.PI / 2 * delta; // pi/2 radians (90 degrees) per second
-        if (keyboard.pressed("W")) {
-            var _raycaster = new THREE.Raycaster(player.shape.position, new THREE.Vector3(player.shape.position.x - 1, player.shape.position.y, player.shape.position.z), 0, 10);
+        if (keyboard.pressed("W") && !$("input").is(":focus")) {
+            var _raycaster = new THREE.Raycaster(player.shape.position, new THREE.Vector3(player.shape.position.x - 1, player.shape.position.y, player.shape.position.z), 0, 5);
             var matrix = new THREE.Matrix4();
             matrix.extractRotation(player.shape.matrix);
             var direction = new THREE.Vector3(0, 0, 1);
-            matrix.multiplyVector3(direction);
+            // matrix.multiplyVector3(direction);
             _raycaster.set(player.shape.position, direction);
-            var _intersections = _raycaster.intersectObjects(objects);
+            var _intersections = _raycaster.intersectObjects(objects, true);
             var NgF = _intersections.length > 0;
             if (!NgF) player.shape.translateZ(moveDistance);
+            updatePlayerData();
+            socket.emit('updatePosition', player.serverdata);
         }
-        if (keyboard.pressed("S")) {
+        if (keyboard.pressed("S") && !$("input").is(":focus")) {
             var _raycaster = new THREE.Raycaster(player.shape.position, new THREE.Vector3(player.shape.position.x - 1, player.shape.position.y, player.shape.position.z), 0, 5);
             var matrix = new THREE.Matrix4();
             matrix.extractRotation(player.shape.matrix);
             var direction = new THREE.Vector3(0, 0, -1);
-            matrix.multiplyVector3(direction);
+            // matrix.multiplyVector3(direction);
             _raycaster.set(player.shape.position, direction);
-            var _intersections = _raycaster.intersectObjects(objects);
+            var _intersections = _raycaster.intersectObjects(objects, true);
             var NgF = _intersections.length > 0;
             if (!NgF) player.shape.translateZ(-moveDistance);
+            updatePlayerData();
+            socket.emit('updatePosition', player.serverdata);
         }
-        if (keyboard.pressed("Q") && isOnObject)
+        if (keyboard.pressed("Q") && !$("input").is(":focus") && isOnObject)
             player.shape.translateX(moveDistance);
-        if (keyboard.pressed("E") && isOnObject)
+        if (keyboard.pressed("E") && !$("input").is(":focus") && isOnObject)
             player.shape.translateX(-moveDistance);
-        if (keyboard.pressed("A")) {
+        if (keyboard.pressed("A") && !$("input").is(":focus")) {
             player.shape.rotateOnAxis(new THREE.Vector3(0, 1, 0), rotateAngle * 1.5);
             if (viewType) camera.rotateOnAxis(new THREE.Vector3(0, 1, 0), rotateAngle);
+            updatePlayerData();
+            socket.emit('updatePosition', player.serverdata);
         }
-        if (keyboard.pressed("D")) {
+        if (keyboard.pressed("D") && !$("input").is(":focus")) {
             player.shape.rotateOnAxis(new THREE.Vector3(0, 1, 0), -rotateAngle * 1.5);
             if (viewType) camera.rotateOnAxis(new THREE.Vector3(0, 1, 0), -rotateAngle);
+            updatePlayerData();
+            socket.emit('updatePosition', player.serverdata);
         }
-        if (keyboard.pressed("space") && isOnObject) {
+        if (keyboard.pressed("space") && !$("input").is(":focus") && isOnObject) {
             jumpY = player.shape.position.y;
             isJumping = true;
             velocity.y = 1.5;
         }
-        if (keyboard.pressed("I") && player.inventory.length) {
+        if (keyboard.pressed('m') && !$("input").is(":focus")) audio.volume = 0;
+        if (keyboard.pressed("I") && !$("input").is(":focus") && player.inventory.length) {
             var light = new THREE.PointLight(0xffffff, 1, 50, 1);
             player.shape.add(light);
             light.translateY(5);
             player.inventory.splice(player.inventory.indexOf('glowbulb'), 1);
-            events.publish('use', {name: 'glowbulb'});
+            events.publish('use', {
+                name: 'glowbulb'
+            });
+            socket.emit('inventory-update', {
+                user: userdata,
+                inv: player.inventory
+            });
             setTimeout(function () {
                 light.visible = false;
                 scene.remove(light);
             }, 10000);
-        }
-        if (keyboard.pressed("P")) {
-            showQuestsGUI();
         }
 
         player.shape.translateY(velocity.y);
@@ -79,7 +91,7 @@ function animate() {
         if (isJumping)
             velocity.y -= 0.05;
 
-        if (!viewType) var relativeCameraOffset = new THREE.Vector3(0, 7.5 + Math.pow(1.025, player.shape.position.y), -3.75 - Math.pow(1.025, player.shape.position.y));
+        if (!viewType) var relativeCameraOffset = new THREE.Vector3(0, 2.5 + Math.pow(1.025, player.shape.position.y), -1.75 - Math.pow(1.025, player.shape.position.y));
         else var relativeCameraOffset = new THREE.Vector3(0, 20, 5);
 
         var cameraOffset = relativeCameraOffset.applyMatrix4(player.shape.matrixWorld);
@@ -91,20 +103,20 @@ function animate() {
         else camera.position.y += 7;
         //(>-_-)>#
         //(-_-)
-        var dayDuration = 800;
+        var dayDuration = 900;
         sunAngle += delta / dayDuration * Math.PI * 2;
 
         sunSphere.update(sunAngle);
         sunLight.update(sunAngle);
         skydom.update(sunAngle);
         skydom.object3d.position.set(camera.position.x, camera.position.y, camera.position.z);
-        for (var key in ais) {
-            ais[key].update();
-        }
+        starfield.update(sunAngle);
+        for (var key in particles) particles[key].tick(delta);
+        TWEEN.update(time);
     }
 
 
-    if (typeof renderer !== 'undefined') renderer.render(scene, camera);
+    if (typeof renderer !== 'undefined' && camera instanceof THREE.Camera) renderer.render(scene, camera);
 }
 
 animate();

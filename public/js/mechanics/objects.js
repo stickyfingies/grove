@@ -91,7 +91,7 @@ obj.house = function House(o) {
         y: o.y + 5,
         z: o.z - 2.5
     });
-     Plant({
+    Plant({
         name: 'glowbulb',
         x: o.x + 17.5,
         y: o.y + 5,
@@ -102,6 +102,26 @@ obj.house = function House(o) {
         x: o.x + 17.5,
         y: o.y + 5,
         z: o.z - 2.5
+    });
+};
+obj.house1 = function (o) {
+    var _loader = new THREE.ObjectLoader();
+    _loader.load('/img/basic-house-1/house-1.json', function (obj) {
+        scene.add(obj);
+        obj.scale.set(o.scale || 15, o.scale || 20, o.scale || 15);
+        obj.traverse(function (child) {
+            objects.push(child);
+            child.callback = function () {
+                if (child.name == 'Door' || child.name == 'Door.001') alert('Yes, those are lovely, but that doesn\'t answer our question.');
+            };
+        });
+        obj.position.set(o.x, o.y, o.z);
+        villager(new THREE.Vector3(o.x + 20, o.y + 20, o.z));
+        obj.rotation.y = Math.PI / 2;
+        o.y += 60;
+        o.z -= 3;
+        o.x += 3;
+        ps.smoke(o);
     });
 };
 
@@ -144,6 +164,21 @@ obj.tree = function Tree(o) {
             objects.push(obj.children[key]);
         }
         obj.position.set(o.x, o.y, o.z);
+    });
+};
+
+obj.spawnAltarStone = function Stone_Spawn_Altar(o) {
+    var _loader = new THREE.ObjectLoader();
+    _loader.load('/img/spawn-alter-stone/spawn-altar-stone.json', function (obj) {
+        scene.add(obj);
+        obj.scale.set(25, 25, 25);
+        for (var key in obj.children) {
+            objects.push(obj.children[key]);
+        }
+        obj.position.set(o.x, o.y, o.z);
+        o.r = 50;
+        o.c = [new THREE.Color('white')];
+        ps.sphere(o);
     });
 };
 

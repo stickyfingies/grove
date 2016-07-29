@@ -1,7 +1,10 @@
 var player = {
     shape: new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({})),
     inventory: [],
+    serverdata: {},
+    id: Math.random(),
     init: function () {
+        console.info(player);
         var _loader = new THREE.ObjectLoader();
         _loader.load('/img/villager/villager.json', function (obj) {
             player.shape = obj;

@@ -1,3 +1,6 @@
+//old version of weapons.js
+//new version of weapons.js is included in: ide.c9.io/hi_man124/shooter-v1
+
 function weapon(o) {
     this.name = o.name;
     this.damage = o.dmg;
