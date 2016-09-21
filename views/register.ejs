@@ -1,0 +1,113 @@
+<!doctype html>
+<html>
+
+    <head>
+        <title>Sign Up | The Grove</title>
+        <link rel='stylesheet' href='/bower_components/bootstrap/dist/css/bootstrap.min.css'>
+        <link rel='icon' href='/img/icons/favicon.png'>
+        <script src='/bower_components/jquery/dist/jquery.min.js'></script>
+        <script src='/bower_components/bootstrap/dist/js/bootstrap.min.js'></script>
+        <style>
+            body {
+                background-image: url('/img/forest.png');
+                background-size: cover;
+            }
+            
+            h1 {
+                color: white;
+                margin: 150px;
+                font-size: 70px;
+            }
+            
+            button {
+                margin-left: 150px;
+                margin-top: -100px;
+                padding: 15px 30px !important;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class='container-fluid'>
+            <span style='color:white;text-align:center;' id='error'></span>
+        </div>
+        <form method='post' action='/register' class='jumbotron' style='margin:100px;'>
+            <div class='container-fluid'>
+                <input name='username' placeholder='username' class='form-control'>
+                <br>
+                <input name='password' placeholder='password' type='password' class='form-control'>
+                <br>
+                <select name='race' class='form-control' style='width:49.5%;display:inline'>
+                    <option value='human'>Human</option>
+                    <option value='elf'>Elf</option>
+                    <option value='dwarf'>Dwarf</option>
+                    <option value='angel'>Angel</option>
+                    <option value='vampire'>Vampire</option>
+                    <option value='demon'>Dæmon</option>
+                </select>
+                <select name='class' class='form-control' style='width:49.5%;display:inline'>
+                    <option value='rogue'>Rogue</option>
+                    <option value='mage'>Mage</option>
+                    <option value='knight'>Knight</option>
+                </select>
+                <br>
+                <br>
+                <input name='type' type='hidden' value='register'>
+                <input type='submit' class='btn btn-primary'>
+                <br>
+                <br>
+                <div class="row">
+                    <div class="col-sm-6 col-md-3">
+                        <div class="thumbnail">
+                            <img src="/img/2D/icons/shrug.svg" alt="..." width='200' id='race-icon'>
+                            <div class="caption">
+                                <h3 id='racename'>Human</h3>
+                                <p id='info'>Humans are good at... at... making mistakes? Hey, they're human!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <script>
+            $('select[name="race"]').change(function (a) {
+                $('select[name="race"] option:selected').each(function () {
+                    switch ($(this).text()) {
+                    case 'Human':
+                        $('#race-icon').attr('src', '/img/2D/icons/shrug.svg');
+                        $('#racename').text('Human');
+                        $('#info').text('Humans are good at... at... making mistakes?  Hey, they\'re human!');
+                        break;
+                    case 'Elf':
+                        $('#race-icon').attr('src', '/img/2D/icons/woman-elf-face.svg');
+                        $('#racename').text('Elf');
+                        $('#info').text('Elves are light on their feet and are good at magic, but look out - they\'re fragile!');
+                        break;
+                    case 'Dwarf':
+                        $('#race-icon').attr('src', '/img/2D/icons/dwarf-face.svg');
+                        $('#racename').text('Dwarf');
+                        $('#info').text('Dwarves aren\'t very smart and are kinda slow, but when it comes to muscle, they could take out Hulk Hogan!');
+                        break;
+                    case 'Vampire':
+                        $('#race-icon').attr('src', '/img/2D/icons/fanged-skull.svg');
+                        $('#racename').text('Vampire');
+                        $('#info').text('Vampires are full of dark traits and are excellent at magic and sneaking around.  Except when it comes to fire or the sun.  Then you\'ve got roasted vampire on the menu.');
+                        break;
+                    }
+                });
+            });
+
+            function getParameterByName(name, url) {
+                if (!url) url = window.location.href;
+                name = name.replace(/[\[\]]/g, "\\$&");
+                var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+                    results = regex.exec(url);
+                if (!results) return null;
+                if (!results[2]) return '';
+                return decodeURIComponent(results[2].replace(/\+/g, " "));
+            }
+            if (getParameterByName('err') == 'not_found') document.getElementById('error').innerHTML = '<h3>Error: User not found!</h3>';
+        </script>
+    </body>
+
+</html>

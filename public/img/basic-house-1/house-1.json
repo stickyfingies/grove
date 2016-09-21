@@ -35,7 +35,7 @@
             "colorEmissive": [0,0,0],
             "doubleSided": true,
             "opacity": 1,
-            "mapDiffuse": "LeatherColor.png",
+            "mapDiffuse": "StrawJPEG.jpg",
             "depthWrite": true,
             "visible": true,
             "mapSpecular": "LeatherSpec.png",

@@ -1,11 +1,8 @@
+'use strict';
 var camera, scene = new THREE.Scene(),
     renderer;
-var geometry, material, mesh;
-var controls, raycaster, _raycaster, _raycaster2, isJumping = false,
+var isJumping = false,
     jumpY = 0,
-    cameraoffset = 0,
-    viewType = false,
-    open,
     mouse = new THREE.Vector2(0, 0);
 var sunSphere = new THREEx.DayNight.SunSphere();
 var sunLight = new THREEx.DayNight.SunLight();
@@ -14,7 +11,6 @@ var starfield = new THREEx.DayNight.StarField();
 var sunAngle = 1 / 6 * Math.PI * 2;
 var objects = [],
     ais = [];
-contact = false; //wut be contact 4 (wheel drive)
 var modal = document.getElementById('modal');
 var close = $('.modal-close');
 var otherPlayers = [],
@@ -30,7 +26,9 @@ var audio = new Audio('/sfx/theme.mp3');
 audio.play();
 
 function init() {
-    window.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
+    window.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
+    window.controls = new THREE.PointerLockControls(camera);
+    scene.add(controls.getObject());
     window.keyboard = new THREEx.KeyboardState();
     scene.fog = new THREE.FogExp2(0x404040, 0.005);
     var geometry = new THREE.BoxGeometry(5, 10, 15);
@@ -38,16 +36,15 @@ function init() {
         color: 0x888800,
         side: THREE.FrontSide
     });
-    $.getJSON('//uinames.com/api/', function (json) {
-        console.log(json);
-    });
     socket.emit('requestOldPlayers', {});
-    // player.init();
+    player.init();
+    let jason = new MusicGoat(new THREE.Vector3(0, 20, 0));
+    render();
 }
 
-socket.on('genMap', function (dat) {
-    if (scene.children.length <= 1 && objects.length <= 5) {
-        THREE.DefaultLoadingManager.onProgress = function (item, loaded, total) {
+function genMap() {
+    $.getJSON(`https://the-grove.justapis.io/maps/${userdata.map}/`, dat => {
+        THREE.DefaultLoadingManager.onProgress = (item, loaded, total) => {
             console.log(item, loaded, total);
             if (loaded == total) {
                 $('#total').html('done');
@@ -55,7 +52,7 @@ socket.on('genMap', function (dat) {
             }
             else {
                 $('#total').width((loaded / total) * 60 + '%');
-                $('#total').html(item);
+                $('#total').html(loaded + '/' + total);
             }
         };
         for (var i = 1; i < dat.length; i++) {
@@ -76,12 +73,11 @@ socket.on('genMap', function (dat) {
         scene.add(sunLight.Alight);
         scene.add(skydom.object3d);
         scene.add(starfield.object3d);
-    }
-});
-socket.on('createPlayer', function (data) {
-    if (typeof window.userdata === 'undefined') {
+    });
+}
+socket.on('createPlayer', data => {
+    if (typeof window.userdsata === 'undefined') {
 
-        console.log(data);
         player.serverdata = data;
         player.id = data.playerId;
 
@@ -91,12 +87,14 @@ socket.on('createPlayer', function (data) {
 
         player.inventory = userdata.inventory;
 
+        genMap();
+
     }
     player.init();
 });
-socket.on('addOtherPlayer', function (data) {
+socket.on('addOtherPlayer', data => {
     var _loader = new THREE.ObjectLoader();
-    _loader.load('/img/villager/villager.json', function (obj) {
+    _loader.load('/img/villager/villager.json', obj => {
         obj.scale.set(5, 5, 5);
         for (var key in obj.children) {
             objects.push(obj.children[key]);
@@ -107,39 +105,40 @@ socket.on('addOtherPlayer', function (data) {
         otherPlayers.push(obj);
     });
 });
-socket.on('removeOtherPlayer', function (data) {
+socket.on('removeOtherPlayer', data => {
 
     scene.remove(playerForId(data.playerId));
     console.log(player);
 
 });
-socket.on('updatePosition', function (data) {
+socket.on('updatePosition', data => {
 
     var somePlayer = playerForId(data.playerId);
+    if (somePlayer) {
+        somePlayer.position.x = data.x;
+        somePlayer.position.y = data.y;
+        somePlayer.position.z = data.z;
 
-    somePlayer.position.x = data.x;
-    somePlayer.position.y = data.y;
-    somePlayer.position.z = data.z;
-
-    somePlayer.rotation.x = data.r_x;
-    somePlayer.rotation.y = data.r_y;
-    somePlayer.rotation.z = data.r_z;
+        somePlayer.rotation.x = data.r_x;
+        somePlayer.rotation.y = data.r_y;
+        somePlayer.rotation.z = data.r_z;
+    }
 
 });
 var updatePlayerData = function () {
     player.serverdata.id = player.id;
 
-    player.serverdata.x = player.shape.position.x;
-    player.serverdata.y = player.shape.position.y;
-    player.serverdata.z = player.shape.position.z;
+    player.serverdata.x = controls.getObject().position.x;
+    player.serverdata.y = controls.getObject().position.y;
+    player.serverdata.z = controls.getObject().position.z;
 
-    player.serverdata.r_x = player.shape.rotation.x;
-    player.serverdata.r_y = player.shape.rotation.y;
-    player.serverdata.r_z = player.shape.rotation.z;
+    player.serverdata.r_x = controls.getObject().rotation.x;
+    player.serverdata.r_y = controls.getObject().rotation.y;
+    player.serverdata.r_z = controls.getObject().rotation.z;
 };
 
 
-var playerForId = function (id) {
+var playerForId = id => {
     var index;
     for (var i = 0; i < otherPlayersId.length; i++) {
         if (otherPlayersId[i] == id) {
@@ -173,9 +172,16 @@ function onWindowResize() {
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-var mouse = new THREE.Vector2();
+function interact() {
+    var direction = new THREE.Vector3();
+    var raycaster = new THREE.Raycaster(); // create once and reuse
 
-document.onmousedown = function (event) {
+    controls.getDirection(direction);
+    raycaster.set(controls.getObject().position, direction);
+    var int = raycaster.intersectObjects(objects, true);
+    if (int.length > 0 && int[0].object.callback) int[0].object.callback();
+}
+document.onmousedown = event => {
 
     if (camera instanceof THREE.Camera) {
         var raycaster = new THREE.Raycaster();
@@ -193,13 +199,25 @@ document.onmousedown = function (event) {
     }
 
 };
-document.onmousemove = function (event) {
+document.onmousemove = event => {
 
-    mouse.x = (event.clientX - window.innerWidth / 2) / 2;
-    mouse.y = (event.clientY - window.innerHeight / 2) / 3;
+    if (typeof window.controls !== 'undefined') {
+        var direction = new THREE.Vector3();
+        var raycaster = new THREE.Raycaster(); // create once and reuse
+
+        controls.getDirection(direction);
+        raycaster.set(controls.getObject().position, direction);
+        var int = raycaster.intersectObjects(objects, true);
+        if (int.length > 0) $('#obj-name').text(controls.getObject().position.distanceTo(int[0].object.position));
+        else $('#obj-name').text('');
+    }
 
 };
-document.onkeypress = function (e) {
+document.onkeyup = e => {
     if (e.keyCode === 80)
         gui.quests();
+    if (e.keyCode === 73)
+        gui.inventory();
+    if (e.keyCode === 69)
+        interact();
 };

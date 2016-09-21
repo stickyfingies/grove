@@ -8,7 +8,6 @@ var gui = function GUI(title, body, ...btns) {
     }
     $('#gui-btns').html(btns_txt);
 };
-
 gui.quests = function () {
     var txt = '';
     for (var key in quests) {
@@ -17,6 +16,16 @@ gui.quests = function () {
         if (quests[key].completed) txt += '</s>';
     }
     gui('Quests', txt, {
+        name: 'close',
+        action: '$("#gui").fadeOut(400);'
+    });
+};
+gui.inventory = function () {
+    var txt = '';
+    for (var key in player.inventory) {
+        txt += '<h2>' + player.inventory[key] + '</h2>';
+    }
+    gui('Inventory', txt, {
         name: 'close',
         action: '$("#gui").fadeOut(400);'
     });

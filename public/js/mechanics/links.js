@@ -27,7 +27,7 @@ links.portal = function Portal(o) {
     var glow = new THREE.Sprite(glowM);
     glow.scale.set(5, 5, 5);
     sprite.add(glow);
-    particles.random({
+    ps.sphere({
         x: o.x,
         y: o.y,
         z: o.z,

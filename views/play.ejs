@@ -1,0 +1,227 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Play | The Grove</title>
+        <script src="/socket.io/socket.io.js"></script>
+        <link rel='stylesheet' href='/bower_components/bootstrap/dist/css/bootstrap.min.css'>
+        <link rel='icon' href='/img/icons/favicon.png'>
+        <script src="//code.jquery.com/jquery-2.2.3.min.js" crossorigin="anonymous"></script>
+        <script src='/bower_components/bootstrap/dist/js/bootstrap.min.js'></script>
+        <!--v IMPORTANT FILE v-->
+        <script src='/js/engine/THREE.js'></script>
+        <!--^ IMPORTANT FILE ^-->
+        <script src='/js/engine/THREEx.PointerLockControls.js'></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
+        <script src='/js/engine/Postal.js'></script>
+        <script src='/js/engine/THREEx.KeyboardState.js'></script>
+        <script src='/js/engine/THREEx.DayNight.js'></script>
+        <script src='/js/engine/TWEEN.js'></script>
+        <style>
+            @import url(https://fonts.googleapis.com/css?family=Open+Sans);
+            body,
+            html {
+                margin: 0;
+                overflow: hidden;
+                cursor: url(img/2D/sign.png), auto;
+            }
+            
+            #gui {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                margin: -280px 0 0 -500px;
+                width: 1000px;
+                height: 800px;
+                background-image: url(img/TheGroveGUI.png);
+                background-repeat: no-repeat;
+            }
+            
+            #gui .content {
+                position: relative;
+                top: 50px;
+                left: 100px;
+                z-index: 9999;
+                color: white;
+                font-family: Open Sans, Verdana, Georgia, Arial;
+                width: 80%;
+                height: 55%;
+                overflow-y: scroll;
+            }
+            
+            #splash {
+                position: fixed;
+                margin: 0px;
+                background: black;
+                width: 100%;
+                height: 100%;
+                z-index: 10000000;
+            }
+            
+            #splash center {
+                position: relative;
+                top: 30%;
+            }
+            
+            #quests {
+                position: absolute;
+                top: 100px;
+                right: 0px;
+            }
+            
+            #quests .content {
+                position: relative;
+                bottom: 75px;
+                left: 40px;
+                color: white;
+            }
+            
+            #quest-btn {
+                position: absolute;
+                bottom: 2%;
+                right: 2%;
+                cursor: pointer;
+            }
+            
+            #description {
+                position: absolute;
+                width: 100%;
+                height: 10%;
+                display: -webkit-box;
+                display: -moz-box;
+                display: box;
+                -webkit-box-orient: horizontal;
+                -moz-box-orient: horizontal;
+                box-orient: horizontal;
+                -webkit-box-pack: center;
+                -moz-box-pack: center;
+                box-pack: center;
+                -webkit-box-align: center;
+                -moz-box-align: center;
+                box-align: center;
+                color: #ffffff;
+                text-align: center;
+            }
+            
+            form {
+                padding: 3px;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 30%;
+            }
+            
+            #messages {
+                list-style-type: none;
+                margin: 0;
+                padding: 0;
+                height: 30%;
+            }
+            
+            #messages li {
+                padding: 5px 10px;
+                background: #aaa;
+            }
+            
+            #messages li:nth-child(odd) {
+                background: #eee;
+            }
+        </style>
+    </head>
+
+    <body>
+        <h3 id='username' style='position:absolute;left:10px;top:7px;'></h3>
+        <div id='quests'>
+            <img src='img/QuestBar.png'>
+            <div class='content'>
+                <p class='lead' id='quest-title'>QUEST TITLE</p>
+                <p style='position:relative;bottom:20px;font-size:10px;'>Press <kbd>P</kbd> to open quests</p>
+            </div>
+        </div>
+        <div id='splash'>
+            <center>
+                <h1 class='map'><%= user.map %></h1>
+                <br>
+                <div id='total' style='background:red;height:10%;display:block;min-width:10%;'></div>
+                <br>
+                <span id='splash-btn'></span>
+            </center>
+        </div>
+        <div id='gui' style='display:none;'>
+            <div class='content'>
+                <h1 id='gui-title'><center>The Path Back to The Grove</center></h1>
+                <hr>
+                <p class='lead' id='gui-content'></p>
+                <center id='gui-btns'>
+                    <button class='btn btn-default' onclick='$("#gui").fadeOut(400)'>Continue</button>
+                </center>
+            </div>
+        </div>
+        <div id='quest-btn' title='View Quests'><img src='/img/QuestIcon.png' width='50px' onclick='gui.quests()'></div>
+        <center><span id='description'></span></center>
+        <form action="" id='chat'>
+            <ul id="messages"></ul>
+            <div class="input-group">
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="submit">Send</button>
+                </span>
+                <input type="text" class="form-control" id='m' placeholder="Chat...">
+            </div>
+        </form>
+        <script>
+            String.prototype.capitalize = function () {
+                return this.charAt(0).toUpperCase() + this.slice(1);
+            };
+            
+            window.onerror = (msg, url, linenumber) => {
+                alert('Error message: ' + msg + '\nURL: ' + url + '\nLine Number: ' + linenumber);
+                return true;
+            };
+            var socket = io();
+            socket.emit('client-credentials', {
+                username: '<%= user.username %>',
+                password: '<%= user.password %>'
+            });
+            $('form').submit(function () {
+                var msg = $('#m').val();
+                msg = msg.replace(/@map/gi, userdata.map.capitalize());
+                msg = msg.replace(/@race/gi, userdata.race.capitalize());
+                msg = msg.replace(/@class/gi, userdata.class.capitalize());
+                msg = msg.replace(/:D/gi, '😃');
+                msg = msg.replace(/:\)/gi, '😊️');
+                if (/.ai/gi.test(msg)) {
+                    ai({
+                        x: player.shape.position.x,
+                        y: player.shape.position.y,
+                        z: player.shape.position.z
+                    });
+                    msg = userdata.username + ' has used a command!';
+                }
+                socket.emit('chat message', userdata.username + ': ' + msg);
+                $('#m').val('');
+                return false;
+            });
+            socket.on('chat message', msg => {
+                var elem = $('<li>').text(msg).appendTo('#messages');
+                setTimeout(function () {
+                    elem.fadeOut();
+                }, 10000);
+            });
+        </script>
+        <script src='/js/engine/particle-engine.js'></script>
+        <script src='/js/mechanics/gui.js'></script>
+        <script src='/js/mechanics/quests.js'></script>
+        <script src='/js/mechanics/player.js'></script>
+        <script src='/js/loaders/obj.js'></script>
+        <script src='/js/loaders/mtl.js'></script>
+        <script src='/js/mechanics/objects.js'></script>
+        <script src='/js/mechanics/particles.js'></script>
+        <script src='/js/mechanics/plants.js'></script>
+        <script src='/js/mechanics/links.js'></script>
+        <script src='/js/mechanics/AI.js'></script>
+        <script src='/js/engine/main.js'></script>
+        <script src='/js/mechanics/pointerlock.js'></script>
+        <script src='/js/engine/render.js'></script>
+        <script src='/js/engine/tether.min.js'></script>
+        <script src='/bower_components/bootstrap/dist/js/bootstrap.min.js'></script>
+    </body>
+</html>

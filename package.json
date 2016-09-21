@@ -5,14 +5,22 @@
   "dependencies": {
     "body-parser": "^1.15.1",
     "doge": "^19.9.9-much.party",
+    "ejs-locals": "^1.0.2",
     "express": "^4.13.4",
+    "express-session": "^1.14.1",
+    "express-socket.io-session": "^1.3.1",
+    "jade": "^1.11.0",
     "mongoose": "^4.4.17",
     "node-games": "^3.0.3",
     "postal": "^2.0.0",
     "request": "^2.72.0",
-    "socket.io": "^1.4.5"
+    "serve-favicon": "^2.3.0",
+    "socket.io": "^1.4.8",
+    "socket.io-express-session": "^0.1.3",
+    "sriracha": "^1.0.0"
   },
   "scripts": {
-    "start": "node app.js"
+    "start": "./mongod --repair && ./mongod & node app.js",
+    "test": "exit 0"
   }
 }

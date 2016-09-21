@@ -1,57 +1,68 @@
-var maps = require('../game/maps');
+'use strict';
 var players = require('../game/players');
 
-module.exports = function (io, events) {
-  var o;
-  events.subscribe('pageview', function (data) {
-    o = data.data;
-  });
+module.exports = (io, User) => {
+  io.on('connection', socket => {
+    socket.on('client-credentials', creds => {
+      User.findOne({
+        username: creds.username,
+        password: creds.password
+      }, (err, o) => {
+        if (err) console.err(err);
+        players.addPlayer(socket.id, o);
+        let player = players.playerForId(socket.id);
+        socket.emit('createPlayer', player);
+        socket.broadcast.emit('addOtherPlayer', player);
+        socket.on('requestOldPlayers', function () {
+          for (let i = 0; i < players.players.length; i++) {
+            if (players.players[i].playerId != socket.id)
+              socket.emit('addOtherPlayer', players.players[i]);
+          }
+        });
+        socket.on('updatePosition', data => {
+          let newData = players.updatePlayerData(data);
+          socket.broadcast.emit('updatePosition', newData);
+        });
 
-  io.on('connection', function (socket) {
+        socket.on('inventory-update', dat => {
+          User.findOne({
+            username: dat.user.username,
+            password: dat.user.password
+          }, (err, obj) => {
+            if (err) console.log(err);
+            if (obj) {
+              obj.inventory = dat.inv;
+              obj.save();
+            }
+            else console.log('Credentials not valid!');
+          });
+        });
+        socket.on('map-update', dat => {
+          User.findOne({
+            username: dat.user.username,
+            password: dat.user.password
+          }, (err, obj) => {
+            if (err) console.log(err);
+            if (obj) {
+              obj.map = dat.map;
+              obj.save();
+              socket.emit('reload bitch!', true);
+            }
+            else console.log('Credentials not valid!');
+          });
+        });
 
-    players.addPlayer(socket.id, o);
-    var player = players.playerForId(socket.id);
-    socket.emit('createPlayer', player);
-    socket.broadcast.emit('addOtherPlayer', player);
-    socket.on('requestOldPlayers', function () {
-      for (var i = 0; i < players.players.length; i++) {
-        if (players.players[i].playerId != socket.id)
-          socket.emit('addOtherPlayer', players.players[i]);
-      }
-    });
-    socket.on('updatePosition', function (data) {
-      var newData = players.updatePlayerData(data);
-      socket.broadcast.emit('updatePosition', newData);
-    });
-    // socket.emit('data-update', o);
+        socket.on('chat message', msg => {
+          console.log('message: ' + msg);
+          io.emit('chat message', msg);
+        });
 
-    socket.on('inventory-update', function (dat) {
-      events.publish('inventory', dat);
-    });
-    socket.on('map-update', function (dat) {
-      var done = events.subscribe('done', function (svreck) {
-        o = svreck.o;
-        socket.emit('clear');
-        socket.emit('data-update', svreck.o);
-        socket.emit('genMap', maps[svreck.o.map]);
-        socket.emit('reload bitch!');
-        done.unsubscribe();
-      });
-      events.publish('map', dat);
-    });
-
-    socket.emit('genMap', maps[o.map]);
-    console.log('A user connected.  Logging time at: ' + new Date());
-    socket.on('chat message', function (msg) {
-      console.log('message: ' + msg);
-      io.emit('chat message', msg);
-    });
-
-    socket.on('disconnect', function () {
-      console.log('user disconnected');
-      io.emit('removeOtherPlayer', player);
-      players.removePlayer(player);
-    });
-  });
-
-};
+        socket.on('disconnect', function () {
+          console.log('user disconnected');
+          io.emit('removeOtherPlayer', player);
+          players.removePlayer(player);
+        }); //
+      }); //
+    }); //
+  }); //
+}; //

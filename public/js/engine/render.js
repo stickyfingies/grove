@@ -1,115 +1,77 @@
-function animate() {
-    requestAnimationFrame(animate);
-    if (typeof controlsEnabled !== 'undefined' && window.keyboard !== undefined && window.player.shape !== undefined && window.camera instanceof THREE.Camera) {
-        raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, 5);
-        raycaster.ray.origin.copy(player.shape.position);
+function render() {
+    requestAnimationFrame(render);
+    if (window.keyboard !== undefined && typeof window.controls !== 'undefined' && window.controls.getObject() !== undefined && window.camera instanceof THREE.Camera) {
+        var raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, 15);
+        raycaster.ray.origin.copy(controls.getObject().position);
         var intersections = raycaster.intersectObjects(objects);
         var isOnObject = intersections.length > 0;
 
         var time = performance.now();
         var delta = (time - prevTime) / 1000;
-        var moveDistance = 75 * delta; // 200 pixels per second
-        var rotateAngle = Math.PI / 2 * delta; // pi/2 radians (90 degrees) per second
+        var moveDistance = 45 * delta; // 200 pixels per second
+        var rotateAngle = Math.PI / 4 * delta; // pi/2 radians (90 degrees) per second
         if (keyboard.pressed("W") && !$("input").is(":focus")) {
-            var _raycaster = new THREE.Raycaster(player.shape.position, new THREE.Vector3(player.shape.position.x - 1, player.shape.position.y, player.shape.position.z), 0, 5);
+            var _raycaster = new THREE.Raycaster(controls.getObject().position, new THREE.Vector3(0, 0, 0), 0, 5);
             var matrix = new THREE.Matrix4();
-            matrix.extractRotation(player.shape.matrix);
+            matrix.extractRotation(controls.getObject().matrix);
             var direction = new THREE.Vector3(0, 0, 1);
-            // matrix.multiplyVector3(direction);
-            _raycaster.set(player.shape.position, direction);
+            _raycaster.set(controls.getObject().position, direction);
             var _intersections = _raycaster.intersectObjects(objects, true);
             var NgF = _intersections.length > 0;
-            if (!NgF) player.shape.translateZ(moveDistance);
+            if (!NgF) controls.getObject().translateZ(-moveDistance);
             updatePlayerData();
             socket.emit('updatePosition', player.serverdata);
         }
         if (keyboard.pressed("S") && !$("input").is(":focus")) {
-            var _raycaster = new THREE.Raycaster(player.shape.position, new THREE.Vector3(player.shape.position.x - 1, player.shape.position.y, player.shape.position.z), 0, 5);
+            var _raycaster = new THREE.Raycaster(controls.getObject().position, new THREE.Vector3(0, 0, 0), 0, 5);
             var matrix = new THREE.Matrix4();
-            matrix.extractRotation(player.shape.matrix);
+            matrix.extractRotation(controls.getObject().matrix);
             var direction = new THREE.Vector3(0, 0, -1);
-            // matrix.multiplyVector3(direction);
-            _raycaster.set(player.shape.position, direction);
+            _raycaster.set(controls.getObject().position, direction);
             var _intersections = _raycaster.intersectObjects(objects, true);
             var NgF = _intersections.length > 0;
-            if (!NgF) player.shape.translateZ(-moveDistance);
+            if (!NgF) controls.getObject().translateZ(moveDistance);
             updatePlayerData();
             socket.emit('updatePosition', player.serverdata);
         }
-        if (keyboard.pressed("Q") && !$("input").is(":focus") && isOnObject)
-            player.shape.translateX(moveDistance);
-        if (keyboard.pressed("E") && !$("input").is(":focus") && isOnObject)
-            player.shape.translateX(-moveDistance);
-        if (keyboard.pressed("A") && !$("input").is(":focus")) {
-            player.shape.rotateOnAxis(new THREE.Vector3(0, 1, 0), rotateAngle * 1.5);
-            if (viewType) camera.rotateOnAxis(new THREE.Vector3(0, 1, 0), rotateAngle);
-            updatePlayerData();
-            socket.emit('updatePosition', player.serverdata);
-        }
-        if (keyboard.pressed("D") && !$("input").is(":focus")) {
-            player.shape.rotateOnAxis(new THREE.Vector3(0, 1, 0), -rotateAngle * 1.5);
-            if (viewType) camera.rotateOnAxis(new THREE.Vector3(0, 1, 0), -rotateAngle);
-            updatePlayerData();
-            socket.emit('updatePosition', player.serverdata);
-        }
-        if (keyboard.pressed("space") && !$("input").is(":focus") && isOnObject) {
-            jumpY = player.shape.position.y;
+        if (keyboard.pressed("A") && !$("input").is(":focus") && isOnObject)
+            controls.getObject().translateX(-moveDistance);
+        if (keyboard.pressed("D") && !$("input").is(":focus") && isOnObject)
+            controls.getObject().translateX(moveDistance);
+        if (keyboard.pressed("space") && !$("input").is(":focus") && isOnObject) { // yippeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+            jumpY = controls.getObject().position.y;
             isJumping = true;
             velocity.y = 1.5;
         }
-        if (keyboard.pressed('m') && !$("input").is(":focus")) audio.volume = 0;
-        if (keyboard.pressed("I") && !$("input").is(":focus") && player.inventory.length) {
-            var light = new THREE.PointLight(0xffffff, 1, 50, 1);
-            player.shape.add(light);
-            light.translateY(5);
-            player.inventory.splice(player.inventory.indexOf('glowbulb'), 1);
-            events.publish('use', {
-                name: 'glowbulb'
-            });
-            socket.emit('inventory-update', {
-                user: userdata,
-                inv: player.inventory
-            });
-            setTimeout(function () {
-                light.visible = false;
-                scene.remove(light);
-            }, 10000);
-        }
+        if (keyboard.pressed('M') && !$("input").is(":focus")) audio.volume = !audio.volume; //mutes || unmutes, depending on current volume
 
-        player.shape.translateY(velocity.y);
+        controls.getObject().position.y += (velocity.y);
         prevTime = time;
-        if (player.shape.position.y > jumpY + 15) isJumping = false;
+        if (controls.getObject().position.y > jumpY + 15) isJumping = false;
         if (isOnObject && !isJumping) {
             velocity.y = 0;
             if (isOnObject) velocity.y = Math.max(0, velocity.y);
         }
         if (!isOnObject && !isJumping) velocity.y -= 0.1;
-        if (player.shape.position.y < -100) {
+        if (controls.getObject().position.y < -100) {
             velocity.y = 0;
-            player.shape.position.set(0, 10, 0);
+            controls.getObject().position.set(0, 10, 0);
         }
-        if (isJumping)
+        if (isJumping) {
             velocity.y -= 0.05;
+            updatePlayerData();
+            socket.emit('updatePosition', player.serverdata);
+        }
 
-        if (!viewType) var relativeCameraOffset = new THREE.Vector3(0, 2.5 + Math.pow(1.025, player.shape.position.y), -1.75 - Math.pow(1.025, player.shape.position.y));
-        else var relativeCameraOffset = new THREE.Vector3(0, 20, 5);
-
-        var cameraOffset = relativeCameraOffset.applyMatrix4(player.shape.matrixWorld);
-
-        camera.position.x = cameraOffset.x;
-        camera.position.y = cameraOffset.y;
-        camera.position.z = cameraOffset.z;
-        if (!viewType) camera.lookAt(new THREE.Vector3(player.shape.position.x, player.shape.position.y + 10, player.shape.position.z));
-        else camera.position.y += 7;
         //(>-_-)>#
-        //(-_-)
+        // (-_-)
+        // controls.getObject().update();
         var dayDuration = 900;
         sunAngle += delta / dayDuration * Math.PI * 2;
-
         sunSphere.update(sunAngle);
         sunLight.update(sunAngle);
         skydom.update(sunAngle);
-        skydom.object3d.position.set(camera.position.x, camera.position.y, camera.position.z);
+        skydom.object3d.position.set(controls.getObject().position.x, controls.getObject().position.y, controls.getObject().position.z);
         starfield.update(sunAngle);
         for (var key in particles) particles[key].tick(delta);
         TWEEN.update(time);
@@ -118,5 +80,3 @@ function animate() {
 
     if (typeof renderer !== 'undefined' && camera instanceof THREE.Camera) renderer.render(scene, camera);
 }
-
-animate();

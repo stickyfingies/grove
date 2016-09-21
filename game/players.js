@@ -1,4 +1,6 @@
-var players = [];
+'use strict';
+
+let players = [];
 
 function Player() {
 
@@ -18,9 +20,9 @@ function Player() {
 
 }
 
-var addPlayer = function (id, accountData) {
+let addPlayer = (id, accountData) => {
 
-    var player = new Player();
+    let player = new Player();
     player.playerId = id;
     player.accountData = accountData;
     players.push(player);
@@ -28,17 +30,17 @@ var addPlayer = function (id, accountData) {
     return player;
 };
 
-var removePlayer = function (player) {
+let removePlayer = player => {
 
-    var index = players.indexOf(player);
+    let index = players.indexOf(player);
 
     if (index > -1) {
         players.splice(index, 1);
     }
 };
 
-var updatePlayerData = function (data) {
-    var player = playerForId(data.playerId);
+let updatePlayerData = data => {
+    let player = playerForId(data.playerId);
     player.x = data.x;
     player.y = data.y;
     player.z = data.z;
@@ -49,10 +51,10 @@ var updatePlayerData = function (data) {
     return player;
 };
 
-var playerForId = function (id) {
+let playerForId = id => {
 
-    var player;
-    for (var i = 0; i < players.length; i++) {
+    let player;
+    for (let i = 0; i < players.length; i++) {
         if (players[i].playerId === id) {
 
             player = players[i];

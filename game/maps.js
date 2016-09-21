@@ -1,4 +1,5 @@
-var maps = []
+'use strict';
+let maps = []
 maps.tutorial = [[{
     name: "Harvest the Glowbulb",
     desc: "Click the Glowbulb plants in the garden to harvest them.",
@@ -84,8 +85,8 @@ maps.tutorial = [[{
     y: 100,
     z: 310,
     s: 20,
-    map: 'helmfirth'
-}]], maps.helmfirth = [[{
+    map: 'helmfirth'}]],
+maps.helmfirth = [[{
     name: "ooooooodle",
     desc: "crazzzzzz",
     pg: 1,

@@ -48,7 +48,7 @@ THREEx.DayNight.StarField = function () {
             var intensity = Math.abs(Math.sin(sunAngle))
             material.color.setRGB(intensity, intensity, intensity)
         }
-        mesh.position.set(player.shape.position.x, player.shape.position.y, player.shape.position.z)
+        mesh.position.set(controls.getObject().position.x, controls.getObject().position.y, controls.getObject().position.z)
     }
 }
 
@@ -93,10 +93,22 @@ THREEx.DayNight.SunLight = function () {
 THREEx.DayNight.SunSphere = function () {
     var geometry = new THREE.SphereGeometry(20, 30, 30)
     var material = new THREE.MeshBasicMaterial({
-        color: 0xffffff
+        color: 0xffffff,
+        fog: false,
+        side: THREE.DoubleSided
     })
     var mesh = new THREE.Mesh(geometry, material)
     this.object3d = mesh
+    var glowM = new THREE.SpriteMaterial({
+        map: new THREE.ImageUtils.loadTexture('/img/glow.png'),
+        useScreenCoordinates: false,
+        color: 0xff0000,
+        blending: THREE.AdditiveBlending,
+        fog: false
+    });
+    var glow = new THREE.Sprite(glowM);
+    glow.scale.set(150, 150, 150);
+    this.object3d.add(glow);
 
     this.update = function (sunAngle) {
         mesh.position.x = 0;
@@ -106,9 +118,11 @@ THREEx.DayNight.SunSphere = function () {
         var phase = THREEx.DayNight.currentPhase(sunAngle)
         if (phase === 'day') {
             mesh.material.color.set("rgb(255," + (Math.floor(Math.sin(sunAngle) * 200) + 55) + "," + (Math.floor(Math.sin(sunAngle) * 200) + 5) + ")");
+            glow.material.color.set("rgb(255," + (Math.floor(Math.sin(sunAngle) * 200) + 55) + "," + (Math.floor(Math.sin(sunAngle) * 200) + 5) + ")");
         }
         else if (phase === 'twilight') {
             mesh.material.color.set("rgb(255,55,5)");
+            glow.material.color.set("rgb(255,55,5)");
         }
         else {}
     }
@@ -140,13 +154,16 @@ THREEx.DayNight.Skydom = function () {
             mesh.material.poacity = 1;
             uniforms.topColor.value.set("rgb(0,120,255)");
             uniforms.bottomColor.value.set("rgb(255," + (Math.floor(Math.sin(sunAngle) * 200) + 55) + "," + (Math.floor(Math.sin(sunAngle) * 200)) + ")");
+            if (scene) scene.fog.color.set("rgb(255," + (Math.floor(Math.sin(sunAngle) * 200) + 55) + "," + (Math.floor(Math.sin(sunAngle) * 200)) + ")");
         }
         else if (phase === 'twilight') {
             uniforms.topColor.value.set("rgb(0," + (120 - Math.floor(Math.sin(sunAngle) * 240 * -1)) + "," + (255 - Math.floor(Math.sin(sunAngle) * 510 * -1)) + ")");
+            if (scene) scene.fog.color.set("rgb(0," + (120 - Math.floor(Math.sin(sunAngle) * 240 * -1)) + "," + (255 - Math.floor(Math.sin(sunAngle) * 510 * -1)) + ")");
             uniforms.bottomColor.value.set("rgb(" + (255 - Math.floor(Math.sin(sunAngle) * 510 * -1)) + "," + (55 - Math.floor(Math.sin(sunAngle) * 110 * -1)) + ",0)");
         }
         else {
             uniforms.topColor.value.set('black')
+            if (scene) scene.fog.color.set('black');
             uniforms.bottomColor.value.set('black');
         }
     }

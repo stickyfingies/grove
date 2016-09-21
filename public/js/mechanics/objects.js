@@ -78,31 +78,6 @@ obj.house = function House(o) {
         obj.position.y += 2;
         obj.translateX(25);
     });
-    o.name = 'glowbulb';
-    Plant({
-        name: 'glowbulb',
-        x: o.x + 30,
-        y: o.y + 5,
-        z: o.z + 2.5
-    });
-    Plant({
-        name: 'glowbulb',
-        x: o.x + 30,
-        y: o.y + 5,
-        z: o.z - 2.5
-    });
-    Plant({
-        name: 'glowbulb',
-        x: o.x + 17.5,
-        y: o.y + 5,
-        z: o.z + 2.5
-    });
-    Plant({
-        name: 'glowbulb',
-        x: o.x + 17.5,
-        y: o.y + 5,
-        z: o.z - 2.5
-    });
 };
 obj.house1 = function (o) {
     var _loader = new THREE.ObjectLoader();
@@ -112,16 +87,23 @@ obj.house1 = function (o) {
         obj.traverse(function (child) {
             objects.push(child);
             child.callback = function () {
-                if (child.name == 'Door' || child.name == 'Door.001') alert('Yes, those are lovely, but that doesn\'t answer our question.');
+                if (child.name == 'Door' || child.name == 'Door.001') {
+                    socket.emit('map-update', {
+                        user: userdata,
+                        map: 'house1'
+                    });
+                }
             };
+            child.castShadow = true;
+            child.receiveShadow = true;
         });
         obj.position.set(o.x, o.y, o.z);
-        villager(new THREE.Vector3(o.x + 20, o.y + 20, o.z));
         obj.rotation.y = Math.PI / 2;
         o.y += 60;
         o.z -= 3;
         o.x += 3;
         ps.smoke(o);
+        obj.castShadow = true;
     });
 };
 
@@ -215,9 +197,12 @@ obj.cube = function Cube(o) {
         wrapAround: true
     });
     var cube = new THREE.Mesh(geometry, material);
+    for (var i = 0; i < cube.geometry.vertices.length; i++)
+        cube.geometry.vertices[i].y += Math.sin(cube.geometry.vertices[i].z * 10) * 100
     cube.position.set(o.x, o.y, o.z);
     cube.rotation.set(o.rx || 0, o.ry || 0, o.rz || 0);
     objects.push(cube);
+    cube.receiveShadow = true;
 };
 obj.plane = function plane(o) {
     var geometry = new THREE.PlaneGeometry(o.w, o.l, 100, 100);

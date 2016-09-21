@@ -1,13 +1,14 @@
-var ps = {};
-var particles = [];
+'use strict';
+let ps = {};
+let particles = [];
 ps.sphere = function (o) {
-    var particleGroup = new SPE.Group({
+    let particleGroup = new SPE.Group({
         texture: {
             value: THREE.ImageUtils.loadTexture('/img/glow.png')
         }
     });
 
-    var emitter = new SPE.Emitter({
+    let emitter = new SPE.Emitter({
         // type: i,
         maxAge: {
             value: 2
@@ -43,13 +44,13 @@ ps.sphere = function (o) {
     scene.add(particleGroup.mesh);
 };
 ps.fire = function (o) {
-    var particleGroup = new SPE.Group({
+    let particleGroup = new SPE.Group({
         texture: {
             value: THREE.ImageUtils.loadTexture('/img/glow.png')
         }
     });
 
-    var emitter = new SPE.Emitter({
+    let emitter = new SPE.Emitter({
         maxAge: {
             value: 2
         },
@@ -84,12 +85,12 @@ ps.fire = function (o) {
     scene.add(particleGroup.mesh);
 };
 ps.smoke = function (o) {
-    var particleGroup = new SPE.Group({
+    let particleGroup = new SPE.Group({
         texture: {
             value: THREE.ImageUtils.loadTexture('/img/glow.png')
         }
     });
-    var emitter = new SPE.Emitter({
+    let emitter = new SPE.Emitter({
         maxAge: {
             value: 3
         },

@@ -1,49 +1,66 @@
-var app, http, io;
+'use strict';
+
+let app, admin, http, io;
 
 app = require('express')();
+
+admin = require('sriracha');
 
 http = require('http').Server(app);
 
 io = require('socket.io')(http);
 
-var postal = require('postal');
-var events = postal.channel();
+let postal = require('postal');
+let events = postal.channel();
 
-var bodyParser = require('body-parser');
+let bodyParser = require('body-parser');
+let session = require('express-session');
 
+app.engine('ejs', require('ejs-locals'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
   extended: true
 }));
+app.use(session({
+  secret: 'keyboard cat'
+}));
 
-app.get('/', function (req, res) {
-  res.sendFile(__dirname + '/views/index.html');
-});
-app.get('/login', function (req, res) {
-  res.sendFile(__dirname + '/views/login.html');
-});
-app.get('/register', function (req, res) {
-  res.sendFile(__dirname + '/views/register.html');
-});
-app.post('/play', function (req, res) {
-  res.sendFile(__dirname + '/views/play.html');
-});
-app.get('/play', function (req, res) {
-  res.redirect('/login');
-});
-app.post('/dashboard', function (req, res) {
-  res.sendFile(__dirname + '/views/dashboard.html');
-});
+let User = require(__dirname + '/game/mongo')(app, events);
+require(__dirname + '/game/client-interact')(io, User);
 
-app.use(require('express')["static"]('public'));
+app.get('/', (req, res) => {
+  if (req.session.user && req.session.user.username) res.render(__dirname + '/views/dashboard.ejs', {
+    user: req.session.user
+  });
+  else res.render(__dirname + '/views/index.ejs');
+});
+app.get('/logout', (req, res) => {
+  console.log(req.session.username + ' has logged out.');
+  delete req.session.user;
+  res.redirect('/');
+});
+app.get('/login', (req, res) => {
+  res.render(__dirname + '/views/login.ejs');
+});
+app.get('/register', (req, res) => {
+  res.render(__dirname + '/views/register.ejs');
+});
+app.get('/play', (req, res) => {
+  if (req.session.user && req.session.user.username) res.render(__dirname + '/views/play.ejs', {
+    user: req.session.user
+  });
+  else res.redirect('/login');
+});
+app.use('/admin', admin({
+  username: 'admin',
+  password: '201703502',
+  users: {
+    searchField: 'username'
+  }
+}));
 
-require(__dirname + '/game/client-interact')(io, events);
-require(__dirname + '/game/mongo')(app, events);
+app.use(require('express')['static']('public'));
 
-// var exec = require('child_process').exec;
-// function puts(error, stdout, stderr) { console.log(stdout) }
-// exec("./mongod", puts);
-
-http.listen(8080, function () {
-  console.log('listening on *:8080');
+http.listen(8080, function (listening) {
+  console.log('listening on 0.0.0.0');
 });

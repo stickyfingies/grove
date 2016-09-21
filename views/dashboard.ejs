@@ -1,0 +1,42 @@
+<!doctype html>
+
+<head>
+    <title><%= user.username %></title>
+    <script src='/bower_components/jquery/dist/jquery.min.js'></script>
+    <link rel='stylesheet' href='/bower_components/bootstrap/dist/css/bootstrap.min.css'>
+    <link rel='icon' href='/img/icons/favicon.png'>
+</head>
+
+<body>
+    <div class='row'>
+        <div class='col-md-5' style='padding:15px;padding-left:30px;'>
+            <div class='jumbotron' style='text-indent:25px;'>
+                <h1><%= user.username %></h1>
+                <p class='lead'>» <%= user.race %> <%= user.class %></p>
+                <p class='lead'><%= user.map %></p>
+            </div>
+            <a href='/play' class='btn btn-lg btn-block btn-success-outline'>play</a>
+            <hr>
+            <h3>Inventory</h3>
+            <div id='inventory'></div>
+        </div>
+        <div class='col-md-5' style='padding:15px;padding-left:30px;'>
+            <h1>Game Updates</h1>
+            <hr>
+            <ul class='list-group'>
+                <li class='list-group-item'>
+                    Added portals, fixed the camera angles, and added a particle system.
+                    <br><span class='label label-default label-pill'>0.0.6 pre-alpha</span>
+                </li>
+                <li class='list-group-item'>
+                    Added AI's and switched to <a href='//clara.io'>clara.io</a> for graphics.
+                    <br><span class='label label-default label-pill'>0.0.4 pre-alpha</span>
+                </li>
+                <li class='list-group-item'>
+                    The Grove goes 3D. Kinda... Uh... no.
+                    <br><span class='label label-default label-pill'>0.0.0 pre-alpha</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</body>
