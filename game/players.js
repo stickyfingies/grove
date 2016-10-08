@@ -9,9 +9,7 @@ function Player() {
     this.x = 0;
     this.y = 0;
     this.z = 0;
-    this.r_x = 0;
-    this.r_y = 0;
-    this.r_z = 0;
+    this.quaternion = {}; //for now
     this.sizeX = 1;
     this.sizeY = 1;
     this.sizeZ = 1;
@@ -44,9 +42,7 @@ let updatePlayerData = data => {
     player.x = data.x;
     player.y = data.y;
     player.z = data.z;
-    player.r_x = data.r_x;
-    player.r_y = data.r_y;
-    player.r_z = data.r_z;
+    player.quaternion = data.quaternion;
 
     return player;
 };

@@ -8,20 +8,21 @@ module.exports = (app, events) => {
         class: String,
         race: String,
         inventory: [],
-        map: String
+        map: String,
+        level: Number
     });
     db.on('error', console.error);
     db.once('open', function () {
-        console.log('Successfully connected to MongoDB!');
+        console.log('Successfully connected to MongoDB');
     });
-    mongoose.connect('mongodb://0.0.0.0/grove');
+    mongoose.connect('mongodb://hybridalpaca:cellman123@ds139685.mlab.com:39685/grove');
 
     events.subscribe('inventory', dat => {
         User.findOne({
             username: dat.user.username,
             password: dat.user.password
         }, (err, obj) => {
-            if (err) console.log(err);
+            if (err) console.log('ERROR!');
             if (obj) {
                 obj.inventory = dat.inv;
                 obj.save((err, data) => {
@@ -40,10 +41,10 @@ module.exports = (app, events) => {
             username: dat.user.username,
             password: dat.user.password
         }, (err, obj) => {
-            if (err) console.log(err);
+            if (err) console.log('ERROR!');
             if (obj) {
                 obj.map = dat.map;
-                obj.save((err, data) =>  {
+                obj.save((err, data) => {
                     events.publish('done', {
                         o: data
                     });
@@ -58,13 +59,13 @@ module.exports = (app, events) => {
     app.post('/login', (req, res) => {
         User.findOne({
             username: req.body.username,
-            password: req.body.password
+            password: require('md5')(req.body.password)
         }, (err, obj) => {
             if (err) {
                 console.log(err);
             }
             else if (obj) {
-                console.log(obj.username + ' logged in');
+                console.log(obj.username + ' logged on.');
                 req.session.user = obj;
                 res.redirect('/');
                 events.publish('pageview', {
@@ -80,13 +81,14 @@ module.exports = (app, events) => {
     app.post('/register', (req, res) => {
         let u = new User({
             username: req.body.username,
-            password: req.body.password,
+            password: require('md5')(req.body.password),
             class: req.body.class,
             race: req.body.race,
-            map: 'tutorial'
+            map: 'tutorial',
+            level: 1
         });
         u.save((err, obj) => {
-            if (err) console.error(err);
+            if (err) console.error('ERROR!');
             else if (obj) {
                 console.log(obj.username + ' created an account.');
                 req.session.user = obj;

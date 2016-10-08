@@ -9,6 +9,7 @@ module.exports = (io, User) => {
         password: creds.password
       }, (err, o) => {
         if (err) console.err(err);
+        if (!o) console.error('USER NOT FOUND FOR MULTIPLAYER');
         players.addPlayer(socket.id, o);
         let player = players.playerForId(socket.id);
         socket.emit('createPlayer', player);
@@ -29,7 +30,7 @@ module.exports = (io, User) => {
             username: dat.user.username,
             password: dat.user.password
           }, (err, obj) => {
-            if (err) console.log(err);
+            if (err) console.log('ERROR!');
             if (obj) {
               obj.inventory = dat.inv;
               obj.save();
@@ -42,7 +43,7 @@ module.exports = (io, User) => {
             username: dat.user.username,
             password: dat.user.password
           }, (err, obj) => {
-            if (err) console.log(err);
+            if (err) console.log('ERROR!');
             if (obj) {
               obj.map = dat.map;
               obj.save();
@@ -58,7 +59,7 @@ module.exports = (io, User) => {
         });
 
         socket.on('disconnect', function () {
-          console.log('user disconnected');
+          console.log('A player has logged off.');
           io.emit('removeOtherPlayer', player);
           players.removePlayer(player);
         }); //
