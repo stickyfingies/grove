@@ -55,10 +55,7 @@ app.get('/play', (req, res) => {
 });
 app.use('/admin', admin({
   username: 'admin',
-  password: '201703502',
-  users: {
-    searchField: 'username'
-  }
+  password: '201703502'
 }));
 
 app.use(require('express')['static']('public'));
