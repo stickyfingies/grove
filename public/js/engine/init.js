@@ -119,7 +119,7 @@ function init() {
         color: 0xffff00
     });
     var torus = new THREE.Mesh(geometry, material);
-    torus.position.set(0, 100, 10);
+    torus.position.set(0, 0, 0);
     scene.add(torus);
     load(torus, {
         mass: 100
