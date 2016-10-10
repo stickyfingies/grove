@@ -53,7 +53,7 @@ app.get('/play', (req, res) => {
   });
   else res.redirect('/login');
 });
-app.get('/robots.txt', (req, res) => {
+app.use('/robots.txt', (req, res) => {
   res.render(__dirname + '/views/robots.txt');
 });
 app.use('/admin', admin({
