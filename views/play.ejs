@@ -51,16 +51,24 @@
                 text-align: center;
                 cursor: pointer;
             }
+            
+            #voice-chat {
+                position: fixed;
+                left: 0px;
+                bottom: 0px;
+            }
         </style>
     </head>
 
     <body>
+        
         <div id="blocker">
             <div id="instructions">
                 <span style="font-size:40px">Click to play</span>
                 <br /> (W,A,S,D = Move, SPACE = Jump, MOUSE = Look, CLICK = Shoot)
             </div>
         </div>
+        
         <script>
             String.prototype.capitalize = function () {
                 return this.charAt(0).toUpperCase() + this.slice(1);
@@ -86,6 +94,7 @@
                 $('#m').val('');
                 return false;
             });
+            
             socket.on('chat message', msg => {
                 var elem = $('<li>').text(msg).appendTo('#messages');
                 setTimeout(function () {
