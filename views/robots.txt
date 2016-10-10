@@ -1,1 +1,2 @@
-all pages open to search robots
+User-agent: Googlebot
+Allow: /$
