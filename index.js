@@ -53,8 +53,8 @@ app.get('/play', (req, res) => {
   });
   else res.redirect('/login');
 });
-app.get('/robots', (req, res) => {
-  res.render(__dirname + 'views/robots.ejs');
+app.use('/robots.txt', (req, res) => {
+  res.render(__dirname + '/robots.txt');
 });
 app.get('/LICENSE', (req, res) => {
   res.render(__dirname + '/LICENSE');
