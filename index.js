@@ -53,8 +53,11 @@ app.get('/play', (req, res) => {
   });
   else res.redirect('/login');
 });
-app.use('/robots.txt', (req, res) => {
-  res.render(__dirname + '/views/robots.txt');
+app.use('/views/robots', (req, res) => {
+  res.render(__dirname + '/views/robots');
+});
+app.get('/LICENSE', (req, res) => {
+  res.render(__dirname + '/LICENSE');
 });
 app.use('/admin', admin({
   username: 'admin',
