@@ -4,6 +4,7 @@
   "description": "The Grove.",
   "main": "index.js",
   "dependencies": {
+    "animate.css": "^3.5.2",
     "body-parser": "^1.15.1",
     "doge": "^19.9.9-much.party",
     "ejs-locals": "^1.0.2",
