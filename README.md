@@ -1,6 +1,9 @@
 # The Grove
 
-Welcome to The Grove, a browser-based MMORPG!
+(UNDER DEVELOPMENT)
+
+
+Welcome to The Grove, a browser-based MMORPG.
 A list of server technologies are:
 
 - node.js

@@ -1,7 +1,7 @@
 {
   "name": "the-grove",
   "version": "0.0.1",
-  "description": "The Grove!",
+  "description": "The Grove.",
   "main": "index.js",
   "dependencies": {
     "body-parser": "^1.15.1",
