@@ -39,7 +39,7 @@ app.get('/logout', (req, res) => {
     console.log(req.session.user.username + ' has logged out!');
     delete req.session.user;
   }
-  res.redirect('/login');
+  res.redirect('/');
 });
 app.get('/login', (req, res) => {
   res.render(__dirname + '/views/login.ejs');
@@ -54,10 +54,10 @@ app.get('/play', (req, res) => {
   else res.redirect('/login');
 });
 app.use('/robots.txt', (req, res) => {
-  res.render(__dirname + '/robots.txt');
+  res.render(__dirname + 'grove/robots.txt');
 });
-app.get('/LICENSE', (req, res) => {
-  res.render(__dirname + '/LICENSE');
+app.get('/liscense', (req, res) => {
+  res.render(__dirname + 'views/liscense.txt');
 });
 app.use('/admin', admin({
   username: 'admin',
