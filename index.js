@@ -36,7 +36,7 @@ app.get('/', (req, res) => {
 });
 app.get('/logout', (req, res) => {
   if (req.session.user) {
-    console.log(req.session.user.username + ' has logged out!');
+    console.log(req.session.user.username + ' has logged out!\n\n');
     delete req.session.user;
   }
   res.redirect('/');
@@ -67,5 +67,5 @@ app.use('/admin', admin({
 app.use(require('express')['static']('public'));
 
 http.listen(process.env.PORT || 8080, function (listening) {
-  console.log('listening for connections on 0.0.0.0\nLicense: The Grove is copyright 2016 by Hybrid Alpaca Game Studios. All images, story, and game are copyright of Hybrid Alapca Game Studios. Copying or redistributing this game or content without the consent of Hybrid Alpaca Game Studios is illegal and unlawful.  The Grove is copyright 2016 by Artifex Game Studios. All images, story, and game are copyright of Artifex Game Studios. Copying or redistributing this game or content without the consent of Artifex Game Studios is illegal and unlawful. ');
+  console.log('listening for connections on 0.0.0.0\n\n\n\n\nLicense: The Grove is copyright 2016 by Hybrid Alpaca Game Studios. All images, story, and game are copyright of \n Hybrid Alapca Game Studios. Copying or redistributing this game or content without the consent of \n Hybrid Alpaca Game Studios is illegal and unlawful.  The Grove is copyright 2016 by Artifex Game Studios. \n All images, story, and game are copyright of Artifex Game Studios. Copying or redistributing this game or content without the consent of Artifex Game Studios is illegal and unlawful. \n     \n     \n      \n       ');
 });
