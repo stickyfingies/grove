@@ -1,6 +1,5 @@
-var world, physicsMaterial, walls = [];
+var world;
 var camera, scene, renderer, rendererDEBUG;
-var geometry, material, mesh;
 var controls, time = Date.now(),
     debug = false;
 
@@ -135,4 +134,4 @@ window.addEventListener("click", function (e) {
 
 document.onkeyup = function (e) {
     if (e.keyCode == 192) debug = !debug;
-}
+};

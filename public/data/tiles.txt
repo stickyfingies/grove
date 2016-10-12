@@ -1,6 +1,0 @@
-1 = grass
-2 = dirt
-3 = water
-4 = grass left, water right
-5 = grass right, water left
-6 = stone

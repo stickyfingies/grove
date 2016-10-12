@@ -89,7 +89,7 @@ function init() {
     scene.add(controls.getObject());
 
     // floor
-    geometry = new THREE.PlaneGeometry(300, 300, 50, 50);
+    var geometry = new THREE.PlaneGeometry(300, 300, 50, 50);
     geometry.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
 
     mesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({
