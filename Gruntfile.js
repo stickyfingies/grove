@@ -5,13 +5,10 @@ module.exports = function (grunt) {
         pkg: grunt.file.readJSON('package.json'),
 
         browserify: {
-            dist: {
-                files: {
-                    'build/module.js': ['client/scripts/**/*.js', 'client/scripts/**/*.coffee']
-                },
-                options: {
-                    transform: ['coffeeify']
-                }
+            client: {
+                src: ['src/**/*.js'],
+                dest: 'public/js/build/latest.js',
+                options: {}
             },
             watch: true
         }
