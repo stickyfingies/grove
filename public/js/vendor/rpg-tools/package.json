@@ -1,0 +1,100 @@
+{
+  "name": "rpg-tools",
+  "version": "0.1.4",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hogart/rpg-tools.git"
+  },
+  "description": "ES5/6 library for RPG genre: inventory operations, modifiers applications, random selections, etc",
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "eslint": "^1.10.3",
+    "istanbul": "^0.4.2",
+    "jscs": "^2.9.0",
+    "mocha": "^2.4.5"
+  },
+  "author": {
+    "name": "Konstantin Kitmanov",
+    "email": "doctor.hogart@gmail.com"
+  },
+  "license": "MIT",
+  "scripts": {
+    "lint": "jscs . && eslint --ignore-path .gitignore .",
+    "unit": "mocha -u bdd -R spec --recursive test",
+    "coverage": "istanbul cover node_modules/.bin/_mocha -- -u bdd -R spec --recursive test",
+    "test": "npm run lint && npm run coverage"
+  },
+  "jscsConfig": {
+    "requireSpaceAfterKeywords": [
+      "if",
+      "for",
+      "while",
+      "do",
+      "switch",
+      "try",
+      "catch"
+    ],
+    "disallowKeywordsOnNewLine": [
+      "else"
+    ],
+    "disallowSpaceBeforePostfixUnaryOperators": true,
+    "disallowMultipleLineStrings": true,
+    "requireSpaceBeforeBinaryOperators": true,
+    "requireSpaceAfterBinaryOperators": true,
+    "disallowSpaceAfterPrefixUnaryOperators": true,
+    "excludeFiles": [
+      "node_modules",
+      "coverage"
+    ]
+  },
+  "eslintConfig": {
+    "env": {
+      "browser": true,
+      "node": true
+    },
+    "rules": {
+      "no-underscore-dangle": [
+        0
+      ],
+      "quotes": [
+        2,
+        "single",
+        "avoid-escape"
+      ],
+      "eol-last": [
+        0
+      ]
+    }
+  },
+  "gitHead": "6909e3f3c21c2fd4c9e7d82103a69f11ae7e4375",
+  "bugs": {
+    "url": "https://github.com/hogart/rpg-tools/issues"
+  },
+  "homepage": "https://github.com/hogart/rpg-tools#readme",
+  "_id": "rpg-tools@0.1.4",
+  "_shasum": "e1a862768b85049ab8d97f41756e1e0ef46ac3a7",
+  "_from": "rpg-tools@latest",
+  "_npmVersion": "3.3.12",
+  "_nodeVersion": "5.1.0",
+  "_npmUser": {
+    "name": "hogart",
+    "email": "doctor.hogart@gmail.com"
+  },
+  "dist": {
+    "shasum": "e1a862768b85049ab8d97f41756e1e0ef46ac3a7",
+    "tarball": "https://registry.npmjs.org/rpg-tools/-/rpg-tools-0.1.4.tgz"
+  },
+  "maintainers": [
+    {
+      "name": "hogart",
+      "email": "doctor.hogart@gmail.com"
+    }
+  ],
+  "_npmOperationalInternal": {
+    "host": "packages-8-eu.internal.npmjs.com",
+    "tmp": "tmp/rpg-tools-0.1.4.tgz_1454362239772_0.23071219422854483"
+  },
+  "directories": {},
+  "_resolved": "https://registry.npmjs.org/rpg-tools/-/rpg-tools-0.1.4.tgz"
+}

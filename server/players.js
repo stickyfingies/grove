@@ -10,11 +10,6 @@ function Player() {
     this.y = 0;
     this.z = 0;
     this.quaternion = {}; //for now
-    this.sizeX = 1;
-    this.sizeY = 1;
-    this.sizeZ = 1;
-    this.speed = 0.1;
-    this.turnSpeed = 0.03;
 
 }
 

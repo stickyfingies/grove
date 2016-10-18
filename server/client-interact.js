@@ -1,12 +1,12 @@
 'use strict';
-var players = require('../game/players');
+var players = require('../server/players');
 
 module.exports = (io, User, conf_url) => {
-  
+
   io.on('connection', socket => {
 
     socket.on('client-credentials', creds => {
-      
+
       User.findOne({
         username: creds.username,
         password: creds.password
@@ -15,17 +15,12 @@ module.exports = (io, User, conf_url) => {
         // check for potential errors
         if (err) console.err(err);
         // user not found (in case this ever happened)
-        if (!o) console.error('USER NOT FOUND FOR MULTIPLAYER');
+        if (!o) console.error('USER NOT FOUND FOR MULTIPLAYER\n\n\n\n');
 
         // add the new player to list of players
         players.addPlayer(socket.id, o);
         // get player we just made
         let player = players.playerForId(socket.id);
-
-        // tell this client to create a new player
-        socket.emit('createPlayer', player);
-        // tell other clients we just made a player
-        socket.broadcast.emit('addOtherPlayer', player);
 
         // when client asks for players that were there before they joined
         socket.on('requestOldPlayers', function () {
@@ -33,6 +28,12 @@ module.exports = (io, User, conf_url) => {
             if (players.players[i].playerId != socket.id)
               socket.emit('addOtherPlayer', players.players[i]);
           }
+
+          // tell this client to create a new player
+          socket.emit('createPlayer', player);
+          // tell other clients we just made a player
+          socket.broadcast.emit('addOtherPlayer', player);
+
         });
 
         // when a client moves, rotates, etc.
@@ -49,12 +50,12 @@ module.exports = (io, User, conf_url) => {
             username: dat.user.username,
             password: dat.user.password
           }, (err, obj) => {
-            if (err) console.log('ERROR!');
+            if (err) console.log('ERROR!\n\n\n\n');
             if (obj) {
               obj.inventory = dat.inv;
               obj.save();
             }
-            else console.log('Credentials not valid!');
+            else console.log('Credentials not valid!\n\n\n\n');
           });
         });
 
@@ -64,13 +65,13 @@ module.exports = (io, User, conf_url) => {
             username: dat.user.username,
             password: dat.user.password
           }, (err, obj) => {
-            if (err) console.log('ERROR!');
+            if (err) console.log('ERROR!\n\n\n\n');
             if (obj) {
               obj.map = dat.map;
               obj.save();
-              socket.emit('reload bitch!', true);
+              socket.emit('reload', true);
             }
-            else console.log('Credentials not valid!');
+            else console.log('Credentials not valid!\n\n\n\n');
           });
         });
 
@@ -84,15 +85,15 @@ module.exports = (io, User, conf_url) => {
 
         // client left :(
         socket.on('disconnect', function () {
-          console.log('A player has logged off.');
+          console.log(player.accountData.username + ' has logged off.\n\n\n\n');
           io.emit('removeOtherPlayer', player);
           players.removePlayer(player);
         }); //
-        
+
       }); //
-      
+
     }); //
-    
+
   }); //
-  
+
 }; //

@@ -1,8 +1,8 @@
-/* global socket, player */
+/* global socket */
 
-define(['globals', 'player/manager'], function (globals, player) {
+module.exports = function (globals, player) {
+    
     socket.emit('requestOldPlayers', {});
-
 
     socket.on('createPlayer', data => {
         if (typeof player.serverdata === 'undefined') {
@@ -17,15 +17,16 @@ define(['globals', 'player/manager'], function (globals, player) {
 
     socket.on('addOtherPlayer', data => {
         if (data.playerId !== player.id) {
-            var cube = globals.box({
+            var cube = globals.load.box({
                 l: 1,
                 w: 1,
                 h: 2,
                 mass: 0
             });
+            cube.body.position.set(data.x, data.y, data.z);
             globals.otherPlayersId.push(data.playerId);
             globals.otherPlayers.push(cube);
-            globals.label(cube.mesh, data.accountData.level + ' - ' + data.accountData.username);
+            globals.load.label(cube.mesh, data.accountData.level + ' - ' + data.accountData.username);
         }
     });
 
@@ -82,10 +83,10 @@ define(['globals', 'player/manager'], function (globals, player) {
     });
 
     socket.on('reload', function () {
-        location.reload();
+        window.location.reload();
     });
 
     globals.updatePlayerData = updatePlayerData;
     globals.playerForId = playerForId;
-
-});
+    
+};

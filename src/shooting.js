@@ -1,6 +1,6 @@
 /* global THREE, CANNON */
 
-define(['globals'], function (globals) {
+module.exports = function (globals) {
 
     function getShootDir(targetVec) {
         var projector = new THREE.Projector();
@@ -21,7 +21,7 @@ define(['globals'], function (globals) {
             var y = globals.BODIES['player'].body.position.y;
             var z = globals.BODIES['player'].body.position.z;
 
-            var ball = globals.ball({
+            var ball = globals.load.ball({
                 array: 'projectiles'
             });
 
@@ -38,9 +38,4 @@ define(['globals'], function (globals) {
             ball.mesh.position.set(x, y, z);
         }
     });
-
-    return {
-        loaded: true
-    };
-
-});
+};

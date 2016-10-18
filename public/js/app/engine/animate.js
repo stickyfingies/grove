@@ -1,10 +1,8 @@
-/* global THREE, socket, player */
+/* global THREE, socket */
 
-define(['globals'], function (globals) {
-    var frustum = new THREE.Frustum();
-    var cameraViewProjectionMatrix = new THREE.Matrix4();
+define(['globals', 'player/manager'], (globals, player) => {
 
-    var dt = 1 / 60;
+    const dt = 1 / 60;
 
     return function animate() {
         requestAnimationFrame(animate);
@@ -12,19 +10,19 @@ define(['globals'], function (globals) {
 
         globals.camera.updateMatrixWorld(); // make sure the camera matrix is updated
         globals.camera.matrixWorldInverse.getInverse(globals.camera.matrixWorld);
-        cameraViewProjectionMatrix.multiplyMatrices(globals.camera.projectionMatrix, globals.camera.matrixWorldInverse);
-        frustum.setFromMatrix(cameraViewProjectionMatrix);
+        globals.cameraViewProjectionMatrix.multiplyMatrices(globals.camera.projectionMatrix, globals.camera.matrixWorldInverse);
+        globals.frustum.setFromMatrix(globals.cameraViewProjectionMatrix);
 
-        for (var key in globals.LABELS) globals.LABELS[key]();
+        for (let key in globals.LABELS) globals.LABELS[key]();
 
         // Update ball positions
-        for (var i = 0; i < globals.BODIES['projectiles'].length; i++) {
+        for (let i = 0; i < globals.BODIES['projectiles'].length; i++) {
             globals.BODIES['projectiles'][i].mesh.position.copy(globals.BODIES['projectiles'][i].body.position);
             globals.BODIES['projectiles'][i].mesh.quaternion.copy(globals.BODIES['projectiles'][i].body.quaternion);
         }
 
         // Update box positions
-        for (var i = 0; i < globals.BODIES['items'].length; i++) {
+        for (let i = 0; i < globals.BODIES['items'].length; i++) {
             globals.BODIES['items'][i].mesh.position.copy(globals.BODIES['items'][i].body.position);
             globals.BODIES['items'][i].mesh.quaternion.copy(globals.BODIES['items'][i].body.quaternion);
         }
@@ -39,10 +37,10 @@ define(['globals'], function (globals) {
 
         // multiplayer stuff
 
-        if (player && player.serverdata) {
-            updatePlayerData();
+        if (player && player.serverdata && globals && globals.updatePlayerData) {
+            globals.updatePlayerData();
             socket.emit('updatePosition', player.serverdata);
         }
 
-    }
+    };
 });
