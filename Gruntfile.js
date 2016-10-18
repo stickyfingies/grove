@@ -3,17 +3,21 @@ module.exports = function (grunt) {
     // Project configuration.
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
-        compile: {
-            files: {
-                'path/to/result.js': 'path/to/source.coffee'
+
+        coffeeify: {
+            build: {
+                cwd: 'src',
+                src: ['*.js'],
+                dest: 'public/js/build/latest.js'
             }
         }
+        
     });
 
     // Load the plugin that provides the "coffee" task.
-    grunt.loadNpmTasks('grunt-contrib-coffee');
+    grunt.loadNpmTasks('grunt-browserify');
 
     // Default task(s).
-    grunt.registerTask('default', ['uglify']);
+    grunt.registerTask('build', ['browserify']);
 
 };
