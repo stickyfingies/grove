@@ -8,9 +8,12 @@ module.exports = function (grunt) {
             client: {
                 src: ['src/**/*.js'],
                 dest: 'public/js/build/latest.js',
-                options: {}
-            },
-            watch: true
+                options: {
+                    watch: true,
+                    keepAlive: true,
+                    transform: ['coffeeify']
+                }
+            }
         }
 
     });

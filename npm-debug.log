@@ -1,0 +1,258 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/home/ubuntu/.nvm/versions/node/v4.5.0/bin/node',
+1 verbose cli   '/home/ubuntu/.nvm/versions/node/v4.5.0/bin/npm',
+1 verbose cli   'install',
+1 verbose cli   'grunt-execute',
+1 verbose cli   '--save-dev' ]
+2 info using npm@2.15.9
+3 info using node@v4.5.0
+4 verbose install initial load of /home/ubuntu/workspace/package.json
+5 warn package.json the-grove@0.0.1 No repository field.
+6 warn package.json the-grove@0.0.1 No license field.
+7 verbose installManyTop reading scoped package data from /home/ubuntu/workspace/node_modules/body-parser/package.json
+8 verbose installManyTop reading scoped package data from /home/ubuntu/workspace/node_modules/coffeeify/package.json
+9 verbose installManyTop reading scoped package data from /home/ubuntu/workspace/node_modules/ejs-locals/package.json
+10 verbose installManyTop reading scoped package data from /home/ubuntu/workspace/node_modules/express/package.json
+11 verbose installManyTop reading scoped package data from /home/ubuntu/workspace/node_modules/express-session/package.json
+12 verbose installManyTop reading scoped package data from /home/ubuntu/workspace/node_modules/grunt/package.json
+13 verbose installManyTop reading scoped package data from /home/ubuntu/workspace/node_modules/grunt-browserify/package.json
+14 verbose installManyTop reading scoped package data from /home/ubuntu/workspace/node_modules/grunt-contrib-coffee/package.json
+15 verbose installManyTop reading scoped package data from /home/ubuntu/workspace/node_modules/grunt-contrib-coffeeify/package.json
+16 verbose installManyTop reading scoped package data from /home/ubuntu/workspace/node_modules/jade/package.json
+17 verbose installManyTop reading scoped package data from /home/ubuntu/workspace/node_modules/md5/package.json
+18 verbose installManyTop reading scoped package data from /home/ubuntu/workspace/node_modules/mongoose/package.json
+19 verbose installManyTop reading scoped package data from /home/ubuntu/workspace/node_modules/postal/package.json
+20 verbose installManyTop reading scoped package data from /home/ubuntu/workspace/node_modules/request/package.json
+21 verbose installManyTop reading scoped package data from /home/ubuntu/workspace/node_modules/serve-favicon/package.json
+22 verbose installManyTop reading scoped package data from /home/ubuntu/workspace/node_modules/socket.io/package.json
+23 verbose installManyTop reading scoped package data from /home/ubuntu/workspace/node_modules/sriracha/package.json
+24 info package.json grunt-browserify@5.0.0 No license field.
+25 info package.json ejs-locals@1.0.2 No license field.
+26 info package.json postal@2.0.4 No license field.
+27 verbose readDependencies loading dependencies from /home/ubuntu/workspace/package.json
+28 silly cache add args [ 'grunt-execute', null ]
+29 verbose cache add spec grunt-execute
+30 silly cache add parsed spec Result {
+30 silly cache add   raw: 'grunt-execute',
+30 silly cache add   scope: null,
+30 silly cache add   name: 'grunt-execute',
+30 silly cache add   rawSpec: '',
+30 silly cache add   spec: 'latest',
+30 silly cache add   type: 'tag' }
+31 silly addNamed grunt-execute@latest
+32 verbose addNamed "latest" is being treated as a dist-tag for grunt-execute
+33 info addNameTag [ 'grunt-execute', 'latest' ]
+34 silly mapToRegistry name grunt-execute
+35 silly mapToRegistry using default registry
+36 silly mapToRegistry registry https://registry.npmjs.org/
+37 silly mapToRegistry data Result {
+37 silly mapToRegistry   raw: 'grunt-execute',
+37 silly mapToRegistry   scope: null,
+37 silly mapToRegistry   name: 'grunt-execute',
+37 silly mapToRegistry   rawSpec: '',
+37 silly mapToRegistry   spec: 'latest',
+37 silly mapToRegistry   type: 'tag' }
+38 silly mapToRegistry uri https://registry.npmjs.org/grunt-execute
+39 verbose addNameTag registry:https://registry.npmjs.org/grunt-execute not in flight; fetching
+40 verbose request uri https://registry.npmjs.org/grunt-execute
+41 verbose request no auth needed
+42 info attempt registry request try #1 at 9:59:49 PM
+43 verbose request id 15cea99cc51362e5
+44 http request GET https://registry.npmjs.org/grunt-execute
+45 http 200 https://registry.npmjs.org/grunt-execute
+46 verbose headers { server: 'CouchDB/1.5.0 (Erlang OTP/R16B03)',
+46 verbose headers   etag: '"7FKFBEUUR6CALJX30J45L8CB9"',
+46 verbose headers   'content-type': 'application/json',
+46 verbose headers   'content-encoding': 'gzip',
+46 verbose headers   'cache-control': 'max-age=300',
+46 verbose headers   'content-length': '3221',
+46 verbose headers   'accept-ranges': 'bytes',
+46 verbose headers   date: 'Tue, 18 Oct 2016 21:59:49 GMT',
+46 verbose headers   via: '1.1 varnish',
+46 verbose headers   age: '176',
+46 verbose headers   connection: 'keep-alive',
+46 verbose headers   'x-served-by': 'cache-ord1743-ORD',
+46 verbose headers   'x-cache': 'HIT',
+46 verbose headers   'x-cache-hits': '1',
+46 verbose headers   'x-timer': 'S1476827989.494474,VS0,VE0',
+46 verbose headers   vary: 'Accept-Encoding' }
+47 silly get cb [ 200,
+47 silly get   { server: 'CouchDB/1.5.0 (Erlang OTP/R16B03)',
+47 silly get     etag: '"7FKFBEUUR6CALJX30J45L8CB9"',
+47 silly get     'content-type': 'application/json',
+47 silly get     'content-encoding': 'gzip',
+47 silly get     'cache-control': 'max-age=300',
+47 silly get     'content-length': '3221',
+47 silly get     'accept-ranges': 'bytes',
+47 silly get     date: 'Tue, 18 Oct 2016 21:59:49 GMT',
+47 silly get     via: '1.1 varnish',
+47 silly get     age: '176',
+47 silly get     connection: 'keep-alive',
+47 silly get     'x-served-by': 'cache-ord1743-ORD',
+47 silly get     'x-cache': 'HIT',
+47 silly get     'x-cache-hits': '1',
+47 silly get     'x-timer': 'S1476827989.494474,VS0,VE0',
+47 silly get     vary: 'Accept-Encoding' } ]
+48 verbose get saving grunt-execute to /home/ubuntu/.npm/registry.npmjs.org/grunt-execute/.cache.json
+49 verbose correctMkdir /home/ubuntu/.npm correctMkdir not in flight; initializing
+50 silly addNameTag next cb for grunt-execute with tag latest
+51 silly addNamed grunt-execute@0.2.2
+52 verbose addNamed "0.2.2" is a plain semver version for grunt-execute
+53 silly mapToRegistry name grunt-execute
+54 silly mapToRegistry using default registry
+55 silly mapToRegistry registry https://registry.npmjs.org/
+56 silly mapToRegistry data Result {
+56 silly mapToRegistry   raw: 'grunt-execute',
+56 silly mapToRegistry   scope: null,
+56 silly mapToRegistry   name: 'grunt-execute',
+56 silly mapToRegistry   rawSpec: '',
+56 silly mapToRegistry   spec: 'latest',
+56 silly mapToRegistry   type: 'tag' }
+57 silly mapToRegistry uri https://registry.npmjs.org/grunt-execute
+58 verbose addRemoteTarball https://registry.npmjs.org/grunt-execute/-/grunt-execute-0.2.2.tgz not in flight; adding
+59 verbose addRemoteTarball [ 'https://registry.npmjs.org/grunt-execute/-/grunt-execute-0.2.2.tgz',
+59 verbose addRemoteTarball   '4e945fe57959cc0de7799083b6b42aed9616350a' ]
+60 info retry fetch attempt 1 at 9:59:49 PM
+61 info attempt registry request try #1 at 9:59:49 PM
+62 http fetch GET https://registry.npmjs.org/grunt-execute/-/grunt-execute-0.2.2.tgz
+63 http fetch 200 https://registry.npmjs.org/grunt-execute/-/grunt-execute-0.2.2.tgz
+64 silly fetchAndShaCheck shasum 4e945fe57959cc0de7799083b6b42aed9616350a
+65 verbose addTmpTarball /tmp/npm-8981-9c96bfc8/registry.npmjs.org/grunt-execute/-/grunt-execute-0.2.2.tgz not in flight; adding
+66 verbose addTmpTarball already have metadata; skipping unpack for grunt-execute@0.2.2
+67 verbose correctMkdir /home/ubuntu/.npm correctMkdir not in flight; initializing
+68 silly cache afterAdd grunt-execute@0.2.2
+69 verbose afterAdd /home/ubuntu/.npm/grunt-execute/0.2.2/package/package.json not in flight; writing
+70 verbose correctMkdir /home/ubuntu/.npm correctMkdir not in flight; initializing
+71 verbose afterAdd /home/ubuntu/.npm/grunt-execute/0.2.2/package/package.json written
+72 silly install resolved [ { name: 'grunt-execute',
+72 silly install resolved     description: 'Execute code in node',
+72 silly install resolved     version: '0.2.2',
+72 silly install resolved     homepage: 'https://github.com/Bartvds/grunt-execute',
+72 silly install resolved     author:
+72 silly install resolved      { name: 'Bart van der Schoor',
+72 silly install resolved        email: 'bartvanderschoor@gmail.com' },
+72 silly install resolved     repository:
+72 silly install resolved      { type: 'git',
+72 silly install resolved        url: 'git://github.com/Bartvds/grunt-execute.git' },
+72 silly install resolved     keywords:
+72 silly install resolved      [ 'gruntplugin',
+72 silly install resolved        'execute',
+72 silly install resolved        'code',
+72 silly install resolved        'node',
+72 silly install resolved        'scripts',
+72 silly install resolved        'spawn',
+72 silly install resolved        'exec' ],
+72 silly install resolved     bugs: { url: 'https://github.com/Bartvds/grunt-execute/issues' },
+72 silly install resolved     licenses: [ [Object] ],
+72 silly install resolved     main: 'Gruntfile.js',
+72 silly install resolved     engines: { node: '>= 0.8.0' },
+72 silly install resolved     scripts: { test: 'grunt test' },
+72 silly install resolved     devDependencies:
+72 silly install resolved      { grunt: '~0.4.1',
+72 silly install resolved        'grunt-cli': '~0.1',
+72 silly install resolved        'grunt-contrib-clean': '~0.5.0',
+72 silly install resolved        'grunt-contrib-nodeunit': '~0.3.0',
+72 silly install resolved        'grunt-contrib-jshint': '~0.10.0',
+72 silly install resolved        'grunt-shell': '~0.7.0' },
+72 silly install resolved     peerDependencies: { grunt: '~0.4.1' },
+72 silly install resolved     _id: 'grunt-execute@0.2.2',
+72 silly install resolved     _shasum: '4e945fe57959cc0de7799083b6b42aed9616350a',
+72 silly install resolved     _from: 'grunt-execute@latest',
+72 silly install resolved     _npmVersion: '1.4.9',
+72 silly install resolved     _npmUser: { name: 'bartvds', email: 'bartvanderschoor@gmail.com' },
+72 silly install resolved     maintainers: [ [Object] ],
+72 silly install resolved     dist:
+72 silly install resolved      { shasum: '4e945fe57959cc0de7799083b6b42aed9616350a',
+72 silly install resolved        tarball: 'https://registry.npmjs.org/grunt-execute/-/grunt-execute-0.2.2.tgz' },
+72 silly install resolved     directories: {},
+72 silly install resolved     _resolved: 'https://registry.npmjs.org/grunt-execute/-/grunt-execute-0.2.2.tgz' } ]
+73 info install grunt-execute@0.2.2 into /home/ubuntu/workspace
+74 info installOne grunt-execute@0.2.2
+75 verbose installOne of grunt-execute to /home/ubuntu/workspace not in flight; installing
+76 verbose correctMkdir /home/ubuntu/.npm/_locks correctMkdir not in flight; initializing
+77 verbose lock using /home/ubuntu/.npm/_locks/grunt-execute-9e3ca4ba821be6de.lock for /home/ubuntu/workspace/node_modules/grunt-execute
+78 silly install write writing grunt-execute 0.2.2 to /home/ubuntu/workspace/node_modules/grunt-execute
+79 verbose unbuild node_modules/grunt-execute
+80 silly gentlyRm /home/ubuntu/workspace/node_modules/grunt-execute is being purged from base /home/ubuntu/workspace
+81 verbose gentlyRm don't care about contents; nuking /home/ubuntu/workspace/node_modules/grunt-execute
+82 verbose tar unpack /home/ubuntu/.npm/grunt-execute/0.2.2/package.tgz
+83 verbose tar unpacking to /home/ubuntu/workspace/node_modules/grunt-execute
+84 silly gentlyRm /home/ubuntu/workspace/node_modules/grunt-execute is being purged
+85 verbose gentlyRm don't care about contents; nuking /home/ubuntu/workspace/node_modules/grunt-execute
+86 silly gunzTarPerm modes [ '755', '644' ]
+87 silly gunzTarPerm extractEntry package.json
+88 silly gunzTarPerm modified mode [ 'package.json', 438, 420 ]
+89 silly gunzTarPerm extractEntry README.md
+90 silly gunzTarPerm modified mode [ 'README.md', 438, 420 ]
+91 silly gunzTarPerm extractEntry Gruntfile.js
+92 silly gunzTarPerm modified mode [ 'Gruntfile.js', 438, 420 ]
+93 silly gunzTarPerm extractEntry LICENSE-MIT
+94 silly gunzTarPerm modified mode [ 'LICENSE-MIT', 438, 420 ]
+95 silly gunzTarPerm extractEntry tasks/execute.js
+96 silly gunzTarPerm modified mode [ 'tasks/execute.js', 438, 420 ]
+97 verbose write writing to /home/ubuntu/workspace/node_modules/grunt-execute/package.json
+98 info preinstall grunt-execute@0.2.2
+99 verbose readDependencies loading dependencies from /home/ubuntu/workspace/node_modules/grunt-execute/package.json
+100 silly prepareForInstallMany adding grunt@~0.4.1 from grunt-execute peerDependencies
+101 warn peerDependencies The peer dependency grunt@~0.4.1 included from grunt-execute will no
+102 warn peerDependencies longer be automatically installed to fulfill the peerDependency
+103 warn peerDependencies in npm 3+. Your application will need to depend on it explicitly.
+104 verbose readDependencies loading dependencies from /home/ubuntu/workspace/node_modules/grunt-execute/package.json
+105 silly install resolved []
+106 verbose about to build /home/ubuntu/workspace/node_modules/grunt-execute
+107 info build /home/ubuntu/workspace/node_modules/grunt-execute
+108 info linkStuff grunt-execute@0.2.2
+109 silly linkStuff grunt-execute@0.2.2 has /home/ubuntu/workspace/node_modules as its parent node_modules
+110 verbose linkBins grunt-execute@0.2.2
+111 verbose linkMans grunt-execute@0.2.2
+112 verbose rebuildBundles grunt-execute@0.2.2
+113 info install grunt-execute@0.2.2
+114 info postinstall grunt-execute@0.2.2
+115 verbose readDependencies loading dependencies from /home/ubuntu/workspace/package.json
+116 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/body-parser/package.json
+117 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/coffeeify/package.json
+118 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/ejs-locals/package.json
+119 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/express/package.json
+120 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/express-session/package.json
+121 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/grunt/package.json
+122 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/grunt-browserify/package.json
+123 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/grunt-contrib-coffee/package.json
+124 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/grunt-contrib-coffeeify/package.json
+125 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/grunt-execute/package.json
+126 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/jade/package.json
+127 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/md5/package.json
+128 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/mongoose/package.json
+129 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/postal/package.json
+130 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/request/package.json
+131 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/serve-favicon/package.json
+132 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/socket.io/package.json
+133 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/sriracha/package.json
+134 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/.bin/doge/package.json
+135 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/.bin/grunt/package.json
+136 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/.bin/jade/package.json
+137 verbose targetResolver reading package data from /home/ubuntu/workspace/node_modules/.bin/node-games/package.json
+138 verbose already installed skipping grunt@~0.4.1 /home/ubuntu/workspace
+139 silly install resolved []
+140 verbose unlock done using /home/ubuntu/.npm/_locks/grunt-execute-9e3ca4ba821be6de.lock for /home/ubuntu/workspace/node_modules/grunt-execute
+141 verbose validateInstall loading /home/ubuntu/workspace/package.json for validation
+142 verbose stack Error: The package grunt@1.0.1 does not satisfy its siblings' peerDependencies requirements!
+142 verbose stack     at /home/ubuntu/.nvm/versions/node/v4.5.0/lib/node_modules/npm/lib/install.js:125:32
+142 verbose stack     at /home/ubuntu/.nvm/versions/node/v4.5.0/lib/node_modules/npm/lib/install.js:268:7
+142 verbose stack     at /home/ubuntu/.nvm/versions/node/v4.5.0/lib/node_modules/npm/node_modules/read-installed/read-installed.js:142:5
+142 verbose stack     at /home/ubuntu/.nvm/versions/node/v4.5.0/lib/node_modules/npm/node_modules/read-installed/read-installed.js:263:14
+142 verbose stack     at cb (/home/ubuntu/.nvm/versions/node/v4.5.0/lib/node_modules/npm/node_modules/slide/lib/async-map.js:47:24)
+142 verbose stack     at /home/ubuntu/.nvm/versions/node/v4.5.0/lib/node_modules/npm/node_modules/read-installed/read-installed.js:263:14
+142 verbose stack     at cb (/home/ubuntu/.nvm/versions/node/v4.5.0/lib/node_modules/npm/node_modules/slide/lib/async-map.js:47:24)
+142 verbose stack     at /home/ubuntu/.nvm/versions/node/v4.5.0/lib/node_modules/npm/node_modules/read-installed/read-installed.js:263:14
+142 verbose stack     at cb (/home/ubuntu/.nvm/versions/node/v4.5.0/lib/node_modules/npm/node_modules/slide/lib/async-map.js:47:24)
+142 verbose stack     at /home/ubuntu/.nvm/versions/node/v4.5.0/lib/node_modules/npm/node_modules/read-installed/read-installed.js:263:14
+143 verbose cwd /home/ubuntu/workspace
+144 error Linux 4.2.0-c9
+145 error argv "/home/ubuntu/.nvm/versions/node/v4.5.0/bin/node" "/home/ubuntu/.nvm/versions/node/v4.5.0/bin/npm" "install" "grunt-execute" "--save-dev"
+146 error node v4.5.0
+147 error npm  v2.15.9
+148 error code EPEERINVALID
+149 error peerinvalid The package grunt@1.0.1 does not satisfy its siblings' peerDependencies requirements!
+149 error peerinvalid Peer grunt-execute@0.2.2 wants grunt@~0.4.1
+149 error peerinvalid Peer grunt-contrib-coffee@1.0.0 wants grunt@>= 0.4.5
+150 verbose exit [ 1, true ]
