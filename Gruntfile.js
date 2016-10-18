@@ -4,14 +4,18 @@ module.exports = function (grunt) {
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
 
-        coffeeify: {
-            build: {
-                cwd: 'src',
-                src: ['*.js'],
-                dest: 'public/js/build/latest.js'
-            }
+        browserify: {
+            dist: {
+                files: {
+                    'build/module.js': ['client/scripts/**/*.js', 'client/scripts/**/*.coffee']
+                },
+                options: {
+                    transform: ['coffeeify']
+                }
+            },
+            watch: true
         }
-        
+
     });
 
     // Load the plugin that provides the "coffee" task.
