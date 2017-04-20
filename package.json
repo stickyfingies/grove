@@ -1,0 +1,37 @@
+{
+  "name": "the-grove",
+  "version": "0.0.1",
+  "description": "The Grove.",
+  "main": "server/index.js",
+  "respository": "cellman1234/grove",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "compression": "^1.6.2",
+    "ejs-locals": "^1.0.2",
+    "express": "^4.14.1",
+    "express-session": "^1.14.1",
+    "helmet": "^3.4.1",
+    "jade": "^1.11.0",
+    "md5": "^2.2.1",
+    "mongoose": "^4.8.6",
+    "postal": "^2.0.4",
+    "request": "^2.79.0",
+    "socket.io": "^1.7.3"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "debug": "DEBUG=* node server/index.js",
+    "build": "webpack",
+    "test": "exit 0"
+  },
+  "devDependencies": {
+    "babel-core": "^6.24.0",
+    "babel-loader": "^6.4.1",
+    "babel-preset-latest": "^6.24.0",
+    "css-loader": "^0.26.4",
+    "node-sass": "^4.5.0",
+    "sass-loader": "^6.0.3",
+    "style-loader": "^0.13.2",
+    "webpack": "^2.2.1"
+  }
+}

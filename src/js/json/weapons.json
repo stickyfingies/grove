@@ -1,0 +1,14 @@
+{
+  "shortsword": {
+    "proto": "@sword",
+    "name": "Shortsword",
+    "desc": "A shortened sword",
+    "slot": 1
+  },
+  "longsword": {
+    "proto": "@sword",
+    "name": "Longsword",
+    "desc": "Slonglord!  Wait a sec...",
+    "slot": 2
+  }
+}

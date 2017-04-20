@@ -1,0 +1,67 @@
+<html>
+    <head>
+    
+        <title>The Grove | Reset Password</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.8/css/materialize.min.css">
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.8/js/materialize.min.js"></script>
+        <link rel='icon' href='/img/favicon.ico'>
+    </head>
+    <style>
+        body {
+            background-color: #888d99  ;
+        }
+        h1 {
+            color: white;
+            margin: 150px;
+            font-size: 60px;
+        }
+        
+        h3 {
+            color: white;
+            margin: 130px;
+            font-size: 30px;
+        }
+        h2 {
+            color: white;
+        }
+        button {
+            margin-left: 150px;
+            margin-top: -100px;
+            padding: 15px 30px !important;
+        }
+        .back-btn {
+            color: white;
+            text-decoration: none;
+            background: #66bb6a;
+            padding: 20px;
+            border-radius: 7.5px;
+            font-size: 17px;
+        }
+    </style>
+    <body>
+        <h2>&nbsp;Password Reset</h2>
+        <br>
+        <form class='container' action='/pwreset' method='POST'>
+            <input placeholder='Username' name='username' class='validate'>
+            <input placeholder='Password' name='password' class='validate'>
+            <input placeholder='New Password' name='new' class='validate'>
+            <input type='submit' value='Submit' class='btn btn-lg btn-success'>
+            <br><br><a href='/settings' class='waves-effect waves-light btn-large red z-depth-3'>Back</a>
+        </form>
+    </body>
+
+<!--Start of Google Analytics-->
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-91570609-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+<!--End of Google Analytics-->

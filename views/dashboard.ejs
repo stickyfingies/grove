@@ -1,0 +1,307 @@
+<!doctype html>
+<html>
+    <head>
+        <title>The Grove | Dashboard</title>
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.8/css/materialize.min.css">
+        <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js'></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.8/js/materialize.min.js"></script>
+        <link href="https://fonts.googleapis.com/css?family=Aldrich" rel="stylesheet">
+        <link rel='icon' href='/img/favicon.ico'>
+
+        <style>
+            html,
+            body {
+                width: 100%;
+                height: 100%;
+                background: #d2d2d2;
+                /*overflow: hidden;*/
+            }
+            
+            .header {
+                font-weight: 300
+            }
+            
+           .timeline {
+              position: relative;
+            }
+            
+            .timeline .timeline-event {
+              position: relative;
+              padding-top: 5px;
+              padding-bottom: 5px;
+            }
+            
+            .timeline .timeline-event .timeline-content {
+              position: relative;
+              width: calc(50% - 50px);
+            }
+            
+            .timeline .timeline-event::before {
+              display: block;
+              content: "";
+              width: 2px;
+              height: calc(50% - 30px);
+              position: absolute;
+              background: #d2d2d2;
+              left: calc(50% - 1px);
+              top: 0;
+            }
+            
+            .timeline .timeline-event::after {
+              display: block;
+              content: "";
+              width: 2px;
+              height: calc(50% - 30px);
+              position: absolute;
+              background: #d2d2d2;
+              left: calc(50% - 1px);
+              top: calc(50% + 30px);
+            }
+            
+            .timeline .timeline-event:first-child::before {
+              display: none;
+            }
+            
+            .timeline .timeline-event:last-child::after {
+              display: none;
+            }
+            
+            .timeline .timeline-event:nth-child(even) .timeline-content {
+              margin-left: calc(50% + 50px);
+            }
+            
+            .timeline .timeline-event:nth-child(odd) .timeline-content {
+              margin-left: 0;
+            }
+            
+            .timeline .timeline-badge {
+              display: block;
+              position: absolute;
+              width: 40px;
+              height: 40px;
+              background: #d2d2d2;
+              top: calc(50% - 20px);
+              right: calc(50% - 20px);
+              border-radius: 50%;
+              text-align: center;
+              cursor: default;
+            }
+            
+            .timeline .timeline-badge i {
+              font-size: 25px;
+              line-height: 40px;
+            }
+            
+            @media (max-width: 600px) {
+              .timeline .timeline-event .timeline-content {
+                width: calc(100% - 70px);
+              }
+              .timeline .timeline-event::before {
+                left: 19px;
+              }
+              .timeline .timeline-event::after {
+                left: 19px;
+              }
+              .timeline .timeline-event:nth-child(even) .timeline-content {
+                margin-left: 70px;
+              }
+              .timeline .timeline-event:nth-child(odd) .timeline-content {
+                margin-left: 70px;
+              }
+              .timeline .timeline-badge {
+                left: 0;
+              }
+            }
+        </style>
+    </head>
+
+    <body>
+        <nav>
+            <div class="nav-wrapper ">
+                <a  class="brand-logo">&nbsp;<%= user.username %></a>
+                <div class='row'>
+                    <div class='col s7'>
+                        <ul id="tabs" class='right hide-on-med-and-down'>
+                            <li class="tab"><a href="#home">Home</a></li>
+                            <li class="tab"><a href="#stats">Stats</a></li>
+                            <li class="tab"><a href="#about">About</a></li>
+                            <li class="tab"><a href="#options">Other Options</a></li>
+                        </ul>
+                    </div>
+                    <div class='col s5'></div>
+                </div>
+            </div>
+        </nav>
+        <div id='home' class='row' style='height:100%;'>
+            <div class='col s4 grey lighten-2' style='height:100%;padding-left:20px;'>
+                <br>
+                <h3 class='header'>Actions</h3>
+                <br>
+                <a href='/play' class='waves-effect waves-light btn-large light-green z-depth-3'>Enter the Grove</a>
+                 <br><br><a href='/settings' class='waves-effect waves-light btn-large blue z-depth-3'>Settings</a>
+                <br><br><a href='/logout' class='waves-effect waves-light btn-large red z-depth-3'>Logout</a>
+                <p class=>Or check out the "Other Options" page for some cool grove-related links!</p>
+            </div>
+            <div class='col s8 teal lighten-2' style='height:100%;padding-left:40px;'>
+                <br>
+                <h3 class='header'>Active Quests:</h3>
+                <div id='quests'>
+                    <p class='flow-text'>» Your current quest is:  <%=user.quest%></p>
+                </div>
+            </div>
+        </div>
+        <!-- Stats -->
+        <style>
+            #stats {
+                background: #d2d2d2;
+                height:100%;
+                width:100%;
+            }
+            #options {
+                background: #d2d2d2;
+                height:100%;
+                width:100%;
+               
+                
+            }
+             .random {
+                background: #81c784;
+                height:100%;
+                width:100%;
+            }
+            .links {
+                font-size: 25px;
+                font-family: serif;
+            }
+            .other {
+                font-family: serif;
+            }
+        </style> 
+        <div id='stats' class='green-text text-darken-3'>
+            <br>
+            <div class='green-text text-darken-3'>
+            <table class='centered'>
+                <thead>
+                    <tr>
+                        <th>Stat</th>
+                        <th>Value</th>
+                        <th>Stat</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr> 
+                        <td>Level</td>
+                        <td>
+                            <%= user.level %>
+                        </td>
+                        <td>Map</td>
+                        <td>
+                            <%= user.map %>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Race</td>
+                        <td>
+                            <%= user.race %>
+                        </td>
+                        <td>Class</td>
+                        <td>
+                            <%= user.class %>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+     </div>
+        </div>
+        <div id='about' style='overflow:auto'>
+            <h4 class='green-text text-darken-3'>&nbsp;About (mainly recent updates and stuff)</h4>
+            <div class='container'>
+                <div class="timeline">
+                  <div class="timeline-event">
+                    <div class="card timeline-content">
+                      <div class="card-content">
+                        <span class="card-title activator grey-text text-darken-4"><span class="badge">pre-alpha</span>About the About</span>
+                        <p>- Updated the about page, made it a timeline ;)</p>
+                      </div>
+                    </div>
+                    <div class="timeline-badge blue white-text"><i class="material-icons">info_outline</i></div>
+                  </div>
+                  <div class="timeline-event">
+                    <div class="card timeline-content">
+                      <div class="card-content">
+                        <span class="card-title activator grey-text text-darken-4"><span class="badge">pre-alpha</span>Random ____</span>
+                        <p>- Discovered scroll bar glitch. (Shows in all the tabs) </p>
+                        <p>- A bunch of random shit that would be to long to write here.</p>
+                      </div>
+                    </div>
+                    <div class="timeline-badge red white-text"><i class="material-icons">info_outline</i></div>
+                  </div>
+                  <div class="timeline-event">
+                    <div class="card timeline-content">
+                      <div class="card-content">
+                        <span class="card-title activator grey-text text-darken-4"><span class="badge">pre-alpha</span>AI's, AI's, AI's</span>
+                        <p>- Added AI's</p>
+                        <p>- Removed chickens and pigs, leaving only "rabbits".</p>
+                        <p>- Removed swarming trait. That was needed.</p>
+                      </div>
+                    </div>
+                    <div class="timeline-badge blue white-text"><i class="material-icons">info_outline</i></div>
+                  </div>
+                  <div class="timeline-event">
+                    <div class="card timeline-content">
+                      <div class="card-content">
+                        <span class="card-title activator grey-text text-darken-4"><span class="badge">pre-alpha</span><s>Grunt</s> Webpack</span>
+                        <p>- Switched from Grunt compiler to Webpack</p>
+                        <p>- Tried out React, but switched back</p>
+                        <p>- Optimized bundles, basic webpack configuration, etc.</p>
+                      </div>
+                    </div>
+                    <div class="timeline-badge red white-text"><i class="material-icons">info_outline</i></div>
+                  </div>
+                </div>
+            </div>
+         <!-- Other Options -->
+        </div>
+        <div id='options' class='green-text text-darken-3' style='overflow:auto'>
+           <h4 class='other'>&nbsp; Other Options (Other links related to The Grove)</h4>
+           <p class='links' >&nbsp; Head to the Grove Website <a href='http://www.grove-mmo.com/'>here</a>!</p>
+           <p class='links' >&nbsp; Donate to the cause <a href='https://www.gofundme.com/grove-mmo?utm_medium=wdgt'>here</a>!</p>
+           <p class='links' >&nbsp; Want to play the very first Grove? Play it  <a href='http://codepen.io/tramans/full/bdOgEq'>here</a>!</p>
+        </div>
+        <script>
+            
+            //
+            //                       _oo0oo_
+            //                      o8888888o
+            //                      88" . "88
+            //                      (| -_- |)
+            //                      0\  =  /0
+            //                    ___/`---'\___
+            //                  .' \\|     |// '.
+            //                 / \\|||  :  |||// \
+            //                / _||||| -:- |||||- \
+            //               |   | \\\  -  /// |   |
+            //               | \_|  ''\---/''  |_/ |
+            //               \  .-\__  '-'  ___/-. /
+            //             ___'. .'  /--.--\  `. .'___
+            //          ."" '<  `.___\_<|>_/___.' >' "".
+            //         | | :  `- \`.;`\ _ /`;.`/ - ` : | |
+            //         \  \ `_.   \_ __\ /__ _/   .-` /  /
+            //     =====`-.____`.___ \_____/___.-`___.-'=====
+            //                       `=---='
+            //
+            //
+            //     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            //
+            //               Buddha bless the code
+            //
+        
+            $(document).ready(function () {
+                $('ul#tabs').tabs();
+            });
+        </script>
+    </body>
+
+</html>

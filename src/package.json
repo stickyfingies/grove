@@ -1,0 +1,13 @@
+{
+  "name": "src",
+  "version": "1.0.0",
+  "description": "node_modules used for The Grove gameplay",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cannon": "github:schteppe/cannon.js",
+    "lodash": "^4.17.4",
+    "rpg-tools": "^0.1.4",
+    "three": "^0.84.0"
+  }
+}

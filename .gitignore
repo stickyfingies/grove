@@ -1,0 +1,8 @@
+# we don't want anyone to see these files
+node_modules
+src/node_modules
+push.sh
+npm-debug.log
+.c9
+.git
+.sass-cache
