@@ -5,14 +5,10 @@ module.exports = (app, events) => {
     let User = mongoose.model('User', {
         username: String,
         password: String,
-        class: String,
-        race: String,
-        inventory: Array,
         map: String,
-        level: Number,
-        status: String,
+        email: String,
         quest: String,
-    }); 
+    });
 
     db.on('error', console.error);
     db.once('open', () => {
@@ -85,7 +81,7 @@ module.exports = (app, events) => {
             class: req.body.class,
             race: req.body.race,
             inventory: [],
-            map: 'tutorial',
+            map: 'skjar-isles',
             level: 1,
             status: 'u.' + Date.now()
         });

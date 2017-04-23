@@ -34,11 +34,18 @@
     </div>
     <form method='post' action='/register' class='jumbotron' style='margin:100px;'>
         <div class='container-fluid'>
+            <p>Username:</p>
             <input name='username' placeholder='Username' class='form-control'>
             <br>
+            <p>Password:</p>
             <input name='password' placeholder='Password' type='password' class='form-control'>
             <br>
+            <p>Email:</p>
+            <input name='email' placeholder='Email' type='email' class='form-control'>
+            <br>
+            <p>Race:</p>
             <select name='race' class='form-control' style='width:49.5%;display:inline'>
+                    <option value='null'>---</option>
                     <option value='human'>Human</option>
                     <option value='elf'>Elf</option>
                     <option value='dwarf'>Dwarf</option>
@@ -46,10 +53,26 @@
                     <option value='vampire'>Vampire</option>
                     <option value='demon'>Dæmon</option>
                 </select>
+                <br>
+                <p>Class:</p>
             <select name='class' class='form-control' style='width:49.5%;display:inline'>
+                    <option value='null'>---</option>
                     <option value='rogue'>Rogue</option>
                     <option value='mage'>Mage</option>
                     <option value='knight'>Knight</option>
+                </select>
+                <p>Grade in school:</p>
+            <select name='grade' class='form-control' style='width:49.5%;display:inline'>
+                    <option value='null'>---</option>
+                    <option value='8th'>5th</option>
+                    <option value='6th'>6th</option>
+                    <option value='7th'>7th</option>
+                    <option value='8th'>8th</option>
+                    <option value='9th'>9th</option>
+                    <option value='10th'>10th</option>
+                    <option value='11th'>11th</option>
+                    <option value='12th'>12th</option>
+                    <option value='other'>Other</option>
                 </select>
             <br>
             <br>
