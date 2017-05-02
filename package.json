@@ -16,7 +16,8 @@
     "mongoose": "^4.8.6",
     "postal": "^2.0.4",
     "request": "^2.79.0",
-    "socket.io": "^1.7.3"
+    "socket.io": "^1.7.3",
+    "unity-api": "^2.0.1"
   },
   "scripts": {
     "start": "node server/index.js",
