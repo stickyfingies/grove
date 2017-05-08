@@ -8,3 +8,4 @@ npm-debug.log
 .sass-cache
 mailgun.txt
 .gitignore
+mailgun.sh
