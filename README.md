@@ -47,7 +47,7 @@ All people that have contributed to this game include:
 - Seth Traman:              Lead Developer, CEO Hybrid Alapca Game Studios
 - Nate Goldsborough:        Developer, Marketing, General Maintenance, CEO Artifex Inc.
 - Casimir Kash:             Developer, Graphics, Beta Testing
-- Hunter Sokolis:           Developer, Graphics, Humor Support ;)
+- Hunter Sokolis:           Developer, Graphics, Humor Support
 - Gavin Montheye:           PR
 - KJ Avakian:               Developer
 - Jasper Burns:             Storyline
