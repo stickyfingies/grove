@@ -1,6 +1,6 @@
 # The Grove
 
-(PRE-ALPHA  - Under Development)
+(ALPHA  - Under Development)
 
 Welcome to The Grove, a browser-based MMORPG.
 

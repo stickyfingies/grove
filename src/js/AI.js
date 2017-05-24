@@ -56,6 +56,13 @@ module.exports = (globals) => {
     // This should be good
 
 
+    new Animal('rabbit', 3, 0, 0);
+    new Animal('rabbit', 3, 0, 0);
+    new Animal('rabbit', 3, 0, 0);
+    new Animal('rabbit', 3, 0, 0);
+    new Animal('rabbit', 3, 0, 0);
+    new Animal('rabbit', 3, 0, 0);
+    new Animal('rabbit', 3, 0, 0);
     new Animal('rabbit', 3, 0, -1);
     new Animal('rabbit', 3, 0, -1);
     new Animal('rabbit', 3, 0, -1);
@@ -64,9 +71,26 @@ module.exports = (globals) => {
     new Animal('rabbit', 3, 0, -1);
     new Animal('rabbit', 3, 0, -1);
 
-    /* new Animal('chicken', 1, 0, -0.5); // Needs to be a bit docile, but also be a bit afraid
-     new Animal('chicken', 1, 0, -0.5);
-     new Animal('chicken', 1, 0, -0.5);*/
+    new Animal('chicken', 1, 0, 1);
+    new Animal('chicken', 1, 0, 1);
+    new Animal('chicken', 1, 0, 1);
+    new Animal('chicken', 1, 0, 15);
+    new Animal('chicken', 1, 0, 1);
+    new Animal('chicken', 1, 0, 1);
+    new Animal('chicken', 1, 0, 1);
+    new Animal('chicken', 1, 0, 15);
+    new Animal('chicken', 1, 0, 1);
+    new Animal('chicken', 1, 0, 1);
+    new Animal('chicken', 1, 0, 1);
+    new Animal('chicken', 1, 0, 1);
+    new Animal('chicken', 1, 0, -0.5);
+    new Animal('chicken', 1, 0, -0.5);
+    new Animal('chicken', 1, 0, -0.5);
+    new Animal('chicken', 1, 0, -0.5);
+    new Animal('chicken', 1, 0, -0.5);
+    new Animal('chicken', 1, 0, -0.5);
+
+
 
 
 };
