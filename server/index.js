@@ -52,21 +52,12 @@ app.use(bodyParser.urlencoded({
 app.use(session({
   secret: '434dbc979dde137b5a2a5a4916464fecc8f7997f0caebd19e6e5d48b622a896b', // is a cookie
   name: 'TG_USR_SESSION',
-  secure: true
+  secure: false
 }));
 app.use(compression());
 app.use(helmet());
 
 app.use(require('express')['static']('public'));
-
-function ensureSecure(req, res, next) {
-  if (req.secure) return next();
-  if (req.headers["x-forwarded-proto"] === "https") return next();
-  res.redirect('https://' + req.hostname + req.url); // express 4.x
-}
-
-app.all('*', ensureSecure); // at top of routing calls
-
 const User = require(__dirname + '/mongo')(app, events);
 require(__dirname + '/client-interact')(io, User);
 
