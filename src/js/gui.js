@@ -122,7 +122,7 @@ module.exports.stats = player => {
             .hint('Everyone stops talking when you are around.', 2)
             .hint('They say you can start fires with your eyes...', 3)
             .$('#st');
-            
+
         skilltree.language.reqTitle = "For level {0} you would need:";
         skilltree.language.req = '<h4>{1}</h4><ul class="reqs commamenu">{0}</ul>',
             skilltree.language.levelTitle = "Level {1} {0}";
