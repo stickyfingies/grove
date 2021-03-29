@@ -116,10 +116,6 @@
         <div id='gui-exit' class='play-btn btn waves-effect waves-light green z-depth-3'>Resume =)</div>
     </div>
     
-    <div id='chat'>
-        <input id='chat-input'>
-    </div>
-    
 </div>
 
     <%- partial('play/shaders') %>
@@ -135,10 +131,10 @@
         String.prototype.capitalize = function() {
             return this.charAt(0).toUpperCase() + this.slice(1);
         };
-        window.onerror = (msg, url, linenumber) => {
+        /*window.onerror = (msg, url, linenumber) => {
             alert(`Error message: ${msg}\nURL: ${url}\nLine Number: ${linenumber}`);
             return true;
-        };
+        };*/
         ;(function() {
             var _push = Array.prototype.push;
             Array.prototype.push = function() {

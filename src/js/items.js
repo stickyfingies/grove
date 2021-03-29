@@ -1,17 +1,15 @@
-/* global $ */
+"use strict";
 
+import ProtoTree from "rpg-tools/lib/ProtoTree";
 
-let ProtoTree = require('rpg-tools/lib/ProtoTree'),
-    pt = null;
-
-const base = require('./json/base'),
-    weapons = require('./json/weapons'),
-    materials = require('./json/mats');
+import base from "./json/base";
+import weapons from "./json/weapons";
+import materials from "./json/mats";
 
 Object.assign(base, weapons, materials);
-pt = new ProtoTree(base);
+let pt = new ProtoTree(base);
 
-module.exports = callback => {
+export default callback => {
     pt = new ProtoTree(base);
     callback(pt, setUpSword);
 };

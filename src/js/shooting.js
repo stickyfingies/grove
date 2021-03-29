@@ -1,13 +1,15 @@
 "use strict";
 
-module.exports = (globals, player) => {
+import {ball, loadModel} from "./load";
 
+import {Raycaster, Ray, Vector3} from "three";
+
+export default (globals, player) => {
     let sword;
     let weapon;
 
-    let loader = new THREE.ObjectLoader();
-    loader.load('/models/sword/sword.json', s => {
-        sword = s;
+    loadModel("/models/sword/sword.json", object => {
+        sword = object;
         sword.scale.set(0.1, 0.1, 0.1);
         sword.castShadow = true;
         sword.position.x++;
@@ -15,7 +17,7 @@ module.exports = (globals, player) => {
         sword.position.z -= 1.25;
     });
 
-    function addWeapon() {
+    const addWeapon = () => {
         if (player.hotbar.list[player.hotbar.selected - 1]) player.equipped.weapon = player.hotbar.list[player.hotbar.selected - 1];
         if (player.equipped.weapon && /sword/gi.test(player.equipped.weapon.name) && !weapon) {
             weapon = sword.clone();
@@ -25,7 +27,7 @@ module.exports = (globals, player) => {
                     let tween = new TWEEN.Tween(weapon.rotation)
                         .to({
                             x: [-Math.PI / 2, 0]
-                        }, 1 / player.equipped.weapon.spd * 3000)
+                        }, 1 / (player.equipped.weapon.spd * 3000))
                         .onStart(() => {
                             let a = new Audio('/audio/sword.mp3');
                             a.play();
@@ -34,11 +36,11 @@ module.exports = (globals, player) => {
 
                     globals.TWEENS.push(tween);
 
-                    let raycaster = new THREE.Raycaster();
-                    raycaster.set(globals.camera.getWorldPosition(), globals.camera.getWorldDirection());
+                    let raycaster = new Raycaster();
+                    raycaster.set(globals.camera.getWorldPosition(), globals.camera.getWorldDirection(new Vector3(0, 0, -1)));
                     let intersects = raycaster.intersectObjects(globals.scene.children, true);
                     if (intersects.length && intersects[0].object.name == 'rabbit') Materialize.toast('Got one!', 750);
-                    else if(intersects.length && intersects[0].object.name == 'Rabbit') Materialize.toast('Still unchanged.  Solution coming!', 750);
+                    else if (intersects.length && intersects[0].object.name == 'Rabbit') Materialize.toast('Still unchanged.  Solution coming!', 750);
                 }
             });
         }
@@ -48,68 +50,63 @@ module.exports = (globals, player) => {
         }
     }
 
-    function getShootDir(targetVec) {
-        let projector = new THREE.Projector();
+    const getShootDir = (targetVec) => {
         let vector = targetVec;
         targetVec.set(0, 0, 1);
-        projector.unprojectVector(vector, globals.camera);
-        let ray = new THREE.Ray(globals.BODIES['player'].body.position, vector.sub(globals.BODIES['player'].body.position).normalize());
+        vector.unproject(globals.camera);
+        let ray = new Ray(globals.BODIES['player'].body.position, vector.sub(globals.BODIES['player'].body.position).normalize());
         targetVec.copy(ray.direction);
     }
 
-    function shoot(e) {
+    const shoot = () => {
         if (globals.controls.enabled == true && player.equipped) {
 
-            let shootDirection = new THREE.Vector3();
+            let shootDirection = new Vector3();
             const shootVelo = 20;
 
             let x = globals.BODIES['player'].body.position.x;
             let y = globals.BODIES['player'].body.position.y;
             let z = globals.BODIES['player'].body.position.z;
 
-            let ball = globals.ball({
+            let b = ball({
                 array: 'projectiles',
                 c: player.equipped == 'rock' ? 0xCCCCCC : 0xFF4500
-            });
+            }, globals);
 
             getShootDir(shootDirection);
-            ball.body.velocity.set(
+            b.body.velocity.set(
                 shootDirection.x * shootVelo,
                 shootDirection.y * shootVelo,
                 shootDirection.z * shootVelo);
 
             // Move the ball outside the player sphere
-            x += shootDirection.x * (globals.BODIES['player'].shape.radius * 1.02 + ball.shape.radius);
-            y += shootDirection.y * (globals.BODIES['player'].shape.radius * 1.02 + ball.shape.radius);
-            z += shootDirection.z * (globals.BODIES['player'].shape.radius * 1.02 + ball.shape.radius);
-            ball.body.position.set(x, y, z);
-            ball.mesh.position.set(x, y, z);
-            ball.id = Math.random();
+            x += shootDirection.x * (globals.BODIES['player'].shape.radius * 1.02 + b.shape.radius);
+            y += shootDirection.y * (globals.BODIES['player'].shape.radius * 1.02 + b.shape.radius);
+            z += shootDirection.z * (globals.BODIES['player'].shape.radius * 1.02 + b.shape.radius);
+            b.body.position.set(x, y, z);
+            b.mesh.position.set(x, y, z);
+            b.id = Math.random();
 
-            ball.body.addEventListener("collide", (event) => {
+            b.body.addEventListener("collide", (event) => {
                 const contact = event.contact;
-                if (contact.bj.id != ball.body.id)
+                if (contact.bj.id != b.body.id)
                     for (let key in globals.PLAYERS) {
                         if (contact.bj == globals.PLAYERS[key].body)
                             globals.socket.emit('hit-player', globals.PLAYERS[key].id);
                     }
                 setTimeout(() => {
-                    globals.remove.bodies.push(ball.body);
-                    globals.remove.meshes.push(ball.mesh);
+                    globals.remove.bodies.push(b.body);
+                    globals.remove.meshes.push(b.mesh);
                 }, 1500);
 
             });
 
             globals.socket.emit('bullet', {
-                pos: {
-                    x,
-                    y,
-                    z
-                },
+                pos: {x, y, z},
                 vel: {
-                    x: ball.body.velocity.x,
-                    y: ball.body.velocity.y,
-                    z: ball.body.velocity.z
+                    x: b.body.velocity.x,
+                    y: b.body.velocity.y,
+                    z: b.body.velocity.z
                 },
             });
         }
@@ -117,11 +114,12 @@ module.exports = (globals, player) => {
 
     setInterval(addWeapon, 500);
 
-    // $(document).on('mousedown', shoot);
+    $(document).on('mousedown', shoot);
+
     $(window).on('keydown', event => {
         if (String.fromCharCode(event.keyCode) == 'E') {
-            let raycaster = new THREE.Raycaster();
-            raycaster.set(globals.camera.getWorldPosition(), globals.camera.getWorldDirection());
+            let raycaster = new Raycaster();
+            raycaster.set(globals.camera.getWorldPosition(), globals.camera.getWorldDirection(new Vector3(0, 0, -1)));
             let intersects = raycaster.intersectObjects(globals.scene.children, true);
             if (intersects.length > 0) {
                 if (/door/gi.test(intersects[0].object.name)) globals.socket.emit('map-update', {
@@ -130,9 +128,6 @@ module.exports = (globals, player) => {
                     map: 'skjar-isles'
                 });
             }
-        }
-        if (String.fromCharCode(event.keyCode) == 'Q') {
-            require('./gui').stats(player);
         }
         try {
             let n = Number(String.fromCharCode(event.keyCode));

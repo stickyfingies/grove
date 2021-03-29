@@ -1,30 +1,72 @@
-/* global CANNON, THREE */
+"use strict";
 
-let globals = require("./globals");
+import {ObjectLoader, BoxGeometry, SphereGeometry, Mesh, MeshPhongMaterial, Texture, SpriteMaterial, Sprite} from "three";
+import {Vec3, Body, Sphere, Box, ConvexPolyhedron, Trimesh} from "cannon-es";
 
-function load(mesh, opts) {
+///
+
+let models = {};
+let accessCount = {};
+let callbacks = {};
+
+export const loadModel = (uri, callback) => {
+    accessCount[uri] = accessCount[uri] || 0;
+    ++accessCount[uri];
+
+    callbacks[uri] = callbacks[uri] || [];
+    callbacks[uri].push(callback);
+
+    // if this is the first time this resource was requested, load it
+    if (accessCount[uri] === 1)
+    {
+        let loader = new ObjectLoader();
+        loader.load(uri, object => {
+            models[uri] = object;
+
+            // model may have been requested again since it started loading,
+            // serve asset to all cached requests
+            for (let cb of callbacks[uri]) {
+                cb(models[uri].clone());
+            }
+        });
+    }
+
+    // the model is cached
+    if (models[uri]) {
+        callback(models[uri].clone());
+    }
+};
+
+export const load = (mesh, opts, globals) => {
     opts = opts ? opts : {};
     mesh.castShadow = true;
     mesh.recieveShadow = true;
-    var verts = [],
-        faces = [];
+
+    let verts = [];
+    let faces = [];
+
     for (var i = 0; i < mesh.geometry.vertices.length; i++) {
         var v = mesh.geometry.vertices[i];
-        verts.push(new CANNON.Vec3(v.x, v.y, v.z));
+        verts.push(v.x);
+        verts.push(v.y);
+        verts.push(v.z);
     }
     for (var i = 0; i < mesh.geometry.faces.length; i++) {
         var f = mesh.geometry.faces[i];
-        faces.push([f.a, f.b, f.c]);
+        faces.push(f.a);
+        faces.push(f.b);
+        faces.push(f.c);
     }
-    var cvph = new CANNON.ConvexPolyhedron(verts, faces);
-    var Cbody = new CANNON.Body({
+
+    var cvph = new Trimesh(verts, faces);
+    var Cbody = new Body({
         mass: opts.mass || 0,
         material: opts.material || undefined
     });
     Cbody.addShape(cvph);
     Cbody.position.copy(mesh.position);
     Cbody.quaternion.copy(mesh.quaternion);
-    globals.world.add(Cbody);
+    globals.world.addBody(Cbody);
     globals.BODIES['items'].push({
         body: Cbody,
         shape: cvph,
@@ -37,17 +79,17 @@ function load(mesh, opts) {
     };
 }
 
-function box(opts) {
+export const box = (opts, globals) => {
     opts = opts ? opts : {};
 
-    var halfExtents = new CANNON.Vec3(opts.l !== undefined ? opts.l : 1, opts.h !== undefined ? opts.h : 1, opts.w !== undefined ? opts.w : 1);
-    var boxShape = new CANNON.Box(halfExtents);
-    var boxGeometry = new THREE.BoxGeometry(halfExtents.x * 2, halfExtents.y * 2, halfExtents.z * 2);
-    var boxBody = new CANNON.Body({
+    let halfExtents = new Vec3(opts.l || 1, opts.h || 1, opts.w || 1);
+    let boxShape = new Box(halfExtents);
+    let boxGeometry = new BoxGeometry(halfExtents.x * 2, halfExtents.y * 2, halfExtents.z * 2);
+    let boxBody = new Body({
         mass: opts.mass || 0
     });
     boxBody.addShape(boxShape);
-    var boxMesh = opts.mesh || new THREE.Mesh(boxGeometry, opts.mat !== undefined ? opts.mat : new THREE.MeshPhongMaterial({
+    let boxMesh = opts.mesh || new Mesh(boxGeometry, opts.mat || new MeshPhongMaterial({
         color: 0xFF0000
     }));
     const index = globals.BODIES['items'].push({
@@ -58,7 +100,7 @@ function box(opts) {
 
     let body = globals.BODIES['items'][index];
 
-    globals.world.add(body.body);
+    globals.world.addBody(body.body);
     globals.scene.add(body.mesh);
     body.mesh.castShadow = true;
     body.mesh.receiveShadow = true;
@@ -69,16 +111,16 @@ function box(opts) {
 
 }
 
-function ball(opts) {
+export const ball = (opts, globals) => {
     opts = opts ? opts : {};
-    var ballShape = new CANNON.Sphere(opts.radius || 0.2);
-    var ballGeometry = new THREE.SphereGeometry(ballShape.radius, 32, 32);
-    var ballBody = new CANNON.Body({
-        mass: opts.mass !== undefined ? opts.mass : 10
+    let ballShape = new Sphere(opts.radius || 0.2);
+    let ballGeometry = new SphereGeometry(ballShape.radius, 32, 32);
+    let ballBody = new Body({
+        mass: opts.mass || 10
     });
 
     ballBody.addShape(ballShape);
-    var ballMesh = opts.mesh || new THREE.Mesh(ballGeometry, opts.mat || new THREE.MeshPhongMaterial({
+    let ballMesh = opts.mesh || new Mesh(ballGeometry, opts.mat || new MeshPhongMaterial({
         color: opts.c || 0x00CCFF
     }));
 
@@ -89,7 +131,7 @@ function ball(opts) {
         norotate: opts.norotate || false
     });
 
-    globals.world.add(body.body);
+    globals.world.addBody(body.body);
     globals.scene.add(body.mesh);
     body.mesh.castShadow = true;
     body.mesh.receiveShadow = true;
@@ -101,36 +143,30 @@ function ball(opts) {
     return body;
 }
 
-
-function label(mesh, txt = '', icon = 'run') {
-
-    var fontface = "Arial";
-
-    var fontsize = 18;
-
-    var borderThickness = 4;
-
-    var borderColor = {
+export const label = (mesh, txt = '', icon = 'run') => {
+    const fontface = "Arial";
+    const fontsize = 18;
+    const borderThickness = 4;
+    const borderColor = {
         r: 0,
         g: 0,
         b: 0,
         a: 1.0
     };
-
-    var backgroundColor = {
+    const backgroundColor = {
         r: 255,
         g: 255,
         b: 255,
         a: 1.0
     };
 
-    var canvas = document.createElement('canvas');
-    var context = canvas.getContext('2d');
+    let canvas = document.createElement('canvas');
+    let context = canvas.getContext('2d');
     context.font = "Bold " + fontsize + "px " + fontface;
 
     // get size data (height depends only on font size)
-    var metrics = context.measureText(txt);
-    var textWidth = metrics.width;
+    let metrics = context.measureText(txt);
+    let textWidth = metrics.width;
 
     // background color
     context.fillStyle = "rgba(" + backgroundColor.r + "," + backgroundColor.g + "," +
@@ -149,20 +185,19 @@ function label(mesh, txt = '', icon = 'run') {
     context.fillText(txt, borderThickness, fontsize + borderThickness);
 
     // canvas contents will be used for a texture
-    var texture = new THREE.Texture(canvas);
+    let texture = new Texture(canvas);
     texture.needsUpdate = true;
 
-    var spriteMaterial = new THREE.SpriteMaterial({
+    let spriteMaterial = new SpriteMaterial({
         map: texture,
         useScreenCoordinates: false
     });
-    var sprite = new THREE.Sprite(spriteMaterial);
+    let sprite = new Sprite(spriteMaterial);
     sprite.scale.set(5, 2.5, 1.0);
     mesh.add(sprite);
-
 }
 
-function roundRect(ctx, x, y, w, h, r) {
+const roundRect = (ctx, x, y, w, h, r) => {
     ctx.beginPath();
     ctx.moveTo(x + r, y);
     ctx.lineTo(x + w - r, y);
@@ -177,8 +212,3 @@ function roundRect(ctx, x, y, w, h, r) {
     ctx.fill();
     ctx.stroke();
 }
-
-module.exports.load = load;
-module.exports.box = box;
-module.exports.label = label;
-module.exports.ball = ball;

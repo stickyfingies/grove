@@ -23,7 +23,7 @@ export default {
                 "css-loader?minimize=true",
                 "sass-loader"
             ]
-        }]
+        }],
     },
     optimization: {
         runtimeChunk: "single",
@@ -44,15 +44,13 @@ export default {
             last = msg;
         }),
         new webpack.optimize.SplitChunksPlugin({}),
-        new webpack.ProvidePlugin({
-            THREE: "three",
-            CANNON: "cannon",
-            _: "lodash"
-        }),
         new webpack.BannerPlugin("\nMade with <3 by the Grove team | " + new Date() + "\n")
     ],
     resolve: {
-        extensions: [".js", ".json", ".sass"]
+        extensions: [".js", ".json", ".sass"],
+        alias: {
+            'three': path.resolve('src/node_modules/three/build/three.module.js')
+        }
     }
 };
 

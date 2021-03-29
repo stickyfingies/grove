@@ -4,8 +4,7 @@ src/node_modules
 push.sh
 npm-debug.log
 .c9
+.theia
 .git
 .sass-cache
-mailgun.txt
 .gitignore
-mailtest.sh

@@ -1,17 +1,6 @@
-/* global $, skill, skilltree */
+"use strict";
 
-module.exports = (title, content) => {
-    $('#quest-alert').css('right', '0px');
-    $('#quest-alert > p').text(title);
-    $('#quest-alert > small').text(content);
-    setTimeout(() => {
-        $('#quest-alert').animate({
-            'right': '-280px'
-        }, 1000);
-    }, 5000);
-};
-
-module.exports.init = (player) => {
+export const init = (globals, player) => {
     $('#gui').toggle();
     $('#underlay').toggle();
     $('#load-play-btn').hide();
@@ -19,13 +8,17 @@ module.exports.init = (player) => {
         $('#gui').toggle();
         $('#underlay').toggle();
     });
+    $(window).on("keydown", e => {
+        if (String.fromCharCode(e.keyCode) == 'Q') {
+            stats(player, globals);
+        }
+    });
 
     // draw the GUI
     setInterval(() => draw(player), 100);
-
 };
 
-module.exports.quests = () => {
+export const quests = () => {
     $('#quest-alert > p').text('Getting Skills');
     $('#quest-alert > small').text('Use the Alchemy Table to make a health potion.');
     setTimeout(() => {
@@ -35,7 +28,7 @@ module.exports.quests = () => {
     }, 10000);
 };
 
-module.exports.stats = player => {
+export const stats = (player, globals) => {
     $('#gui').show();
     $('#underlay').show();
     $('#gui-title').text('');
@@ -76,7 +69,7 @@ module.exports.stats = player => {
     $('#gui-m').click(() => {
         $('#gui-title').html('Map');
         const strMime = "image/jpeg";
-        const imgData = require('./globals').renderer.domElement.toDataURL(strMime);
+        const imgData = globals.renderer.domElement.toDataURL(strMime);
         $('#gui-content').html(`<img src=${imgData} width=200>`);
     });
     $('#gui-p').click(() => {

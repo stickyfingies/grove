@@ -1,4 +1,6 @@
-/* global $ */
+"use strict";
+
+import items from "./items";
 
 class Player {
     constructor() {
@@ -25,7 +27,7 @@ class Player {
             active: null
         };
 
-        require('./items')((pt, sword) => {
+        items((pt, sword) => {
             this.inventory.push(sword(0, 'iron', 'wood'));
             this.inventory.push(sword(0, 'ebony', 'iron'));
         });
@@ -35,4 +37,4 @@ class Player {
 
 let player = new Player();
 
-module.exports = player;
+export default player;

@@ -1,34 +1,37 @@
 "use strict";
 
-export default (globals, player) => {
+import {load, loadModel} from "../load";
 
-    globals.scene.fog = new THREE.Fog(0xFFFFFF, 2);
+import {Fog, DirectionalLight, Sprite, SpriteMaterial, ImageUtils, NormalBlending, BackSide, Vector2, BoxGeometry, Mesh, MeshBasicMaterial, ShaderMaterial, HemisphereLight} from "three";
+
+export default (globals) => {
+    globals.scene.fog = new Fog(0xFFFFFF, 2);
  
-    let light = new THREE.DirectionalLight(0xffffff, 1);
+    let light = new DirectionalLight(0xffffff, 1);
     light.position.set(50, 30, 40);
     light.castShadow = true;
-
-    light.shadow.camera.near = globals.camera.near;
-    light.shadow.camera.far = globals.camera.far;
-    light.shadow.camera.fov = 70;
-    light.shadow.camera.left = -400;
-    light.shadow.camera.right = 400;
-    light.shadow.camera.top = 100;
-    light.shadow.camera.bottom = -300;
-
     light.shadowMapBias = 0.0036;
     light.shadowMapDarkness = 0.5;
-    light.shadow.mapSize.width = 4096;
-    light.shadow.mapSize.height = 4096;
+    let {shadow: {camera, mapSize}} = light;
+    camera.near = globals.camera.near;
+    camera.far = globals.camera.far;
+    camera.fov = 70;
+    camera.left = -400;
+    camera.right = 400;
+    camera.top = 100;
+    camera.bottom = -300;
+    mapSize.width = 4096;
+    mapSize.height = 4096;
 
     globals.scene.add(light);
-    let spriteMaterial = new THREE.SpriteMaterial({
-        map: new THREE.ImageUtils.loadTexture('/img/glow.png'),
+
+    let spriteMaterial = new SpriteMaterial({
+        map: new ImageUtils.loadTexture("/img/glow.png"),
         color: 0xffaaaa,
         transparent: false,
-        blending: THREE.NormalBlending
+        blending: NormalBlending
     });
-    let sprite = new THREE.Sprite(spriteMaterial);
+    let sprite = new Sprite(spriteMaterial);
     sprite.scale.set(100, 100, 1.0);
     light.add(sprite);
 
@@ -37,7 +40,7 @@ export default (globals, player) => {
             value: 1.0
         },
         resolution: {
-            value: new THREE.Vector2()
+            value: new Vector2()
         }
     };
 
@@ -52,7 +55,7 @@ export default (globals, player) => {
 
     }, 40);
 
-    var hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.2);
+    var hemiLight = new HemisphereLight(0xffffff, 0xffffff, 0.2);
     hemiLight.color.setHSL(0.6, 1, 0.6);
     hemiLight.groundColor.setHSL(0.095, 1, 0.75);
     hemiLight.position.set(0, 500, 0);
@@ -61,83 +64,33 @@ export default (globals, player) => {
     let imagePrefix = "/img/skybox/";
     let directions = ["px", "nx", "py", "ny", "pz", "nz"];
     let imageSuffix = ".jpg";
-    let skyGeometry = new THREE.BoxGeometry(2000, 2000, 2000);
+    let skyGeometry = new BoxGeometry(2000, 2000, 2000);
 
     let materialArray = [];
     for (var i = 0; i < 6; i++) {
-        materialArray.push(new THREE.MeshBasicMaterial({
-            map: THREE.ImageUtils.loadTexture(imagePrefix + directions[i] + imageSuffix),
-            side: THREE.BackSide,
+        materialArray.push(new MeshBasicMaterial({
+            map: ImageUtils.loadTexture(imagePrefix + directions[i] + imageSuffix),
+            side: BackSide,
             fog: false
         }));
     }
-    var skyBox = new THREE.Mesh(skyGeometry, materialArray);
-    globals.BODIES['player'].mesh.add(skyBox);
+    var skyBox = new Mesh(skyGeometry, materialArray);
+    globals.BODIES["player"].mesh.add(skyBox);
 
-
-    let loader = new THREE.ObjectLoader();
-    loader.load(`/models/skjar-isles/skjar-isles.json`, object => {
+    loadModel(`/models/skjar-isles/skjar-isles.json`, object => {
         globals.scene.add(object);
         object.castShadow = true;
         object.recieveShadow = true;
         object.traverse(child => {
-            if (child instanceof THREE.Mesh) {
+            if (child instanceof Mesh) {
+                console.log(child.name);
                 child.castShadow = true;
                 child.recieveShadow = true;
-                
-                if (!/NP/gi.test(child.name)) globals.load(child, {
+                load(child, {
                     mass: 0,
                     material: globals.groundMaterial
-                });
-                if (/portal/gi.test(child.name)) {
-                    // let sound = new THREE.PositionalAudio(globals.listener);
-                    // let oscillator = globals.listener.context.createOscillator();
-                    // oscillator.type = 'sine';
-                    // oscillator.frequency.value = 200;
-                    // oscillator.start();
-                    // sound.setNodeSource(oscillator);
-                    // sound.setRefDistance(20);
-                    // sound.setVolume(1);
-                    // child.add(sound);
-
-                    child.material = new THREE.ShaderMaterial({
-                        uniforms: uni,
-                        vertexShader: document.getElementById('V_PortalShader').textContent,
-                        fragmentShader: document.getElementById('F_PortalShader').textContent
-                    });
-                    child.add(new THREE.PointLight(0xFFFFFF, 1, 25, 2));
-                }
-                if (/bridge/gi.test(child.name)) {
-                    // let audioLoader = new THREE.AudioLoader();
-                    // let sound = new THREE.PositionalAudio(globals.listener);
-                    // let sound2 = new THREE.PositionalAudio(globals.listener);
-                    // audioLoader.load('/audio/creak.wav', (buffer) => {
-                    //     sound.setBuffer(buffer);
-                    //     sound.setRefDistance(5);
-                    //     sound.setLoop(true);
-                    //     sound.play();
-                    // });
-                    // audioLoader.load('/audio/creak2.wav', (buffer) => {
-                    //     sound2.setBuffer(buffer);
-                    //     sound2.setRefDistance(5);
-                    //     sound2.setLoop(true);
-                    //     sound2.play();
-                    // });
-                    // child.add(sound);
-                    // child.add(sound2);
-
-                    let tween = new TWEEN.Tween(child.rotation)
-                        .to({
-                            y: -Math.PI / 8
-                        }, 4000)
-                        .repeat(Infinity)
-                        .yoyo(true)
-                        .start();
-
-                    globals.TWEENS.push(tween);
-                }
+                }, globals);
             }
         });
     });
-
 };

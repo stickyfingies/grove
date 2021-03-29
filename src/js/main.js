@@ -3,38 +3,45 @@
 import "../css/play";
 import "../css/skill";
 
-import pointerlock from "./pointerlock";
-pointerlock();
+const debug = true;
 
-let globals = require("./globals");
-let player = require("./player");
+import globals from "./globals";
+import player from "./player";
+import pointerlock from "./pointerlock";
+import shooting from "./shooting";
+import manager from "./init/manager";
+import AI from "./AI";
+import {init as guiInit, quests} from "./gui";
+
+import {DefaultLoadingManager} from "three";
+import _ from "lodash";
+import cannonDebugger from "cannon-es-debugger";
+
+let physicsDebugger = debug ? cannonDebugger(globals.scene, globals.world.bodies, {}) : null;
 
 const dt = 1 / 60;
 
-let items = require("./items");
-let gui = require("./gui");
-let shooting = require("./shooting");
-import multiplayer from "./multiplayer";
-
-gui.init(player);
+guiInit(globals, player);
 shooting(globals, player);
-multiplayer(globals, player);
+manager(globals, player);
+AI(globals);
+pointerlock(globals);
 
-THREE.DefaultLoadingManager.onProgress = (item, loaded, total) => {
-    console.log(`${loaded} out of ${total}`);
-    if (loaded == total) {
+DefaultLoadingManager.onProgress = (item, loaded, total) => {
+    console.log(`loading ${item} (${loaded}/${total})`);
+    if (loaded > 10 && loaded == total) {
         $('#spinner').hide();
         $('#load-play-btn, .play-btn').show();
         _.once(animate)();
-        gui.quests();
+        quests();
     }
 };
 
 function animate(delta) {
-    if (window.controls && window.controls.enabled) {
+    if (globals.controls && globals.controls.enabled) {
         if (globals.remove.bodies.length && globals.remove.meshes.length) {
             for (let key in globals.remove.bodies) {
-                globals.world.remove(globals.remove.bodies[key]);
+                globals.world.removeBody(globals.remove.bodies[key]);
                 delete globals.remove.bodies[key];
             }
             for (let key in globals.remove.meshes) {
@@ -48,6 +55,9 @@ function animate(delta) {
                 delete globals.remove.tweens[key];
             }
         }
+
+        globals.world.step(dt);
+        if (debug) physicsDebugger.update();
 
         // Update bullets, etc.
         for (let i = 0; i < globals.BODIES['projectiles'].length; i++) {
@@ -80,9 +90,7 @@ function animate(delta) {
 
         // for (let key in globals.composers) globals.composers[key].render(delta);
 
-        globals.world.step(dt);
         globals.controls.update(Date.now() - globals.delta);
-        // globals.rendererDEBUG.update();
         globals.renderer.render(globals.scene, globals.camera);
         globals.delta = Date.now();
 

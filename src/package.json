@@ -4,8 +4,12 @@
   "description": "node_modules used for The Grove gameplay",
   "author": "",
   "license": "ISC",
+  "sideEffects": [
+    "*.sass"
+  ],
   "dependencies": {
-    "cannon": "github:schteppe/cannon.js",
+    "cannon-es": "^0.17.0",
+    "cannon-es-debugger": "^0.1.2",
     "lodash": "^4.17.4",
     "rpg-tools": "^0.1.4",
     "three": "0.98"

@@ -1,18 +1,20 @@
 "use strict";
 
-require('./items');
+import {Scene, WebGLRenderer, PerspectiveCamera, AudioListener, Clock, Frustum, Matrix4} from "three";
 
-let G = module.exports = {};
+import {World, Material, ContactMaterial} from "cannon-es";
 
-G.scene = new THREE.Scene();
-G.renderer = new THREE.WebGLRenderer({
+let G = {};
+
+G.scene = new Scene();
+G.renderer = new WebGLRenderer({
     antialias: true,
     preserveDrawingBuffer: true,
     alpha: true
 });
-G.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 20000);
+G.camera = new PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 20000);
 
-G.world = new CANNON.World();
+G.world = new World();
 
 G.socket = io();
 
@@ -33,19 +35,18 @@ G.remove = {
     tweens: []
 };
 
-G.listener = new THREE.AudioListener(),
+G.listener = new AudioListener(),
 
 G.delta = Date.now();
-G.clock = new THREE.Clock();
-G.frustum = new THREE.Frustum();
-G.cameraViewProjectionMatrix = new THREE.Matrix4();
+G.clock = new Clock();
+G.frustum = new Frustum();
+G.cameraViewProjectionMatrix = new Matrix4();
 
-G.groundMaterial = new CANNON.Material("groundMaterial");
+G.groundMaterial = new Material("groundMaterial");
 
 
-// module.exports.rendererDEBUG = new THREE.CannonDebugRenderer(module.exports.scene, module.exports.world);
 // Adjust constraint equation parameters for ground/ground contact
-let ground_ground_cm = new CANNON.ContactMaterial(module.exports.groundMaterial, module.exports.groundMaterial, {
+let ground_ground_cm = new ContactMaterial(G.groundMaterial, G.groundMaterial, {
     friction: 50,
     restitution: 0.3,
 });
@@ -53,9 +54,4 @@ let ground_ground_cm = new CANNON.ContactMaterial(module.exports.groundMaterial,
 // Add contact material to the world
 G.world.addContactMaterial(ground_ground_cm);
 
-let load = require('./load');
-G.load = load.load;
-G.box = load.box;
-G.label = load.label;
-G.ball = load.ball;
-G.plane = load.plane;
+export default G;

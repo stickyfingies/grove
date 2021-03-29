@@ -1,4 +1,8 @@
-/* global THREE */
+"use strict";
+
+import {ball, loadModel} from "./load";
+
+import {Vector3} from "three";
 
 export default (globals) => {
 
@@ -20,21 +24,21 @@ export default (globals) => {
         constructor(type = 'animal', hp = 3, dmg = 2, hostility = 0) {
             // Hostility: -1 is run away, 0 = neutral, 1 is hostile
             super(type, hp, dmg);
-            let loader = new THREE.ObjectLoader();
             this.hostility = hostility;
             this.id = Math.random();
-            loader.load(`/models/${type}/${type}.json`, object => {
+
+            let object = loadModel(`/models/${type}/${type}.json`, object => {
                 if (type == 'chicken') object.scale.set(5, 5, 5);
-                let body = globals.ball({
+                let body = ball({
                     radius: 0.4,
                     mass: 15,
-                    pos: new THREE.Vector3(Math.random() * 50 - 25, 20, Math.random() * 50 - 25),
+                    pos: new Vector3(Math.random() * 50 - 25, 20, Math.random() * 50 - 25),
                     mesh: object,
                     norotate: true,
                     cb(body) {
-                        body.mesh.name = 'rabbit';
+                        body.mesh.name = type;
                     }
-                });
+                }, globals);
                 this.body = body;
                 setInterval(() => this.update(this.body, this.hostility), 40);
             });
@@ -55,42 +59,24 @@ export default (globals) => {
 
     // This should be good
 
-
     new Animal('rabbit', 3, 0, 0);
     new Animal('rabbit', 3, 0, 0);
     new Animal('rabbit', 3, 0, 0);
     new Animal('rabbit', 3, 0, 0);
-    new Animal('rabbit', 3, 0, 0);
-    new Animal('rabbit', 3, 0, 0);
-    new Animal('rabbit', 3, 0, 0);
-    new Animal('rabbit', 3, 0, -1);
-    new Animal('rabbit', 3, 0, -1);
-    new Animal('rabbit', 3, 0, -1);
     new Animal('rabbit', 3, 0, -1);
     new Animal('rabbit', 3, 0, -1);
     new Animal('rabbit', 3, 0, -1);
     new Animal('rabbit', 3, 0, -1);
 
-    new Animal('chicken', 1, 0, 1);
     new Animal('chicken', 1, 0, 1);
     new Animal('chicken', 1, 0, 1);
     new Animal('chicken', 1, 0, 15);
     new Animal('chicken', 1, 0, 1);
     new Animal('chicken', 1, 0, 1);
-    new Animal('chicken', 1, 0, 1);
     new Animal('chicken', 1, 0, 15);
     new Animal('chicken', 1, 0, 1);
     new Animal('chicken', 1, 0, 1);
-    new Animal('chicken', 1, 0, 1);
-    new Animal('chicken', 1, 0, 1);
     new Animal('chicken', 1, 0, -0.5);
     new Animal('chicken', 1, 0, -0.5);
     new Animal('chicken', 1, 0, -0.5);
-    new Animal('chicken', 1, 0, -0.5);
-    new Animal('chicken', 1, 0, -0.5);
-    new Animal('chicken', 1, 0, -0.5);
-
-
-
-
 };

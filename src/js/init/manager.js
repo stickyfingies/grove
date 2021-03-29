@@ -4,15 +4,17 @@ import initWorld from "./world";
 import initPlayer from "./player";
 import initBodies from "./bodies";
 
+import {BasicShadowMap} from "three";
+
 export default (globals, player) => {
 
-    initWorld(globals);
+    initWorld(globals.world);
     initPlayer(globals, player);
-    initBodies(globals, player);
+    initBodies(globals);
 
     globals.renderer.shadowMap.enabled = true;
     globals.renderer.shadowMapSoft = true;
-    globals.renderer.shadowMap.type = THREE.BasicShadowMap;
+    globals.renderer.shadowMap.type = BasicShadowMap;
 
     globals.renderer.shadowCameraNear = 3;
     globals.renderer.shadowCameraFar = globals.camera.far;
