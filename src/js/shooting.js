@@ -1,4 +1,4 @@
-/* global THREE, TWEEN, $, Materialize */
+"use strict";
 
 module.exports = (globals, player) => {
 

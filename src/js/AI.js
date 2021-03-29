@@ -1,6 +1,6 @@
 /* global THREE */
 
-module.exports = (globals) => {
+export default (globals) => {
 
     // Current Required AIs Include: Wicket, Ferdinand, Nicholas Czerwinski
 

@@ -1,6 +1,9 @@
-/* global $, THREE,  Materialize */
+"use strict";
 
-module.exports = (globals, player) => {
+import manager from "./init/manager";
+import AI from "./AI";
+
+export default (globals, player) => {
 
     $(window).bind("online", () => Materialize.toast('Connection restored', 4000));
     $(window).bind("offline", () => Materialize.toast('Connection lost', 4000));
@@ -21,11 +24,11 @@ module.exports = (globals, player) => {
             player.serverdata = data;
             player.id = data.id;
 
-            Object.assign(player.inventory, player.serverdata.acc.inventory); // GOD!
+            //Object.assign(player.inventory, player.serverdata.acc.inventory); // GOD!
 
-            require('./init/manager')(globals, player);
+            manager(globals, player);
 
-            require('./AI')(globals);
+            AI(globals);
 
         }
     });

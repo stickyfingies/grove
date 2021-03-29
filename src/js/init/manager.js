@@ -1,12 +1,18 @@
-function init(globals, player) {
+"use strict";
 
-    require('./world')(globals);
-    require('./player')(globals, player);
-    require('./bodies')(globals, player);
+import initWorld from "./world";
+import initPlayer from "./player";
+import initBodies from "./bodies";
 
-    globals.renderer.shadowMapEnabled = true;
+export default (globals, player) => {
+
+    initWorld(globals);
+    initPlayer(globals, player);
+    initBodies(globals, player);
+
+    globals.renderer.shadowMap.enabled = true;
     globals.renderer.shadowMapSoft = true;
-    globals.renderer.shadowMapType = THREE.BasicShadowMap;
+    globals.renderer.shadowMap.type = THREE.BasicShadowMap;
 
     globals.renderer.shadowCameraNear = 3;
     globals.renderer.shadowCameraFar = globals.camera.far;
@@ -24,5 +30,3 @@ function init(globals, player) {
     document.body.appendChild(globals.renderer.domElement);
 
 }
-
-module.exports = init;

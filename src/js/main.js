@@ -1,17 +1,24 @@
-/* global _, $, THREE */
+"use strict";
 
-require('../css/play');
-require('../css/skill');
+import "../css/play";
+import "../css/skill";
 
-let globals = require('./globals'),
-    player = require('./player');
+import pointerlock from "./pointerlock";
+pointerlock();
+
+let globals = require("./globals");
+let player = require("./player");
     
 const dt = 1 / 60;
 
-require('./items');
-require('./gui').init(player);
-require('./shooting')(globals, player);
-require('./multiplayer')(globals, player);
+let items = require("./items");
+let gui = require("./gui");
+let shooting = require("./shooting");
+import multiplayer from "./multiplayer";
+
+gui.init(player)
+shooting(globals, player);
+multiplayer(globals, player);
 
 THREE.DefaultLoadingManager.onProgress = (item, loaded, total) => {
     console.log(`${loaded} out of ${total}`);
@@ -19,14 +26,12 @@ THREE.DefaultLoadingManager.onProgress = (item, loaded, total) => {
         $('#spinner').hide();
         $('#load-play-btn, .play-btn').show();
         _.once(animate)();
-        require('./gui').quests();
+        gui.quests();
     }
 };
 
 function animate(delta) {
-
     if (window.controls && window.controls.enabled) {
-
         if (globals.remove.bodies.length && globals.remove.meshes.length) {
             for (let key in globals.remove.bodies) {
                 globals.world.remove(globals.remove.bodies[key]);
@@ -63,9 +68,9 @@ function animate(delta) {
         globals.BODIES['player'].mesh.position.copy(globals.BODIES['player'].body.position);
         if (globals.BODIES['player'].body.position.y < -400) player.hp.val--;
 
-        $('#health-bar')
-            .val(player.hp.val / player.hp.max * 100 > 0 ? player.hp.val / player.hp.max * 100 : 0);
+        $('#health-bar').val(player.hp.val / player.hp.max * 100 > 0 ? player.hp.val / player.hp.max * 100 : 0);
         $('#health').text(`${player.hp.val > 0 ? player.hp.val : 0} HP`);
+        
         if (player.hp.val <= 0) {
             globals.socket.disconnect();
             $('#blocker').fadeIn(5000);
@@ -88,7 +93,6 @@ function animate(delta) {
     }
 
     requestAnimationFrame(animate);
-
 }
 
 window.addEventListener('resize', onWindowResize, false);

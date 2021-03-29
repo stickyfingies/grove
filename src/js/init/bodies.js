@@ -1,35 +1,34 @@
-/* global THREE, SPE */
+"use strict";
 
-module.exports = (globals, player) => {
+export default (globals, player) => {
 
     globals.scene.fog = new THREE.Fog(0xFFFFFF, 2);
-
+ 
     let light = new THREE.DirectionalLight(0xffffff, 1);
     light.position.set(50, 30, 40);
     light.castShadow = true;
 
-    light.shadowCameraNear = globals.camera.near;
-    light.shadowCameraFar = globals.camera.far;
-    light.shadowCameraFov = 70;
-    light.shadowCameraLeft = -400;
-    light.shadowCameraRight = 400;
-    light.shadowCameraTop = 100;
-    light.shadowCameraBottom = -300;
+    light.shadow.camera.near = globals.camera.near;
+    light.shadow.camera.far = globals.camera.far;
+    light.shadow.camera.fov = 70;
+    light.shadow.camera.left = -400;
+    light.shadow.camera.right = 400;
+    light.shadow.camera.top = 100;
+    light.shadow.camera.bottom = -300;
 
     light.shadowMapBias = 0.0036;
     light.shadowMapDarkness = 0.5;
-    light.shadowMapWidth = 4096;
-    light.shadowMapHeight = 4096;
+    light.shadow.mapSize.width = 4096;
+    light.shadow.mapSize.height = 4096;
 
-    light.shadowCameraVisible = true;
     globals.scene.add(light);
-    var spriteMaterial = new THREE.SpriteMaterial({
+    let spriteMaterial = new THREE.SpriteMaterial({
         map: new THREE.ImageUtils.loadTexture('/img/glow.png'),
         color: 0xffaaaa,
         transparent: false,
-        blending: THREE.AdditiveBlending
+        blending: THREE.NormalBlending
     });
-    var sprite = new THREE.Sprite(spriteMaterial);
+    let sprite = new THREE.Sprite(spriteMaterial);
     sprite.scale.set(100, 100, 1.0);
     light.add(sprite);
 
@@ -46,9 +45,9 @@ module.exports = (globals, player) => {
         uni.time.value += 0.1;
         // let time = new Date().getTime() * 0.000015;
         let time = 2.1;
-        let nsin = Math.sin(time);
-        let ncos = Math.cos(time);
-        // set the sun
+        const nsin = Math.sin(time);
+        const ncos = Math.cos(time);
+        
         light.position.set(450 * nsin, 600 * nsin, 600 * ncos);
 
     }, 40);
@@ -62,17 +61,17 @@ module.exports = (globals, player) => {
     let imagePrefix = "/img/skybox/";
     let directions = ["px", "nx", "py", "ny", "pz", "nz"];
     let imageSuffix = ".jpg";
-    let skyGeometry = new THREE.CubeGeometry(2000, 2000, 2000);
+    let skyGeometry = new THREE.BoxGeometry(2000, 2000, 2000);
 
     let materialArray = [];
-    for (var i = 0; i < 6; i++)
+    for (var i = 0; i < 6; i++) {
         materialArray.push(new THREE.MeshBasicMaterial({
             map: THREE.ImageUtils.loadTexture(imagePrefix + directions[i] + imageSuffix),
             side: THREE.BackSide,
             fog: false
         }));
-    var skyMaterial = new THREE.MeshFaceMaterial(materialArray);
-    var skyBox = new THREE.Mesh(skyGeometry, skyMaterial);
+    }
+    var skyBox = new THREE.Mesh(skyGeometry, materialArray);
     globals.BODIES['player'].mesh.add(skyBox);
 
 
@@ -85,8 +84,8 @@ module.exports = (globals, player) => {
             if (child instanceof THREE.Mesh) {
                 child.castShadow = true;
                 child.recieveShadow = true;
-                let body;
-                if (!/NP/gi.test(child.name)) body = globals.load(child, {
+                
+                if (!/NP/gi.test(child.name)) globals.load(child, {
                     mass: 0,
                     material: globals.groundMaterial
                 });

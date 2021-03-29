@@ -1,6 +1,6 @@
 /* global CANNON, THREE */
 
-let globals = require('./globals');
+let globals = require("./globals");
 
 function load(mesh, opts) {
     opts = opts ? opts : {};
@@ -101,36 +101,6 @@ function ball(opts) {
     return body;
 }
 
-function plane(opts) { // PLANE BROKEN!!!!!
-    var geometry = new THREE.PlaneGeometry(5, 20, 32);
-    var material = new THREE.MeshBasicMaterial({
-        color: 0xffff00,
-        side: THREE.DoubleSide
-    });
-    var plane = new THREE.Mesh(geometry, material);
-    globals.scene.add(plane);
-
-    var groundShape = new CANNON.Plane();
-    var groundBody = new CANNON.Body({
-        mass: 0,
-        shape: groundShape
-    });
-    globals.world.add(groundBody);
-
-    globals.BODIES[opts.array || 'items'].push({
-        body: groundBody,
-        shape: groundShape,
-        mesh: plane
-    });
-
-    return {
-        body: groundBody,
-        shape: groundShape,
-        mesh: plane
-    };
-} // PLANE BROKEN!!!!
-// WHOA> I JUST DID SOMEHTHING
-
 
 function label(mesh, txt = '', icon = 'run') {
 
@@ -212,4 +182,3 @@ module.exports.load = load;
 module.exports.box = box;
 module.exports.label = label;
 module.exports.ball = ball;
-module.exports.plane = plane;

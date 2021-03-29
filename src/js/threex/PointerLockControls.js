@@ -3,7 +3,7 @@
  * @author schteppe / https://github.com/schteppe
  */
 
-module.exports = function(camera, cannonBody) {
+export default function(camera, cannonBody) {
 
     const eyeYPos = 2; // eyes are 2 meters above the ground
     const velocityFactor = 0.3;

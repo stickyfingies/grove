@@ -1,6 +1,6 @@
-/* global CANNON */
+"use strict";
 
-module.exports = (globals) => {
+export default (globals) => {
 
     var solver = new CANNON.GSSolver();
 

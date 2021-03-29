@@ -4,19 +4,19 @@
 //                      88" . "88
 //                      (| -_- |)
 //                      0\  =  /0
-//                    ___/`---'\___
-//                  .' \\|     |// '.
+//                    ___/`---"\___
+//                  ." \\|     |// ".
 //                 / \\|||  :  |||// \
 //                / _||||| -:- |||||- \
 //               |   | \\\  -  /// |   |
-//               | \_|  ''\---/''  |_/ |
-//               \  .-\__  '-'  ___/-. /
-//             ___'. .'  /--.--\  `. .'___
-//          ."" '<  `.___\_<|>_/___.' >' "".
+//               | \_|  ""\---/""  |_/ |
+//               \  .-\__  "-"  ___/-. /
+//             ___". ."  /--.--\  `. ."___
+//          ."" "<  `.___\_<|>_/___." >" "".
 //         | | :  `- \`.;`\ _ /`;.`/ - ` : | |
 //         \  \ `_.   \_ __\ /__ _/   .-` /  /
-//     =====`-.____`.___ \_____/___.-`___.-'=====
-//                       `=---='
+//     =====`-.____`.___ \_____/___.-`___.-"=====
+//                       `=---="
 //
 //
 //     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -24,92 +24,119 @@
 //               Buddha bless the code
 //
 
-'use strict';
+"use strict";
 
-let app, compression, helmet, http, io;
+import express from "express";
+import HTTP from "http";
+import path from "path";
+import socketio from "socket.io";
+import compression from "compression";
+import postal from "postal";
+import bodyParser from "body-parser";
+import session from "express-session";
+import ejs from "ejs-locals";
 
-app = require('express')();
+import {dbInit, dbFindUser, dbNewUser} from "./mongo.js";
+import _client from "./client-interact.js";
 
-http = require('http').Server(app);
-
-helmet = require('helmet');
-
-io = require('socket.io')(http);
-
-compression = require('compression');
-
-let postal = require('postal');
+let app = express();
+let http = HTTP.Server(app);
+let io = socketio(http);
 let events = postal.channel();
 
-let bodyParser = require('body-parser');
-let session = require('express-session');
+///
 
-app.engine('ejs', require('ejs-locals'));
+app.engine("ejs", ejs);
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
-  extended: true
+    extended: true
 }));
 app.use(session({
-  secret: '434dbc979dde137b5a2a5a4916464fecc8f7997f0caebd19e6e5d48b622a896b', // is a cookie
-  name: 'TG_USR_SESSION',
-  secure: false
+    secret: "434dbc979dde137b5a2a5a4916464fecc8f7997f0caebd19e6e5d48b622a896b", // is a cookie
+    name: "grove_usersession",
+    secure: true,
+    resave: true,
+    saveUninitialized: false
 }));
 app.use(compression());
-app.use(helmet());
+app.use(express.static("public"));
 
-app.use(require('express')['static']('public'));
-const User = require(__dirname + '/mongo')(app, events);
-require(__dirname + '/client-interact')(io, User);
+///
 
-app.get('/', (req, res) => {
-  if (req.session.user && req.session.user.username) res.render('../views/dashboard.ejs', {
-    user: req.session.user
-  });
-  else res.render('../views/index.ejs');
-  console.log(new Date() + 'Home Activated.');
-});
-app.get('/logout', (req, res) => {
-  if (req.session.user) {
-    console.log(new Date() + req.session.user.username + ' has logged out. ');
-    delete req.session.user;
-  }
-  res.redirect('/');
-});
-app.get('/login', (req, res) => {
-  res.render('../views/login.ejs');
-  console.log(new Date() + 'Login Activated.');
+dbInit(events);
+_client(io);
 
+///
+
+app.get("/", (req, res) => {
+    let {session: {user}} = req;
+    if (user && user.username)
+        res.render(path.resolve("views/dashboard.ejs"), { user });
+    else
+        res.render(path.resolve("views/index.ejs"));
 });
-app.get('/register', (req, res) => {
-  res.render('../views/register.ejs');
-  console.log(new Date() + 'Register Activated.');
+
+app.get("/logout", (req, res) => {
+    let {session: {user}} = req;
+    if (user) {
+        console.log(`[${user.username}] logged out`)
+        delete req.session.user;
+    }
+    res.redirect("/");
 });
-app.get('/play', (req, res) => {
-  console.log(new Date() + 'Play Activated.');
-  if (req.session.user && req.session.user.username) res.render('../views/play.ejs', {
-    user: req.session.user
-  });
-  else res.redirect('/login');
+
+app.get("/login", (req, res) => {
+    res.render(path.resolve("views/login.ejs"));
 });
-app.get('/robots.txt', (req, res) => {
-  res.sendFile(require('path').resolve('views/robots.txt'));
-  console.log(new Date() + 'Robots Activated.');
+
+app.get("/register", (req, res) => {
+    res.render(path.resolve("views/register.ejs"));
 });
-app.get('/settings', (req, res) => {
-  res.render(require('path').resolve('views/settings.ejs'));
-  console.log(new Date() + 'Settings Activated.');
+
+app.get("/play", (req, res) => {
+    let {session: {user}} = req;
+    if (user && user.username)
+        res.render(path.resolve("views/play.ejs"), { user });
+    else
+        res.redirect("/login");
 });
-app.get('/pwreset', (req, res) => {
-  res.render(require('path').resolve('views/pwreset.ejs'));
-  console.log(new Date() + 'Password Reset Activated.');
+
+app.get("/robots.txt", (req, res) => {
+    res.sendFile(path.resolve("views/robots.txt"));
 });
-app.get('/login-weebly', (req, res) => {
-  res.render(require('path').resolve('views/login-iframe.ejs'));
-  console.log(new Date() + 'Weebly login Activated.');
+
+app.get("/settings", (req, res) => {
+    res.render(path.resolve("views/settings.ejs"));
 });
-http.listen(process.env.PORT || 8080, (listening) => {
-  if (!process.env.NODE_ENV) {
-    console.log('Listening For conections on 0.0.0.0');
-    console.log('Server running! ( View license at https://grove-mmo.com )');
-  }
+
+///
+
+app.post("/login", async (req, res) => {
+    const user = await dbFindUser(req.body);
+    if (user) {
+        console.log(`[${user.username}] logged in`);
+        req.session.user = user;
+        res.redirect("/");
+    }
+    else
+        res.redirect("/login?err=user_not_found");
+});
+
+app.post("/register", async (req, res) => {
+    const user = await dbNewUser(req.body);
+    if (user) {
+        console.log(`[${user.username}] made an account`);
+        req.session.user = user;
+        res.redirect("/");
+    }
+    else
+        res.redirect("/register?err=birds_ate_the_server");
+});
+
+///
+
+http.listen(process.env.PORT || 8080, () => {
+    console.log("Listening For conections on 0.0.0.0");
+    console.log("Server running!");
 });

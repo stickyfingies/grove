@@ -1,19 +1,17 @@
 'use strict';
 
-let players = [];
+export let players = [];
 
 function Player() {
-
     this.id = players.length;
     this.acc = {};
     this.x = 0;
     this.y = 0;
     this.z = 0;
     this.q = {}; // quaternion
-
 }
 
-let addPlayer = (id, accountData) => {
+export const addPlayer = (id, accountData) => {
 
     let player = new Player();
     player.id = id;
@@ -23,16 +21,16 @@ let addPlayer = (id, accountData) => {
     return player;
 };
 
-let removePlayer = player => {
+export const removePlayer = player => {
 
-    let index = players.indexOf(player);
+    const index = players.indexOf(player);
 
     if (index > -1) {
         players.splice(index, 1);
     }
 };
 
-let updatePlayerData = data => {
+export const updatePlayerData = data => {
     let player = playerForId(data.id);
     
     player.x = data.x;
@@ -43,7 +41,7 @@ let updatePlayerData = data => {
     return player;
 };
 
-let playerForId = id => {
+export const playerForId = id => {
 
     let player;
     for (let i = 0; i < players.length; i++) {
@@ -57,9 +55,3 @@ let playerForId = id => {
 
     return player;
 };
-
-module.exports.players = players;
-module.exports.addPlayer = addPlayer;
-module.exports.removePlayer = removePlayer;
-module.exports.updatePlayerData = updatePlayerData;
-module.exports.playerForId = playerForId;

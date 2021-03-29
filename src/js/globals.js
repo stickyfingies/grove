@@ -1,4 +1,4 @@
-/* global THREE, CANNON, io */
+"use strict";
 
 require('./items');
 

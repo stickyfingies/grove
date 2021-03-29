@@ -1,6 +1,8 @@
-const PointerLockControls = require('../threex/PointerLockControls');
+"use strict";
 
-module.exports = (globals, player) => {
+import PointerLockControls from "../threex/PointerLockControls";
+
+export default (globals, player) => {
 
     var mass = 100,
         radius = 1.7;

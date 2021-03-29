@@ -1,38 +1,41 @@
 {
   "name": "the-grove",
   "version": "0.0.1",
-  "description": "The Grove.",
+  "description": "The Grove",
   "main": "server/index.js",
-  "respository": "cellman1234/grove",
+  "respository": "stickyfingies/grove",
+  "type": "module",
   "dependencies": {
+    "@babel/core": "^7.13.13",
+    "babel": "^6.23.0",
+    "babel-core": "^6.26.3",
+    "babel-loader": "^8.2.2",
+    "babel-preset-latest": "^6.24.0",
     "body-parser": "^1.15.2",
     "compression": "^1.6.2",
+    "css-loader": "^0.26.4",
     "ejs-locals": "^1.0.2",
     "express": "^4.14.1",
     "express-session": "^1.14.1",
     "helmet": "^3.4.1",
     "jade": "^1.11.0",
     "md5": "^2.2.1",
-    "mongoose": "^4.8.6",
+    "mongodb": "^3.6.5",
+    "mongoose": "^5.12.2",
+    "node-sass": "^4.5.0",
     "postal": "^2.0.4",
     "request": "^2.79.0",
+    "sass-loader": "^6.0.3",
     "socket.io": "^1.7.3",
-    "unity-api": "^2.0.1"
+    "style-loader": "^0.13.2",
+    "unity-api": "^2.0.1",
+    "webpack": "^5.28.0",
+    "webpack-cli": "^4.6.0"
   },
   "scripts": {
     "start": "node server/index.js",
     "debug": "DEBUG=* node server/index.js",
     "build": "webpack",
     "test": "exit 0"
-  },
-  "devDependencies": {
-    "babel-core": "^6.24.0",
-    "babel-loader": "^6.4.1",
-    "babel-preset-latest": "^6.24.0",
-    "css-loader": "^0.26.4",
-    "node-sass": "^4.5.0",
-    "sass-loader": "^6.0.3",
-    "style-loader": "^0.13.2",
-    "webpack": "^2.2.1"
   }
 }
