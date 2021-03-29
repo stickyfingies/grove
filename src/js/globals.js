@@ -2,45 +2,45 @@
 
 require('./items');
 
-module.exports = {
-    scene: new THREE.Scene(),
-    renderer: new THREE.WebGLRenderer({
-        antialias: true,
-        preserveDrawingBuffer: true,
-        alpha: true
-    }),
-    camera: new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 20000),
+let G = module.exports = {};
 
-    world: new CANNON.World(),
+G.scene = new THREE.Scene();
+G.renderer = new THREE.WebGLRenderer({
+    antialias: true,
+    preserveDrawingBuffer: true,
+    alpha: true
+});
+G.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 20000);
 
-    socket: io(),
-    
-    composers: [],
+G.world = new CANNON.World();
 
-    BODIES: {
-        items: [],
-        projectiles: []
-    },
-    AIS: [],
-    LABELS: [],
-    PLAYERS: [],
-    EMITTERS: [],
-    TWEENS: [],
-    remove: {
-        bodies: [],
-        meshes: [],
-        tweens: []
-    },
-    
-    listener: new THREE.AudioListener(),
+G.socket = io();
 
-    delta: Date.now(),
-    clock: new THREE.Clock(),
-    frustum: new THREE.Frustum(),
-    cameraViewProjectionMatrix: new THREE.Matrix4(),
+G.composers = [];
 
-    groundMaterial: new CANNON.Material("groundMaterial")
+G.BODIES = {
+    items: [],
+    projectiles: []
 };
+G.AIS = [];
+G.LABELS = [];
+G.PLAYERS = [];
+G.EMITTERS = [];
+G.TWEENS = [];
+G.remove = {
+    bodies: [],
+    meshes: [],
+    tweens: []
+};
+
+G.listener = new THREE.AudioListener(),
+
+G.delta = Date.now();
+G.clock = new THREE.Clock();
+G.frustum = new THREE.Frustum();
+G.cameraViewProjectionMatrix = new THREE.Matrix4();
+
+G.groundMaterial = new CANNON.Material("groundMaterial");
 
 
 // module.exports.rendererDEBUG = new THREE.CannonDebugRenderer(module.exports.scene, module.exports.world);
@@ -51,11 +51,11 @@ let ground_ground_cm = new CANNON.ContactMaterial(module.exports.groundMaterial,
 });
 
 // Add contact material to the world
-module.exports.world.addContactMaterial(ground_ground_cm);
+G.world.addContactMaterial(ground_ground_cm);
 
 let load = require('./load');
-module.exports.load = load.load;
-module.exports.box = load.box;
-module.exports.label = load.label;
-module.exports.ball = load.ball;
-module.exports.plane = load.plane;
+G.load = load.load;
+G.box = load.box;
+G.label = load.label;
+G.ball = load.ball;
+G.plane = load.plane;

@@ -35,17 +35,7 @@ module.exports.quests = () => {
     }, 10000);
 };
 
-module.exports.hotbar = player => {
-    for (let i = 0; i < 8; i++) $(`#hb-${i}`).html('-');
-    for (let i = 0; i < player.hotbar.list.length; i++) {
-        $(`#hb-${i+1}`)
-            .text(player.hotbar.list[i].name)
-            .data('item', player.hotbar.list[i]);
-    }
-};
-
 module.exports.stats = player => {
-
     $('#gui').show();
     $('#underlay').show();
     $('#gui-title').text('');

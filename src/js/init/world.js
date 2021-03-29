@@ -11,7 +11,7 @@ export default (globals) => {
 
     solver.iterations = 7;
     solver.tolerance = 0.1;
-    var split = false;
+    var split = true;
     if (split)
         globals.world.solver = new CANNON.SplitSolver(solver);
     else

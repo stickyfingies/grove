@@ -8,7 +8,7 @@ pointerlock();
 
 let globals = require("./globals");
 let player = require("./player");
-    
+
 const dt = 1 / 60;
 
 let items = require("./items");
@@ -16,7 +16,7 @@ let gui = require("./gui");
 let shooting = require("./shooting");
 import multiplayer from "./multiplayer";
 
-gui.init(player)
+gui.init(player);
 shooting(globals, player);
 multiplayer(globals, player);
 
