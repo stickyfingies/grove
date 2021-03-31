@@ -68,9 +68,6 @@ export const stats = (player, globals) => {
     });
     $('#gui-m').click(() => {
         $('#gui-title').html('Map');
-        const strMime = "image/jpeg";
-        const imgData = globals.renderer.domElement.toDataURL(strMime);
-        $('#gui-content').html(`<img src=${imgData} width=200>`);
     });
     $('#gui-p').click(() => {
         $('#gui-title').html('Player');

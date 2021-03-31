@@ -9,7 +9,8 @@ export default {
     mode: "development",
     name: "js",
     entry: {
-        latest: "./src/js/main.js"
+        "latest": "./src/js/main.js",
+        "graphics-worker": "./src/js/graphics-worker.js"
     },
     output: {
         filename: "[name].js",
@@ -23,6 +24,11 @@ export default {
                 "css-loader?minimize=true",
                 "sass-loader"
             ]
+        }, {
+            test: /\.js/,
+            resolve: {
+                fullySpecified: false
+            }
         }],
     },
     optimization: {
@@ -47,10 +53,7 @@ export default {
         new webpack.BannerPlugin("\nMade with <3 by the Grove team | " + new Date() + "\n")
     ],
     resolve: {
-        extensions: [".js", ".json", ".sass"],
-        alias: {
-            'three': path.resolve('src/node_modules/three/build/three.module.js')
-        }
+        extensions: [".js", ".json", ".sass"]
     }
 };
 

@@ -88,7 +88,7 @@
             </div>
     </div>
 
-    <div id='underlay'></div>
+    <!-- <div id='underlay'></div> -->
 
     <div id='pause' class="card blue-grey darken-1">
         <div class="card-content white-text">
@@ -105,18 +105,21 @@
         <canvas id="hp-bar" width="578" height="200">ERROR</canvas>
     </div>
 
-    <div id='quest-alert'>
+    <!-- <div id='quest-alert'>
         <p>Loading...</p>
         <small>Loading...</small>
-    </div>
+    </div> -->
 
-    <div id='gui'>
+    <!-- <div id='gui'>
         <h3 id='gui-title'></h3>
         <span id='gui-content'></span>
         <div id='gui-exit' class='play-btn btn waves-effect waves-light green z-depth-3'>Resume =)</div>
-    </div>
+    </div> -->
     
 </div>
+
+    <canvas id="main-canvas"></canvas>
+    <canvas id="offscreen-canvas"></canvas>
 
     <%- partial('play/shaders') %>
     <%- partial('play/libs') %>
@@ -135,12 +138,6 @@
             alert(`Error message: ${msg}\nURL: ${url}\nLine Number: ${linenumber}`);
             return true;
         };*/
-        ;(function() {
-            var _push = Array.prototype.push;
-            Array.prototype.push = function() {
-                return this[_push.apply(this, arguments) - 1];
-            }
-        }());
     </script>
 
     <script src='/js/runtime.js' defer></script>

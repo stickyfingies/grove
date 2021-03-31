@@ -1,5 +1,6 @@
 "use strict";
 
+import {getEntity} from "./entities"
 import {ball, loadModel} from "./load";
 
 import {Vector3} from "three";
@@ -13,7 +14,6 @@ export default (globals) => {
             this.name = name;
             this.hp = hp;
             this.dmg = dmg;
-            globals.AIS.push(this);
         }
 
         update() {} // virtual
@@ -45,13 +45,14 @@ export default (globals) => {
         }
 
         update(body, hostility) {
-            const ppos = globals.BODIES['player'].body.position;
+            const playerent = getEntity(0);
+            const ppos = playerent.body.position;
             const bpos = body.body.position;
-            if (globals.BODIES['player'].mesh.position.distanceTo(body.mesh.position) < 20) {
+            if (playerent.mesh.position.distanceTo(body.mesh.position) < 20) {
                 let speed = 12.5;
                 if (hostility < 0) speed *= -1;
                 body.body.velocity.set(ppos.x < bpos.x ? -speed : speed, body.body.velocity.y, ppos.z < bpos.z ? -speed : speed);
-                body.mesh.lookAt(globals.BODIES['player'].mesh.position);
+                body.mesh.lookAt(playerent.mesh.position);
             }
             else this.body.body.velocity.set(0, body.body.velocity.y, 0);
         }

@@ -28,7 +28,7 @@ export default (globals) => {
             }
         }
 
-        const pointerlockerror = () => {}
+        const pointerlockerror = () => { }
 
         // Hook pointer lock state change events
         document.addEventListener('pointerlockchange', pointerlockchange, false);
@@ -45,31 +45,10 @@ export default (globals) => {
             // Ask the browser to lock the pointer
             element.requestPointerLock = element.requestPointerLock || element.mozRequestPointerLock || element.webkitRequestPointerLock;
 
-            if (/Firefox/i.test(navigator.userAgent)) {
-                const fullscreenchange = () => {
-                    if (document.fullscreenElement === element || document.mozFullscreenElement === element || document.mozFullScreenElement === element) {
-                        document.removeEventListener('fullscreenchange', fullscreenchange);
-                        document.removeEventListener('mozfullscreenchange', fullscreenchange);
-                        element.requestPointerLock();
-                    }
-                }
-
-                document.addEventListener('fullscreenchange', fullscreenchange, false);
-                document.addEventListener('mozfullscreenchange', fullscreenchange, false);
-
-                element.requestFullscreen = element.requestFullscreen || element.mozRequestFullscreen || element.mozRequestFullScreen || element.webkitRequestFullscreen;
-                element.requestFullscreen();
-            }
-            else {
-                element.requestPointerLock();
-                element.requestFullscreen = element.requestFullscreen || element.mozRequestFullscreen || element.mozRequestFullScreen || element.webkitRequestFullscreen;
-                element.requestFullscreen();
-            }
-
+            element.requestPointerLock();
         }
 
-        $('.play-btn').click(click);
-
+        document.getElementsByClassName("play-btn")[0].onclick = click;
     }
     else {
         alert('Your browser doesn\'t support the HTML5 PointerLock API!');

@@ -1,7 +1,10 @@
 "use strict";
 
+import {addObjectToScene} from "./graphics"
+
 import {ObjectLoader, BoxGeometry, SphereGeometry, Mesh, MeshPhongMaterial, Texture, SpriteMaterial, Sprite} from "three";
 import {Vec3, Body, Sphere, Box, ConvexPolyhedron, Trimesh} from "cannon-es";
+import { addEntity, getEntity } from "./entities";
 
 ///
 
@@ -37,8 +40,7 @@ export const loadModel = (uri, callback) => {
     }
 };
 
-export const load = (mesh, opts, globals) => {
-    opts = opts ? opts : {};
+export const load = (mesh, opts = {}, globals) => {
     mesh.castShadow = true;
     mesh.recieveShadow = true;
 
@@ -60,85 +62,67 @@ export const load = (mesh, opts, globals) => {
 
     var cvph = new Trimesh(verts, faces);
     var Cbody = new Body({
-        mass: opts.mass || 0,
-        material: opts.material || undefined
+        mass: opts.mass ?? 0,
+        material: opts.material
     });
     Cbody.addShape(cvph);
     Cbody.position.copy(mesh.position);
     Cbody.quaternion.copy(mesh.quaternion);
     globals.world.addBody(Cbody);
-    globals.BODIES['items'].push({
-        body: Cbody,
-        shape: cvph,
-        mesh: mesh
-    });
-    return {
-        body: Cbody,
-        shape: cvph,
-        mesh: mesh
-    };
+    
+    const index = addEntity(Cbody, cvph, mesh);
+    return getEntity(index);
 }
 
-export const box = (opts, globals) => {
-    opts = opts ? opts : {};
-
-    let halfExtents = new Vec3(opts.l || 1, opts.h || 1, opts.w || 1);
+export const box = (opts = {}, globals) => {
+    let halfExtents = new Vec3(opts.l ?? 1, opts.h ?? 1, opts.w ?? 1);
     let boxShape = new Box(halfExtents);
     let boxGeometry = new BoxGeometry(halfExtents.x * 2, halfExtents.y * 2, halfExtents.z * 2);
     let boxBody = new Body({
-        mass: opts.mass || 0
+        mass: opts.mass ?? 0
     });
     boxBody.addShape(boxShape);
-    let boxMesh = opts.mesh || new Mesh(boxGeometry, opts.mat || new MeshPhongMaterial({
+    let boxMesh = opts.mesh ?? new Mesh(boxGeometry, opts.mat || new MeshPhongMaterial({
         color: 0xFF0000
     }));
-    const index = globals.BODIES['items'].push({
-        body: boxBody,
-        shape: boxShape,
-        mesh: boxMesh
-    });
+    const index = addEntity(boxBody, boxShape, boxMesh)
 
-    let body = globals.BODIES['items'][index];
+    let body = getEntity(index);
 
     globals.world.addBody(body.body);
-    globals.scene.add(body.mesh);
+    addObjectToScene(body.mesh);
     body.mesh.castShadow = true;
     body.mesh.receiveShadow = true;
     opts.pos ? body.mesh.position.set(opts.pos.x, opts.pos.y, opts.pos.z) : null;
-    body.norotete = opts.norotate || false;
+    body.norotate = opts.norotate ?? false;
 
     return body;
 
 }
 
-export const ball = (opts, globals) => {
-    opts = opts ? opts : {};
-    let ballShape = new Sphere(opts.radius || 0.2);
+export const ball = (opts = {}, globals) => {
+    let ballShape = new Sphere(opts.radius ?? 0.2);
     let ballGeometry = new SphereGeometry(ballShape.radius, 32, 32);
     let ballBody = new Body({
-        mass: opts.mass || 10
+        mass: opts.mass ?? 10
     });
 
     ballBody.addShape(ballShape);
     let ballMesh = opts.mesh || new Mesh(ballGeometry, opts.mat || new MeshPhongMaterial({
-        color: opts.c || 0x00CCFF
+        color: opts.c ?? 0x00CCFF
     }));
 
-    const body = globals.BODIES[opts.array || 'items'].push({
-        body: ballBody,
-        shape: ballShape,
-        mesh: ballMesh,
-        norotate: opts.norotate || false
-    });
+    const index = addEntity(ballBody, ballShape, ballMesh, opts?.norotate);
+    let body = getEntity(index);
 
-    globals.world.addBody(body.body);
-    globals.scene.add(body.mesh);
-    body.mesh.castShadow = true;
-    body.mesh.receiveShadow = true;
+    globals.world.addBody(ballBody);
+    addObjectToScene(ballMesh);
+    ballMesh.castShadow = true;
+    ballMesh.receiveShadow = true;
     
-    !opts.cb || opts.cb(body);
+    opts.cb?.(body);
 
-    opts.pos ? body.body.position.set(opts.pos.x, opts.pos.y, opts.pos.z) : null;
+    if (opts.pos) body.body.position.set(opts.pos.x, opts.pos.y, opts.pos.z);
 
     return body;
 }
