@@ -3,13 +3,27 @@
 import "../css/play";
 import "../css/skill";
 
+/**
+ * Tasks
+ * - thread renderer
+ *  - bodies.js
+ *  - player.js
+ *  - load.js
+ *  - main.js
+ *  - threex/PointerLockControls.js
+ * - typescript (?)
+ * - organize, organize, organize
+ */
+
+const debug = false;
+
 import globals from "./globals";
 import player from "./player";
 import pointerlock from "./pointerlock";
 import shooting from "./shooting";
 import manager from "./init/manager";
 import { load, loadModel } from "./load";
-import { getCamera, removeObjectFromScene } from "./graphics";
+import { initGraphics, updateGraphics, resizeGraphicsTarget, getCamera, removeObjectFromScene } from "./graphics";
 // import AI from "./AI";
 // import {init as guiInit, quests} from "./gui";
 

@@ -13,10 +13,6 @@ let G = {
         tweens: []
     },
     delta: Date.now(),
-    controls: {
-        enabled: false,
-        update(dt) {}
-    },
     groundMaterial: new Material("groundMaterial")
 };
 
