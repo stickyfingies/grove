@@ -1,8 +1,3 @@
-/*!
- * 
- * Made with <3 by the Grove team | Wed Mar 31 2021 01:09:10 GMT+0000 (Coordinated Universal Time)
- *
- */
 /*
  * ATTENTION: The "eval" devtool has been used (maybe by default in mode: "development").
  * This devtool is neither made for production nor for readable output files.

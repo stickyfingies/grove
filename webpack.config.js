@@ -3,8 +3,6 @@
 import path from "path";
 import webpack from "webpack";
 
-let last = "";
-
 export default {
     mode: "development",
     name: "js",
@@ -19,6 +17,7 @@ export default {
     module: {
         rules: [{
             test: /\.sass$/,
+            include: path.resolve("src/css"),
             use: [
                 "style-loader",
                 "css-loader?minimize=true",
@@ -26,6 +25,7 @@ export default {
             ]
         }, {
             test: /\.js/,
+            include: path.resolve("src/js"),
             resolve: {
                 fullySpecified: false
             }
@@ -39,21 +39,15 @@ export default {
                     test: /node_modules/,
                     chunks: "initial",
                     name: "vendor",
+                    reuseExistingChunk: true,
                     enforce: true
                 }
             }
         } 
     },
-    plugins: [
-        new webpack.ProgressPlugin(function handler(percentage, msg) {
-            if (last !== msg) console.log(Math.floor(percentage * 100) + "% - " + msg);
-            last = msg;
-        }),
-        new webpack.optimize.SplitChunksPlugin({}),
-        new webpack.BannerPlugin("\nMade with <3 by the Grove team | " + new Date() + "\n")
-    ],
     resolve: {
-        extensions: [".js", ".json", ".sass"]
+        extensions: [".js", ".json", ".sass"],
+        symlinks: false
     }
 };
 
