@@ -29,10 +29,7 @@ import { initGraphics, updateGraphics, resizeGraphicsTarget, getCamera, removeOb
 
 import { DefaultLoadingManager, Quaternion, Vector3, Mesh, BufferGeometry } from "three";
 import _ from "lodash";
-import cannonDebugger from "cannon-es-debugger";
 import { entityList } from "./entities";
-
-// let physicsDebugger = debug ? cannonDebugger(getScene(), globals.world.bodies, {}) : null;
 
 const dt = 1 / 60;
 
@@ -48,16 +45,18 @@ loadModel(`/models/skjar-isles/skjar-isles.json`, object => {
         if (child instanceof Mesh) {
             child.castShadow = true;
             child.recieveShadow = true;
+
+            const map = child.material.map;
             
             let canvas = document.createElement("canvas");
-            canvas.width = child.material.map.image.width;
-            canvas.height = child.material.map.image.height;
+            canvas.width = map.image.width;
+            canvas.height = map.image.height;
 
             // Copy the image contents to the canvas
             let ctx = canvas.getContext("2d");
-            ctx.drawImage(child.material.map.image, 0, 0);
+            ctx.drawImage(map.image, 0, 0);
 
-            let imageData = ctx.getImageData(0, 0, child.material.map.image.width, child.material.map.image.height);
+            let imageData = ctx.getImageData(0, 0, map.image.width, map.image.height);
 
             load(child, {
                 mass: 0,
@@ -81,9 +80,8 @@ loadModel(`/models/skjar-isles/skjar-isles.json`, object => {
                 name: child.name,
                 geometry: bufferGeometry,
                 imageData: imageData.data,
-                imageSrc: child.material.map.image.src,
-                imageWidth: child.material.map.image.width,
-                imageHeight: child.material.map.image.height,
+                imageWidth: map.image.width,
+                imageHeight: map.image.height,
                 p,
                 q,
                 s
@@ -91,7 +89,6 @@ loadModel(`/models/skjar-isles/skjar-isles.json`, object => {
         }
     });
 });
-// initGraphics();
 // AI(globals);
 pointerlock(globals);
 
@@ -137,9 +134,6 @@ function animate(delta) {
         }
 
         globals.world.step(dt);
-        // if (debug) physicsDebugger.update();
-
-        // Update bullets, etc.
 
         for (let e of entityList) {
             e.mesh.position.copy(e.body.position);
@@ -149,8 +143,6 @@ function animate(delta) {
         for (let key in globals.TWEENS) {
             globals.TWEENS[key].update(delta);
         }
-
-        // if (globals.BODIES['player'].body.position.y < -400) player.hp.val--;
 
         $('#health-bar').val(player.hp.val / player.hp.max * 100 > 0 ? player.hp.val / player.hp.max * 100 : 0);
         $('#health').text(`${player.hp.val > 0 ? player.hp.val : 0} HP`);
@@ -172,7 +164,6 @@ function animate(delta) {
         getCamera().matrixWorld.decompose(p, q, s);
         worker.postMessage({ type: "updateCamera", p, q, s });
 
-        // updateGraphics();
         globals.delta = Date.now();
     }
 

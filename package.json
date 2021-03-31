@@ -12,7 +12,6 @@
     "@types/three": "^0.126.2",
     "body-parser": "^1.15.2",
     "cannon-es": "^0.17.0",
-    "cannon-es-debugger": "^0.1.2",
     "compression": "^1.6.2",
     "css-loader": "^0.26.4",
     "ejs-locals": "^1.0.2",

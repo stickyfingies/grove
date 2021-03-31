@@ -17,7 +17,8 @@ import {
     LinearFilter,
     BoxGeometry,
     MeshBasicMaterial,
-    BackSide
+    BackSide,
+    LinearMipMapLinearFilter
 } from "three";
 import { Quaternion } from "cannon-es";
 
@@ -65,6 +66,9 @@ const init = (data) => {
 
     let materialArray = [];
     let loader = new ImageBitmapLoader();
+    loader.setOptions({
+        imageOrientation: "flipY"
+    });
     for (let i = 0; i < 6; i++) {
         loader.load(imagePrefix + directions[i] + imageSuffix, image => {
             const map = new CanvasTexture(image);
@@ -96,7 +100,7 @@ const updateCamera = ({ p, q, s }) => {
     camera.scale.copy(s);
 };
 
-const addObject = ({ geometry, imageData, imageSrc, imageWidth, imageHeight, p, q, s }) => {
+const addObject = ({ geometry, imageData, imageWidth, imageHeight, p, q, s }) => {
     const shallowGeometry = geometry;
     const buffergeo = new BufferGeometry();
 
@@ -112,23 +116,21 @@ const addObject = ({ geometry, imageData, imageSrc, imageWidth, imageHeight, p, 
 
     buffergeo.groups = shallowGeometry.groups;
 
-    // let texture = new DataTexture(imageData, imageWidth, imageHeight, RGBAFormat);
-    // texture.needsUpdate = true;
-
-    let loader = new ImageBitmapLoader();
-    loader.load(imageSrc, image => {
-        let map = new CanvasTexture(image);
-        map.wrapS = RepeatWrapping;
-        map.wrapT = RepeatWrapping;
-        const mesh = new Mesh(buffergeo, new MeshPhongMaterial({
-            map
-        }));
-        mesh.position.copy(p);
-        mesh.quaternion.copy(new Quaternion(q._x, q._y, q._z, q._w));
-        mesh.scale.copy(s);
-        mesh.updateMatrix();
-        scene.add(mesh);
-    });
+    let map = new DataTexture(imageData, imageWidth, imageHeight, RGBAFormat);
+    map.wrapS = RepeatWrapping;
+    map.wrapT = RepeatWrapping;
+    map.magFilter = LinearFilter;
+    map.minFilter = LinearMipMapLinearFilter;
+    map.generateMipmaps = true;
+    map.needsUpdate = true;
+    const mesh = new Mesh(buffergeo, new MeshPhongMaterial({
+        map
+    }));
+    mesh.position.copy(p);
+    mesh.quaternion.copy(new Quaternion(q._x, q._y, q._z, q._w));
+    mesh.scale.copy(s);
+    mesh.updateMatrix();
+    scene.add(mesh);
 };
 
 const messageHandlers = {

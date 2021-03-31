@@ -562,11 +562,6 @@ caniuse-lite@^1.0.30001181:
   resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001204.tgz#256c85709a348ec4d175e847a3b515c66e79f2aa"
   integrity sha512-JUdjWpcxfJ9IPamy2f5JaRDCaqJOxDzOSKtbdx4rH9VivMd1vIzoPumsJa9LoMIi4Fx2BV2KZOxWhNkBjaYivQ==
 
-cannon-es-debugger@^0.1.2:
-  version "0.1.2"
-  resolved "https://registry.yarnpkg.com/cannon-es-debugger/-/cannon-es-debugger-0.1.2.tgz#c9673adeff1fe97f969b55d4706b6c6ba5422bfa"
-  integrity sha512-oAOQOS0tbst/cOTTFLcuOZg5a6SCycdpcAycz6xjTOEdukvz4+hUihA0CNEhppiBG81yPGiVxOU3S5uHxkZ1/Q==
-
 cannon-es@^0.17.0:
   version "0.17.0"
   resolved "https://registry.yarnpkg.com/cannon-es/-/cannon-es-0.17.0.tgz#8ddf149000d3fbb1343410b2bc40880597c2cfd5"
