@@ -1,9 +1,7 @@
 "use strict";
 
-import {addObjectToScene} from "./graphics"
-
-import {ObjectLoader, BoxGeometry, SphereGeometry, Mesh, MeshPhongMaterial, Texture, SpriteMaterial, Sprite} from "three";
-import {Vec3, Body, Sphere, Box, ConvexPolyhedron, Trimesh} from "cannon-es";
+import { ObjectLoader, BoxGeometry, SphereGeometry, Mesh, MeshPhongMaterial, Texture, SpriteMaterial, Sprite } from "three";
+import { Vec3, Body, Sphere, Box, Trimesh } from "cannon-es";
 import { addEntity, getEntity } from "./entities";
 
 ///
@@ -20,8 +18,7 @@ export const loadModel = (uri, callback) => {
     callbacks[uri].push(callback);
 
     // if this is the first time this resource was requested, load it
-    if (accessCount[uri] === 1)
-    {
+    if (accessCount[uri] === 1) {
         let loader = new ObjectLoader();
         loader.load(uri, object => {
             models[uri] = object;
@@ -69,7 +66,7 @@ export const load = (mesh, opts = {}, globals) => {
     Cbody.position.copy(mesh.position);
     Cbody.quaternion.copy(mesh.quaternion);
     globals.world.addBody(Cbody);
-    
+
     const index = addEntity(Cbody, cvph, mesh);
     return getEntity(index);
 }
@@ -90,7 +87,6 @@ export const box = (opts = {}, globals) => {
     let body = getEntity(index);
 
     globals.world.addBody(body.body);
-    addObjectToScene(body.mesh);
     body.mesh.castShadow = true;
     body.mesh.receiveShadow = true;
     opts.pos ? body.mesh.position.set(opts.pos.x, opts.pos.y, opts.pos.z) : null;
@@ -116,10 +112,9 @@ export const ball = (opts = {}, globals) => {
     let body = getEntity(index);
 
     globals.world.addBody(ballBody);
-    addObjectToScene(ballMesh);
     ballMesh.castShadow = true;
     ballMesh.receiveShadow = true;
-    
+
     opts.cb?.(body);
 
     if (opts.pos) body.body.position.set(opts.pos.x, opts.pos.y, opts.pos.z);

@@ -1,11 +1,11 @@
 "use strict";
 
-import {addObjectToScene, getCamera} from "../graphics"
-import {PointerLockControls} from "../threex/pointer-lock-controls";
+import { getCamera } from "../graphics"
+import { PointerLockControls } from "../threex/pointer-lock-controls";
 
-import {Mesh, BoxGeometry, MeshLambertMaterial} from "three";
+import { Mesh, BoxGeometry, MeshLambertMaterial } from "three";
 
-import {Sphere, Body, Vec3} from "cannon-es";
+import { Sphere, Body, Vec3 } from "cannon-es";
 import { addEntity } from "../entities";
 
 export default (globals, player) => {
@@ -44,7 +44,9 @@ export default (globals, player) => {
         new MeshLambertMaterial()
     );
     mesh.castShadow = true;
-    addObjectToScene(mesh);
+
+    // todo: add mesh to scene
+
     addEntity(sphereBody, sphereShape, mesh, true);
 
     globals.controls = new PointerLockControls(getCamera(), document.body, sphereBody);

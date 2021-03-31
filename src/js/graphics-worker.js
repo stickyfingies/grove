@@ -82,6 +82,7 @@ const init = (data) => {
             if (materialArray.length == 6) {
                 let skyBox = new Mesh(skyGeometry, materialArray);
                 scene.add(skyBox);
+                scene.updateMatrixWorld();
             }
         });
     }

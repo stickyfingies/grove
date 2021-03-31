@@ -15,15 +15,13 @@ import "../css/skill";
  * - organize, organize, organize
  */
 
-const debug = false;
-
 import globals from "./globals";
 import player from "./player";
 import pointerlock from "./pointerlock";
 import shooting from "./shooting";
 import manager from "./init/manager";
 import { load, loadModel } from "./load";
-import { initGraphics, updateGraphics, resizeGraphicsTarget, getCamera, removeObjectFromScene } from "./graphics";
+import { initGraphics, getCamera, updateGraphics, addGraphicsObject } from "./graphics";
 // import AI from "./AI";
 // import {init as guiInit, quests} from "./gui";
 
@@ -34,25 +32,20 @@ import { entityList } from "./entities";
 const dt = 1 / 60;
 
 // guiInit(globals, player);
+initGraphics();
 shooting(globals, player);
 manager(globals, player);
 loadModel(`/models/skjar-isles/skjar-isles.json`, object => {
-    // addObjectToScene(object);
-    object.castShadow = true;
-    object.recieveShadow = true;
     object.updateMatrixWorld(false, true);
     object.traverse(child => {
         if (child instanceof Mesh) {
-            child.castShadow = true;
-            child.recieveShadow = true;
 
             const map = child.material.map;
-            
+
             let canvas = document.createElement("canvas");
             canvas.width = map.image.width;
             canvas.height = map.image.height;
 
-            // Copy the image contents to the canvas
             let ctx = canvas.getContext("2d");
             ctx.drawImage(map.image, 0, 0);
 
@@ -75,9 +68,9 @@ loadModel(`/models/skjar-isles/skjar-isles.json`, object => {
             let s = new Vector3();
             child.matrixWorld.decompose(p, q, s);
 
-            worker.postMessage({
-                type: "addObject",
+            addGraphicsObject({
                 name: child.name,
+                arrayBuffers,
                 geometry: bufferGeometry,
                 imageData: imageData.data,
                 imageWidth: map.image.width,
@@ -85,24 +78,12 @@ loadModel(`/models/skjar-isles/skjar-isles.json`, object => {
                 p,
                 q,
                 s
-            }, arrayBuffers);
+            });
         }
     });
 });
 // AI(globals);
 pointerlock(globals);
-
-const worker = new Worker(new URL("./graphics-worker.js", import.meta.url));
-const offscreenCanvas = document.getElementById("main-canvas");
-const offscreen = offscreenCanvas.transferControlToOffscreen();
-
-worker.postMessage({
-    type: "init",
-    canvas: offscreen,
-    width: window.innerWidth,
-    height: window.innerHeight,
-    pixelRatio: window.devicePixelRatio
-}, [offscreen]);
 
 DefaultLoadingManager.onProgress = (item, loaded, total) => {
     console.log(`loading ${item} (${loaded}/${total})`);
@@ -122,7 +103,7 @@ function animate(delta) {
                 delete globals.remove.bodies[key];
             }
             for (let key in globals.remove.meshes) {
-                removeObjectFromScene(globals.remove.meshes[key]);
+                // todo: remove mesh from scene
                 delete globals.remove.meshes[key];
             }
         }
@@ -156,13 +137,7 @@ function animate(delta) {
 
         globals.controls.update(Date.now() - globals.delta);
 
-        let p = new Vector3();
-        let q = new Quaternion();
-        let s = new Vector3();
-        getCamera().updateMatrix();
-        getCamera().updateWorldMatrix();
-        getCamera().matrixWorld.decompose(p, q, s);
-        worker.postMessage({ type: "updateCamera", p, q, s });
+        updateGraphics();
 
         globals.delta = Date.now();
     }
