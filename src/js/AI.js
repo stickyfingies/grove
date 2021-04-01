@@ -1,12 +1,12 @@
 "use strict";
 
-import {getEntity} from "./entities"
-import {ball, loadModel} from "./load";
+import { getEntity } from "./entities"
+import { ball, loadModel } from "./load";
 
-import {Vector3} from "three";
+import { Vector3 } from "three";
+import { camera } from "./graphics";
 
 export default (globals) => {
-
     // Current Required AIs Include: Wicket, Ferdinand, Nicholas Czerwinski
 
     class AI {
@@ -16,19 +16,20 @@ export default (globals) => {
             this.dmg = dmg;
         }
 
-        update() {} // virtual
+        update() { } // virtual
     }
 
     class Animal extends AI {
-
         constructor(type = 'animal', hp = 3, dmg = 2, hostility = 0) {
             // Hostility: -1 is run away, 0 = neutral, 1 is hostile
             super(type, hp, dmg);
             this.hostility = hostility;
             this.id = Math.random();
 
-            let object = loadModel(`/models/${type}/${type}.json`, object => {
-                if (type == 'chicken') object.scale.set(5, 5, 5);
+            loadModel(`/models/${type}/${type}.json`, object => {
+                if (type == 'chicken') {
+                    object.scale.set(0.0005, 0.0005, 0.0005);
+                }
                 let body = ball({
                     radius: 0.4,
                     mass: 15,
@@ -48,8 +49,9 @@ export default (globals) => {
             const playerent = getEntity(0);
             const ppos = playerent.body.position;
             const bpos = body.body.position;
-            if (playerent.mesh.position.distanceTo(body.mesh.position) < 20) {
-                let speed = 12.5;
+            if (camera.position.distanceTo(body.body.position) < 20) {
+                // console.log("chasing mode");
+                let speed = 6.5;
                 if (hostility < 0) speed *= -1;
                 body.body.velocity.set(ppos.x < bpos.x ? -speed : speed, body.body.velocity.y, ppos.z < bpos.z ? -speed : speed);
                 body.mesh.lookAt(playerent.mesh.position);

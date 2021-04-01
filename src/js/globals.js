@@ -1,6 +1,6 @@
 "use strict";
 
-import {World, Material, ContactMaterial} from "cannon-es";
+import { World, Material, ContactMaterial } from "cannon-es";
 
 let G = {
     world: new World(),

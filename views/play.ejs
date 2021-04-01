@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.5/css/bootstrap.min.css" integrity="sha384-AysaV+vQoT3kOAXZkl02PThvDr8HYKPZhNT5h/CXfBThSRXQ6jW5DO2ekP5ViFdi" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.8/css/materialize.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.8/css/materialize.min.css">
-    <link rel='icon' href='/img/favicon.ico'>
+    <link rel='icon' href='/img/favicon(1).ico'>
     <link href="https://fonts.googleapis.com/css?family=Aldrich" rel="stylesheet">
 </head>
 <body>
@@ -83,7 +83,7 @@
 
     <div id="blocker">
             <div id="load">
-                <img id='spinner' src='//samherbert.net/svg-loaders/svg-loaders/tail-spin.svg'><br>
+                <img id='spinner' src='/img/loading.svg'><br>
                 <button id='load-play-btn' class='play-btn btn waves-effect waves-light light-green z-depth-3'>Play</button>
             </div>
     </div>
@@ -124,25 +124,9 @@
     <%- partial('play/shaders') %>
     <%- partial('play/libs') %>
 
-    <script>
-        window.__D = {
-            username: '<%= user.username %>',
-            password: '<%= user.password %>'
-        };
-
-        console.log('Game Play has Started.');
-        String.prototype.capitalize = function() {
-            return this.charAt(0).toUpperCase() + this.slice(1);
-        };
-        /*window.onerror = (msg, url, linenumber) => {
-            alert(`Error message: ${msg}\nURL: ${url}\nLine Number: ${linenumber}`);
-            return true;
-        };*/
-    </script>
-
-    <script src='/js/runtime.js' defer></script>
-    <script src='/js/vendor.js' defer></script>
-    <script src='/js/latest.js' defer></script>
+    <script src='/js/dist/runtime.js' defer></script>
+    <script src='/js/dist/vendor.js' defer></script>
+    <script src='/js/dist/latest.js' defer></script>
 </body>
 
 <!--Start of Google Analytics-->

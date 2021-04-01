@@ -9,12 +9,13 @@ export default {
     mode: "development",
     name: "js",
     entry: {
-        "latest": "./src/js/main.js",
-        "graphics-worker": "./src/js/graphics-worker.js"
+        latest: "./src/js/main.js",
+        graphicsworker: "./src/js/graphicsworker.js",
     },
     output: {
         filename: "[name].js",
-        path: path.resolve("public/js")
+        chunkFilename: "[chunkhash].js",
+        path: path.resolve("public/js/dist")
     },
     module: {
         rules: [{
@@ -34,6 +35,7 @@ export default {
     optimization: {
         runtimeChunk: "single",
         splitChunks: {
+            chunks: "all",
             cacheGroups: {
                 vendor: {
                     test: /node_modules/,
@@ -42,15 +44,17 @@ export default {
                     enforce: true
                 }
             }
-        } 
+        }
     },
     plugins: [
         new webpack.ProgressPlugin(function handler(percentage, msg) {
             if (last !== msg) console.log(Math.floor(percentage * 100) + "% - " + msg);
             last = msg;
         }),
-        new webpack.optimize.SplitChunksPlugin({}),
-        new webpack.BannerPlugin("\nMade with <3 by the Grove team | " + new Date() + "\n")
+        new webpack.BannerPlugin("\nMade with <3 by the Grove team | " + new Date() + "\n"),
+        // new webpack.optimize.LimitChunkCountPlugin({
+        //     maxChunks: 1,
+        // }),
     ],
     resolve: {
         extensions: [".js", ".json", ".sass"]

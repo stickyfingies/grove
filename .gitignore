@@ -1,6 +1,7 @@
 # we don't want anyone to see these files
 node_modules
 src/node_modules
+public/js/dist
 push.sh
 npm-debug.log
 .c9

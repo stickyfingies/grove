@@ -1,13 +1,13 @@
 "use strict";
 
-import {ball} from "./load";
+import { ball } from "./load";
 
-import {Ray, Vector3} from "three";
+import { Ray, Vector3 } from "three";
 
 import { getEntity } from "./entities";
-import { getCamera } from "./graphics";
+import { camera, removeFromScene } from "./graphics";
 
-export default (globals, player) => {
+export default (globals) => {
     // let sword;
     // let weapon;
 
@@ -51,56 +51,40 @@ export default (globals, player) => {
         let playerent = getEntity(0);
         let vector = targetVec;
         targetVec.set(0, 0, 1);
-        vector.unproject(getCamera());
+        vector.unproject(camera);
         let ray = new Ray(playerent.body.position, vector.sub(playerent.body.position).normalize());
         targetVec.copy(ray.direction);
     }
 
     const shoot = () => {
-        if (globals.controls.enabled == true && player.equipped) {
+        if (!globals.controls.enabled) return;
 
-            let shootDirection = new Vector3();
-            const shootVelo = 20;
+        let b = ball({
+            c: 0xFF4500
+        }, globals);
 
-            let playerent = getEntity(0)
-            let x = playerent.body.position.x;
-            let y = playerent.body.position.y;
-            let z = playerent.body.position.z;
+        let shootDirection = new Vector3();
+        getShootDir(shootDirection);
+        const { x: sdx, y: sdy, z: sdz } = shootDirection;
+        const shootVelo = 20;
+        b.body.velocity.set(sdx * shootVelo, sdy * shootVelo, sdz * shootVelo);
 
-            let b = ball({
-                c: player.equipped == 'rock' ? 0xCCCCCC : 0xFF4500
-            }, globals);
+        let playerent = getEntity(0);
+        let { x, y, z } = playerent.body.position;
 
-            getShootDir(shootDirection);
-            b.body.velocity.set(
-                shootDirection.x * shootVelo,
-                shootDirection.y * shootVelo,
-                shootDirection.z * shootVelo);
+        x += shootDirection.x * (playerent.shape.radius * 1.02 + b.shape.radius);
+        y += shootDirection.y * (playerent.shape.radius * 1.02 + b.shape.radius);
+        z += shootDirection.z * (playerent.shape.radius * 1.02 + b.shape.radius);
 
-            // Move the ball outside the player sphere
-            x += shootDirection.x * (playerent.shape.radius * 1.02 + b.shape.radius);
-            y += shootDirection.y * (playerent.shape.radius * 1.02 + b.shape.radius);
-            z += shootDirection.z * (playerent.shape.radius * 1.02 + b.shape.radius);
-            b.body.position.set(x, y, z);
-            b.mesh.position.set(x, y, z);
-            b.id = Math.random();
+        b.body.position.set(x, y, z);
+        b.mesh.position.set(x, y, z);
 
-            b.body.addEventListener("collide", () => {
-                setTimeout(() => {
-                    globals.remove.bodies.push(b.body);
-                    globals.remove.meshes.push(b.mesh);
-                }, 1500);
-            });
-
-            globals.socket.emit('bullet', {
-                pos: {x, y, z},
-                vel: {
-                    x: b.body.velocity.x,
-                    y: b.body.velocity.y,
-                    z: b.body.velocity.z
-                },
-            });
-        }
+        b.body.addEventListener("collide", () => {
+            setTimeout(() => {
+                globals.remove.bodies.push(b.body);
+                // removeFromScene(b.mesh);
+            }, 1500);
+        });
     }
 
     // setInterval(addWeapon, 500);

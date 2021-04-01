@@ -60,7 +60,12 @@ app.use(session({
     saveUninitialized: false
 }));
 app.use(compression());
-app.use(express.static("public"));
+app.use(express.static("public", {
+    setHeaders(res) {
+        res.set("Cross-Origin-Embedder-Policy", "require-corp");
+        res.set("Cross-Origin-Opener-Policy", "same-origin");
+    }
+}));
 
 ///
 
@@ -96,8 +101,11 @@ app.get("/register", (req, res) => {
 
 app.get("/play", (req, res) => {
     let {session: {user}} = req;
-    if (user && user.username)
+    if (user && user.username) {
+        res.set("Cross-Origin-Embedder-Policy", "require-corp");
+        res.set("Cross-Origin-Opener-Policy", "same-origin");
         res.render(path.resolve("views/play.ejs"), { user });
+    }
     else
         res.redirect("/login");
 });

@@ -1,8 +1,9 @@
 "use strict";
 
-import { ObjectLoader, BoxGeometry, SphereGeometry, Mesh, MeshPhongMaterial, Texture, SpriteMaterial, Sprite } from "three";
+import { ObjectLoader, BoxGeometry, SphereGeometry, Mesh, MeshPhongMaterial, Texture, SpriteMaterial, Sprite, Vector3, Quaternion } from "three";
 import { Vec3, Body, Sphere, Box, Trimesh } from "cannon-es";
 import { addEntity, getEntity } from "./entities";
+import { addToScene } from "./graphics";
 
 ///
 
@@ -11,10 +12,10 @@ let accessCount = {};
 let callbacks = {};
 
 export const loadModel = (uri, callback) => {
-    accessCount[uri] = accessCount[uri] || 0;
+    accessCount[uri] = accessCount[uri] ?? 0;
     ++accessCount[uri];
 
-    callbacks[uri] = callbacks[uri] || [];
+    callbacks[uri] = callbacks[uri] ?? [];
     callbacks[uri].push(callback);
 
     // if this is the first time this resource was requested, load it
@@ -22,53 +23,104 @@ export const loadModel = (uri, callback) => {
         let loader = new ObjectLoader();
         loader.load(uri, object => {
             models[uri] = object;
+            models[uri].updateMatrixWorld();
+
+            // for each child in object
+            //   upload child
+            //   for each texture in child
+            //      upload texture
 
             // model may have been requested again since it started loading,
             // serve asset to all cached requests
-            for (let cb of callbacks[uri]) {
-                cb(models[uri].clone());
-            }
+            models[uri].traverse((child) => {
+                if (child instanceof Mesh) {
+                    for (let cb of callbacks[uri]) {
+                        let inst = child.clone();
+                        child.updateWorldMatrix();
+                        let p = new Vector3();
+                        let q = new Quaternion();
+                        let s = new Vector3();
+                        child.matrixWorld.decompose(p, q, s);
+                        inst.position.copy(p);
+                        inst.quaternion.copy(q);
+                        inst.scale.copy(s);
+                        addToScene(inst);
+                        cb(inst);
+                    }
+                }
+            });
         });
     }
 
     // the model is cached
     if (models[uri]) {
-        callback(models[uri].clone());
+        models[uri].traverse((child) => {
+            let inst = child.clone();
+            child.updateWorldMatrix();
+            let p = new Vector3();
+            let q = new Quaternion();
+            let s = new Vector3();
+            child.matrixWorld.decompose(p, q, s);
+            inst.position.copy(p);
+            inst.quaternion.copy(q);
+            inst.scale.copy(s);
+            addToScene(inst);
+            callback(inst);
+        });
     }
 };
 
-export const load = (mesh, opts = {}, globals) => {
-    mesh.castShadow = true;
-    mesh.recieveShadow = true;
-
+export const loadPhysicsModel = (mesh, mass, globals) => {
     let verts = [];
     let faces = [];
 
-    for (var i = 0; i < mesh.geometry.vertices.length; i++) {
-        var v = mesh.geometry.vertices[i];
-        verts.push(v.x);
-        verts.push(v.y);
-        verts.push(v.z);
+    for (let i = 0; i < mesh.geometry.vertices.length; i++) {
+        const { x, y, z } = mesh.geometry.vertices[i];
+        verts.push(x);
+        verts.push(y);
+        verts.push(z);
     }
-    for (var i = 0; i < mesh.geometry.faces.length; i++) {
-        var f = mesh.geometry.faces[i];
-        faces.push(f.a);
-        faces.push(f.b);
-        faces.push(f.c);
+    for (let i = 0; i < mesh.geometry.faces.length; i++) {
+        const { a, b, c } = mesh.geometry.faces[i];
+        faces.push(a);
+        faces.push(b);
+        faces.push(c);
     }
 
-    var cvph = new Trimesh(verts, faces);
-    var Cbody = new Body({
-        mass: opts.mass ?? 0,
-        material: opts.material
+    let shape = new Trimesh(verts, faces);
+    let body = new Body({
+        mass,
+        material: globals.groundMaterial
     });
-    Cbody.addShape(cvph);
-    Cbody.position.copy(mesh.position);
-    Cbody.quaternion.copy(mesh.quaternion);
-    globals.world.addBody(Cbody);
+    body.addShape(shape);
+    body.position.copy(mesh.position);
+    body.quaternion.copy(mesh.quaternion);
+    globals.world.addBody(body);
 
-    const index = addEntity(Cbody, cvph, mesh);
+    const index = addEntity(body, shape, mesh);
     return getEntity(index);
+}
+
+export const ball = (opts = {}, globals) => {
+    let shape = new Sphere(opts.radius ?? 0.2);
+    let body = new Body({
+        mass: opts.mass ?? 10
+    });
+    body.addShape(shape);
+    globals.world.addBody(body);
+
+    let geometry = new SphereGeometry(shape.radius, 32, 32);
+    let ballMesh = opts.mesh || new Mesh(geometry, opts.mat || new MeshPhongMaterial({
+        color: opts.c ?? 0x00CCFF
+    }));
+    addToScene(ballMesh);
+
+    const index = addEntity(body, shape, ballMesh, opts?.norotate);
+    let entity = getEntity(index);
+
+    opts.cb?.(entity);
+
+    return entity;
 }
 
 export const box = (opts = {}, globals) => {
@@ -93,101 +145,4 @@ export const box = (opts = {}, globals) => {
     body.norotate = opts.norotate ?? false;
 
     return body;
-
-}
-
-export const ball = (opts = {}, globals) => {
-    let ballShape = new Sphere(opts.radius ?? 0.2);
-    let ballGeometry = new SphereGeometry(ballShape.radius, 32, 32);
-    let ballBody = new Body({
-        mass: opts.mass ?? 10
-    });
-
-    ballBody.addShape(ballShape);
-    let ballMesh = opts.mesh || new Mesh(ballGeometry, opts.mat || new MeshPhongMaterial({
-        color: opts.c ?? 0x00CCFF
-    }));
-
-    const index = addEntity(ballBody, ballShape, ballMesh, opts?.norotate);
-    let body = getEntity(index);
-
-    globals.world.addBody(ballBody);
-    ballMesh.castShadow = true;
-    ballMesh.receiveShadow = true;
-
-    opts.cb?.(body);
-
-    if (opts.pos) body.body.position.set(opts.pos.x, opts.pos.y, opts.pos.z);
-
-    return body;
-}
-
-export const label = (mesh, txt = '', icon = 'run') => {
-    const fontface = "Arial";
-    const fontsize = 18;
-    const borderThickness = 4;
-    const borderColor = {
-        r: 0,
-        g: 0,
-        b: 0,
-        a: 1.0
-    };
-    const backgroundColor = {
-        r: 255,
-        g: 255,
-        b: 255,
-        a: 1.0
-    };
-
-    let canvas = document.createElement('canvas');
-    let context = canvas.getContext('2d');
-    context.font = "Bold " + fontsize + "px " + fontface;
-
-    // get size data (height depends only on font size)
-    let metrics = context.measureText(txt);
-    let textWidth = metrics.width;
-
-    // background color
-    context.fillStyle = "rgba(" + backgroundColor.r + "," + backgroundColor.g + "," +
-        backgroundColor.b + "," + backgroundColor.a + ")";
-    // border color
-    context.strokeStyle = "rgba(" + borderColor.r + "," + borderColor.g + "," +
-        borderColor.b + "," + borderColor.a + ")";
-
-    context.lineWidth = borderThickness;
-    roundRect(context, borderThickness / 2, borderThickness / 2, textWidth + borderThickness, fontsize * 1.4 + borderThickness, 6);
-    // 1.4 is extra height factor for text below baseline: g,j,p,q.
-
-    // text color
-    context.fillStyle = "rgba(0, 0, 0, 1.0)";
-
-    context.fillText(txt, borderThickness, fontsize + borderThickness);
-
-    // canvas contents will be used for a texture
-    let texture = new Texture(canvas);
-    texture.needsUpdate = true;
-
-    let spriteMaterial = new SpriteMaterial({
-        map: texture,
-        useScreenCoordinates: false
-    });
-    let sprite = new Sprite(spriteMaterial);
-    sprite.scale.set(5, 2.5, 1.0);
-    mesh.add(sprite);
-}
-
-const roundRect = (ctx, x, y, w, h, r) => {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.lineTo(x + w - r, y);
-    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    ctx.lineTo(x + w, y + h - r);
-    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    ctx.lineTo(x + r, y + h);
-    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    ctx.lineTo(x, y + r);
-    ctx.quadraticCurveTo(x, y, x + r, y);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
 }

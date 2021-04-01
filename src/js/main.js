@@ -20,12 +20,12 @@ import player from "./player";
 import pointerlock from "./pointerlock";
 import shooting from "./shooting";
 import manager from "./init/manager";
-import { load, loadModel } from "./load";
-import { initGraphics, getCamera, updateGraphics, addGraphicsObject } from "./graphics";
-// import AI from "./AI";
+import { loadPhysicsModel, loadModel } from "./load";
+import { initGraphics, updateGraphics, resizeGraphicsTarget } from "./graphics";
+import AI from "./AI";
 // import {init as guiInit, quests} from "./gui";
 
-import { DefaultLoadingManager, Quaternion, Vector3, Mesh, BufferGeometry } from "three";
+import { DefaultLoadingManager } from "three";
 import _ from "lodash";
 import { entityList } from "./entities";
 
@@ -33,61 +33,17 @@ const dt = 1 / 60;
 
 // guiInit(globals, player);
 initGraphics();
-shooting(globals, player);
+shooting(globals);
 manager(globals, player);
-loadModel(`/models/skjar-isles/skjar-isles.json`, object => {
-    object.updateMatrixWorld(false, true);
-    object.traverse(child => {
-        if (child instanceof Mesh) {
-
-            const map = child.material.map;
-
-            let canvas = document.createElement("canvas");
-            canvas.width = map.image.width;
-            canvas.height = map.image.height;
-
-            let ctx = canvas.getContext("2d");
-            ctx.drawImage(map.image, 0, 0);
-
-            let imageData = ctx.getImageData(0, 0, map.image.width, map.image.height);
-
-            load(child, {
-                mass: 0,
-                material: globals.groundMaterial
-            }, globals);
-
-            const bufferGeometry = new BufferGeometry().fromGeometry(child.geometry);
-            const arrayBuffers = [];
-            for (let attributeName of Object.keys(bufferGeometry.attributes)) {
-                arrayBuffers.push(bufferGeometry.attributes[attributeName].array.buffer)
-            }
-
-            child.updateMatrixWorld();
-            let p = new Vector3();
-            let q = new Quaternion();
-            let s = new Vector3();
-            child.matrixWorld.decompose(p, q, s);
-
-            addGraphicsObject({
-                name: child.name,
-                arrayBuffers,
-                geometry: bufferGeometry,
-                imageData: imageData.data,
-                imageWidth: map.image.width,
-                imageHeight: map.image.height,
-                p,
-                q,
-                s
-            });
-        }
-    });
-});
+loadModel(`/models/skjar-isles/skjar-isles.json`, child => loadPhysicsModel(child, 0, globals));
 // AI(globals);
 pointerlock(globals);
 
+console.groupCollapsed("[LoadingManager]");
 DefaultLoadingManager.onProgress = (item, loaded, total) => {
-    console.log(`loading ${item} (${loaded}/${total})`);
+    console.log(`${item} (${loaded}/${total})`);
     if (loaded == total) {
+        console.groupEnd();
         $('#spinner').hide();
         $('#load-play-btn, .play-btn').show();
         _.once(animate)();
@@ -95,23 +51,19 @@ DefaultLoadingManager.onProgress = (item, loaded, total) => {
     }
 };
 
-function animate(delta) {
+const animate = (delta) => {
     if (globals.controls && globals.controls.enabled) {
-        if (globals.remove.bodies.length && globals.remove.meshes.length) {
-            for (let key in globals.remove.bodies) {
-                globals.world.removeBody(globals.remove.bodies[key]);
-                delete globals.remove.bodies[key];
-            }
-            for (let key in globals.remove.meshes) {
-                // todo: remove mesh from scene
-                delete globals.remove.meshes[key];
-            }
+        for (let key in globals.remove.bodies) {
+            globals.world.removeBody(globals.remove.bodies[key]);
+            delete globals.remove.bodies[key];
         }
-        else if (globals.remove.tweens.length) {
-            for (let key in globals.remove.tweens) {
-                globals.TWEENS[globals.remove.bodies[key]].stop();
-                delete globals.remove.tweens[key];
-            }
+        for (let key in globals.remove.meshes) {
+            // todo: remove mesh from scene
+            delete globals.remove.meshes[key];
+        }
+        for (let key in globals.remove.tweens) {
+            globals.TWEENS[globals.remove.bodies[key]].stop();
+            delete globals.remove.tweens[key];
         }
 
         globals.world.step(dt);
@@ -145,9 +97,4 @@ function animate(delta) {
     requestAnimationFrame(animate);
 }
 
-window.addEventListener('resize', onWindowResize, false);
-
-function onWindowResize() {
-    getCamera().aspect = window.innerWidth / window.innerHeight;
-    getCamera().updateProjectionMatrix();
-}
+window.addEventListener("resize", resizeGraphicsTarget);
