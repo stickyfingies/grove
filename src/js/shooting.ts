@@ -3,11 +3,12 @@
 import { ball } from "./load";
 
 import { Ray, Vector3 } from "three";
-
+import $ from "jquery";
 import { getEntity } from "./entities";
-import { camera, removeFromScene } from "./graphics";
+import { camera } from "./graphics";
+import { PointerLockControls } from "./threex/pointer-lock-controls";
 
-export default (globals) => {
+export default (globals: any, controls: PointerLockControls) => {
     // let sword;
     // let weapon;
 
@@ -47,7 +48,7 @@ export default (globals) => {
     //     }
     // }
 
-    const getShootDir = (targetVec) => {
+    const getShootDir = (targetVec: Vector3) => {
         let playerent = getEntity(0);
         let vector = targetVec;
         targetVec.set(0, 0, 1);
@@ -57,7 +58,7 @@ export default (globals) => {
     }
 
     const shoot = () => {
-        if (!globals.controls.enabled) return;
+        if (!controls.isLocked) return;
 
         let b = ball({
             c: 0xFF4500

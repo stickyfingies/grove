@@ -1,8 +1,13 @@
 "use strict";
 
-import items from "./items";
-
 class Player {
+    hp: { val: number, max: number };
+    mp: { val: number, max: number };
+    xp: { level: number, xp: number, max: number };
+    equipped: any;
+    inventory: any;
+    hotbar: any;
+
     constructor() {
         this.hp = {
             val: 10, // current hp
@@ -26,12 +31,6 @@ class Player {
             selected: 1,
             active: null
         };
-
-        items((pt, sword) => {
-            this.inventory.push(sword(0, 'iron', 'wood'));
-            this.inventory.push(sword(0, 'ebony', 'iron'));
-        });
-
     }
 }
 

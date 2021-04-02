@@ -20,9 +20,9 @@ import {
     BackSide,
     LinearMipMapLinearFilter,
     Vector3,
+    Quaternion,
     Object3D
 } from "three";
-import { Quaternion } from "cannon-es";
 
 let camera = new PerspectiveCamera(45, 2, 0.01, 2000);
 let scene = new Scene();
@@ -32,13 +32,13 @@ let scene = new Scene();
  * automatically copy transform from buffer @ id
  */
 
-let entityMap = [];
+let entityMap = [] as Object3D[];
 let entityId = 0;
 
-let geometryCache = {};
-let textureCache = {};
+// let geometryCache = {};
+let textureCache = {} as any;
 
-const init = (data) => {
+const init = (data: any) => {
     const { canvas, buffer, width, height, pixelRatio } = data;
 
     // this is our array of object transforms.
@@ -62,13 +62,16 @@ const init = (data) => {
     entityMap[entityId++] = camera;
     scene.add(camera);
 
+    let cube = new Mesh(new BoxGeometry(6, 6, 6), new MeshPhongMaterial({
+        color: 0xff0000
+    }));
+    cube.position.y = 30;
+    scene.add(cube);
+
     let light = new DirectionalLight(0xffffff, 1);
     light.position.set(0, 30, 20);
     light.castShadow = true;
-    light.shadowMapBias = 0.0036;
-    light.shadowMapDarkness = 0.5;
     let { shadow } = light;
-    shadow.camera.fov = 70;
     shadow.camera.left = -1024;
     shadow.camera.right = 1024;
     shadow.camera.top = 1024;
@@ -84,7 +87,7 @@ const init = (data) => {
     let skyGeometry = new BoxGeometry(2000, 2000, 2000);
 
     let skybox = new Object3D();
-    let materialArray = [];
+    let materialArray = [] as MeshBasicMaterial[];
     let loader = new ImageBitmapLoader();
     loader.setOptions({
         imageOrientation: "flipY"
@@ -100,7 +103,7 @@ const init = (data) => {
             materialArray[i] = mat;
 
             // this if condition is true more than once (why?)
-            if (materialArray.length == 6 && !skybox.material) {
+            if (materialArray.length == 6 && !(skybox as Mesh).material) {
                 skybox = new Mesh(skyGeometry, materialArray);
                 scene.add(skybox);
             }
@@ -108,9 +111,11 @@ const init = (data) => {
     }
 
     const render = () => {
+        cube.rotateY(0.01);
+        skybox.rotateY(0.0001);
         for (let id in entityMap) {
             let object = entityMap[id];
-            const offset = id * 10;
+            const offset = Number(id) * 10;
             object.position.copy(new Vector3(tArr[offset + 0], tArr[offset + 1], tArr[offset + 2]));
             object.quaternion.copy(new Quaternion(tArr[offset + 3], tArr[offset + 4], tArr[offset + 5], tArr[offset + 6]));
             // object.scale.copy(new Vector3(tArr[offset + 7], tArr[offset + 8], tArr[offset + 9]));
@@ -130,7 +135,7 @@ const init = (data) => {
     render();
 };
 
-export const uploadTexture = ({ imageName, imageData, imageWidth, imageHeight }) => {
+export const uploadTexture = ({ imageName, imageData, imageWidth, imageHeight }: any) => {
     if (textureCache[imageName]) return;
 
     let map = new DataTexture(imageData, imageWidth, imageHeight, RGBAFormat);
@@ -144,7 +149,7 @@ export const uploadTexture = ({ imageName, imageData, imageWidth, imageHeight })
     textureCache[imageName] = map;
 };
 
-const addObject = ({ geometry, imageName }) => {
+const addObject = ({ geometry, imageName }: any) => {
     const shallowGeometry = geometry;
     const buffergeo = new BufferGeometry();
 
@@ -171,9 +176,9 @@ const messageHandlers = {
     init,
     uploadTexture,
     addObject
-};
+} as any;
 
-self.onmessage = ({ data }) => {
+self.onmessage = ({ data }: any) => {
     const { type } = data;
     if (messageHandlers[type]) messageHandlers[type](data);
     else console.error("no graphics handler registered for " + type);

@@ -2,6 +2,7 @@
 
 import path from "path";
 import webpack from "webpack";
+import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
 
 let last = "";
 
@@ -9,8 +10,7 @@ export default {
     mode: "development",
     name: "js",
     entry: {
-        latest: "./src/js/main.js",
-        graphicsworker: "./src/js/graphicsworker.js",
+        main: "./src/js/main.ts",
     },
     output: {
         filename: "[name].js",
@@ -26,9 +26,17 @@ export default {
                 "sass-loader"
             ]
         }, {
-            test: /\.js/,
+            test: /\.js$/,
+            exclude: /node_modules/,
             resolve: {
                 fullySpecified: false
+            }
+        }, {
+            test: /\.ts$/,
+            exclude: /node_modules/,
+            loader: "ts-loader",
+            options: {
+                transpileOnly: true
             }
         }],
     },
@@ -36,6 +44,7 @@ export default {
         runtimeChunk: "single",
         splitChunks: {
             chunks: "all",
+            hidePathInfo: true,
             cacheGroups: {
                 vendor: {
                     test: /node_modules/,
@@ -47,17 +56,18 @@ export default {
         }
     },
     plugins: [
-        new webpack.ProgressPlugin(function handler(percentage, msg) {
-            if (last !== msg) console.log(Math.floor(percentage * 100) + "% - " + msg);
-            last = msg;
-        }),
         new webpack.BannerPlugin("\nMade with <3 by the Grove team | " + new Date() + "\n"),
-        // new webpack.optimize.LimitChunkCountPlugin({
-        //     maxChunks: 1,
-        // }),
+        new ForkTsCheckerWebpackPlugin({
+            typescript: {
+                diagnosticOptions: {
+                    semantic: true,
+                    syntactic: true,
+                },
+            },
+        })
     ],
     resolve: {
-        extensions: [".js", ".json", ".sass"]
+        extensions: [".ts", ".js", ".json", ".sass"]
     }
 };
 

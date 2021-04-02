@@ -1,8 +1,8 @@
 "use strict";
 
-import { Vector3, Quaternion, BufferGeometry, PerspectiveCamera } from "three";
+import { Vector3, Quaternion, BufferGeometry, PerspectiveCamera, Object3D, Mesh, Texture, MeshBasicMaterial } from "three";
 
-const worker = new Worker(new URL("./graphicsworker.js", import.meta.url));
+const worker = new Worker(new URL("./graphicsworker.ts", import.meta.url));
 
 let buffer = new SharedArrayBuffer(4 * 10 * 1024);
 let array = new Float32Array(buffer);
@@ -16,14 +16,15 @@ let array = new Float32Array(buffer);
 // this "camera" acts as a proxy for the actual rendering camera in the backend
 export let camera = new PerspectiveCamera();
 
-let entityMap = [];
+let entityMap = [] as any;
 let entityId = 0;
 
 export const initGraphics = () => {
-    const offscreenCanvas = document.getElementById("main-canvas");
+    const offscreenCanvas = document.getElementById("main-canvas") as HTMLCanvasElement;
     const offscreen = offscreenCanvas.transferControlToOffscreen();
 
     entityMap[entityId] = camera;
+    // @ts-ignore
     camera.entityId = entityId++;
 
     updateGraphics();
@@ -38,15 +39,16 @@ export const initGraphics = () => {
     }, [offscreen]);
 };
 
-const writeTransformToArray = (object) => {
+const writeTransformToArray = (object: Object3D) => {
     // extract position, quaternion, and scale
-    object.updateWorldMatrix();
+    object.updateMatrixWorld();
     let p = new Vector3();
     let q = new Quaternion();
     let s = new Vector3();
     object.matrixWorld.decompose(p, q, s);
 
     // place those values into the shared array
+    // @ts-ignore
     const offset = object.entityId * 10;
 
     array[offset + 0] = p.x;
@@ -69,36 +71,39 @@ export const updateGraphics = () => {
     }
 };
 
-export const addToScene = (object) => {
+export const addToScene = (object: Mesh) => {
     // register object with an ID
     entityMap[entityId] = object;
+    // @ts-ignore
     object.entityId = entityId++;
 
     // extract raw geometry data
-    const bufferGeometry = new BufferGeometry().fromGeometry(object.geometry);
+    // @ts-ignore
+    const bufferGeometry: BufferGeometry = new BufferGeometry().fromGeometry(object.geometry);
     const arrayBuffers = [];
     for (let attributeName of Object.keys(bufferGeometry.attributes)) {
-        arrayBuffers.push(bufferGeometry.attributes[attributeName].array.buffer)
+        arrayBuffers.push((bufferGeometry.attributes[attributeName].array as Float32Array).buffer)
     }
 
     // send object's texture data to backend
-    if (object.material.map) uploadTexture(object.material.map);
+    const {map} = object.material as MeshBasicMaterial;
+    if (map) uploadTexture(map);
 
     // send that bitch to the backend
     worker.postMessage({
         type: "addObject",
         name: object.name,
         geometry: bufferGeometry,
-        imageName: object.material.map?.name
+        imageName: map?.name
     }, arrayBuffers);
 };
 
-export const uploadTexture = (map) => {
+export const uploadTexture = (map: Texture) => {
     // draw the image to a canvas
     let canvas = document.createElement("canvas");
     canvas.width = map.image.width;
     canvas.height = map.image.height;
-    let ctx = canvas.getContext("2d");
+    let ctx = canvas.getContext("2d")!;
     ctx.drawImage(map.image, 0, 0);
 
     // grab raw pixel data from the canvas

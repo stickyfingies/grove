@@ -29,19 +29,19 @@
 import express from "express";
 import HTTP from "http";
 import path from "path";
-import socketio from "socket.io";
+import { Server as ioServer } from "socket.io";
 import compression from "compression";
 import postal from "postal";
 import bodyParser from "body-parser";
 import session from "express-session";
 import ejs from "ejs-locals";
 
-import {dbInit, dbFindUser, dbNewUser} from "./mongo.js";
+import { dbInit, dbFindUser, dbNewUser } from "./mongo.js";
 import _client from "./client-interact.js";
 
 let app = express();
 let http = HTTP.Server(app);
-let io = socketio(http);
+let io = new ioServer(http);
 let events = postal.channel();
 
 ///
@@ -75,7 +75,7 @@ _client(io);
 ///
 
 app.get("/", (req, res) => {
-    let {session: {user}} = req;
+    let { session: { user } } = req;
     if (user && user.username)
         res.render(path.resolve("views/dashboard.ejs"), { user });
     else
@@ -83,7 +83,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/logout", (req, res) => {
-    let {session: {user}} = req;
+    let { session: { user } } = req;
     if (user) {
         console.log(`[${user.username}] logged out`)
         delete req.session.user;
@@ -100,7 +100,7 @@ app.get("/register", (req, res) => {
 });
 
 app.get("/play", (req, res) => {
-    let {session: {user}} = req;
+    let { session: { user } } = req;
     if (user && user.username) {
         res.set("Cross-Origin-Embedder-Policy", "require-corp");
         res.set("Cross-Origin-Opener-Policy", "same-origin");
