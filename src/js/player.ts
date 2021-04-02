@@ -34,6 +34,4 @@ class Player {
     }
 }
 
-let player = new Player();
-
-export default player;
+export default Player;

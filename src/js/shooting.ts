@@ -6,7 +6,7 @@ import { Ray, Vector3 } from "three";
 import $ from "jquery";
 import { getEntity } from "./entities";
 import { camera } from "./graphics";
-import { PointerLockControls } from "./threex/pointer-lock-controls";
+import PointerLockControls from "./threex/pointerlockControls";
 
 export default (globals: any, controls: PointerLockControls) => {
     // let sword;

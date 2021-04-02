@@ -26,6 +26,7 @@ import {
 
 let camera = new PerspectiveCamera(45, 2, 0.01, 2000);
 let scene = new Scene();
+let renderer: WebGLRenderer;
 
 /**
  * map from id -> object
@@ -47,7 +48,7 @@ const init = (data: any) => {
 
     let context = canvas.getContext("webgl2", { antialias: true });
 
-    const renderer = new WebGLRenderer({
+    renderer = new WebGLRenderer({
         canvas,
         context,
         antialias: true
@@ -69,7 +70,7 @@ const init = (data: any) => {
     scene.add(cube);
 
     let light = new DirectionalLight(0xffffff, 1);
-    light.position.set(0, 30, 20);
+    light.position.set(10, 30, -20);
     light.castShadow = true;
     let { shadow } = light;
     shadow.camera.left = -1024;
@@ -172,10 +173,18 @@ const addObject = ({ geometry, imageName }: any) => {
     entityMap[entityId++] = mesh;
 };
 
+const resize = ({ width, height }: any) => {
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(width, height, false);
+};
+
 const messageHandlers = {
     init,
     uploadTexture,
-    addObject
+    addObject,
+    resize
 } as any;
 
 self.onmessage = ({ data }: any) => {

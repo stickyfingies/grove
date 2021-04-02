@@ -16,16 +16,16 @@ let array = new Float32Array(buffer);
 // this "camera" acts as a proxy for the actual rendering camera in the backend
 export let camera = new PerspectiveCamera();
 
-let entityMap = [] as any;
+let idToEntity = new Map<number, Object3D>();
+let entityToId = new WeakMap<Object3D, number>();
 let entityId = 0;
 
 export const initGraphics = () => {
     const offscreenCanvas = document.getElementById("main-canvas") as HTMLCanvasElement;
     const offscreen = offscreenCanvas.transferControlToOffscreen();
 
-    entityMap[entityId] = camera;
-    // @ts-ignore
-    camera.entityId = entityId++;
+    idToEntity.set(entityId, camera);
+    entityToId.set(camera, entityId++);
 
     updateGraphics();
 
@@ -48,8 +48,7 @@ const writeTransformToArray = (object: Object3D) => {
     object.matrixWorld.decompose(p, q, s);
 
     // place those values into the shared array
-    // @ts-ignore
-    const offset = object.entityId * 10;
+    const offset = entityToId.get(object)! * 10;
 
     array[offset + 0] = p.x;
     array[offset + 1] = p.y;
@@ -66,16 +65,15 @@ const writeTransformToArray = (object: Object3D) => {
 };
 
 export const updateGraphics = () => {
-    for (let object of entityMap) {
+    for (let [, object] of idToEntity) {
         writeTransformToArray(object);
     }
 };
 
 export const addToScene = (object: Mesh) => {
     // register object with an ID
-    entityMap[entityId] = object;
-    // @ts-ignore
-    object.entityId = entityId++;
+    idToEntity.set(entityId, object);
+    entityToId.set(object, entityId++);
 
     // extract raw geometry data
     // @ts-ignore
@@ -86,7 +84,7 @@ export const addToScene = (object: Mesh) => {
     }
 
     // send object's texture data to backend
-    const {map} = object.material as MeshBasicMaterial;
+    const { map } = object.material as MeshBasicMaterial;
     if (map) uploadTexture(map);
 
     // send that bitch to the backend
@@ -119,4 +117,10 @@ export const uploadTexture = (map: Texture) => {
     });
 }
 
-export const resizeGraphicsTarget = () => { };
+export const resizeGraphicsTarget = ({ width, height }: any) => {
+    worker.postMessage({
+        type: "resize",
+        width,
+        height
+    });
+};

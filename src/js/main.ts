@@ -4,7 +4,7 @@ import "../css/play";
 import "../css/skill";
 
 import globals from "./globals";
-import player from "./player";
+import Player from "./player";
 import pointerlock from "./pointerlock";
 import shooting from "./shooting";
 import manager from "./init/manager";
@@ -14,13 +14,16 @@ import { initGraphics, updateGraphics, resizeGraphicsTarget, camera } from "./gr
 // import {init as guiInit, quests} from "./gui";
 import { DefaultLoadingManager, Mesh } from "three";
 import { getEntity, entityList } from "./entities";
-import { PointerLockControls } from "./threex/pointer-lock-controls";
+import PointerLockControls from "./threex/pointerlockControls";
 import $ from "jquery";
+// @ts-ignore
+import Stats from "stats-js";
 
 let gameStarted = false;
 
 // initiate the game
 
+let player = new Player();
 // guiInit(globals, player);
 initGraphics();
 manager(globals, player);
@@ -49,8 +52,14 @@ DefaultLoadingManager.onProgress = (item, loaded, total) => {
 
 let then = 0;
 
+let stats = new Stats();
+stats.showPanel(1);
+document.body.appendChild(stats.dom);
+
 const animate = (now: number) => {
     const delta = now - then;
+
+    stats.begin();
 
     if (gameStarted && controls.isLocked) {
         // remove entities that need to be removed
@@ -84,10 +93,17 @@ const animate = (now: number) => {
         }
     }
 
+    stats.end();
+
     requestAnimationFrame(animate);
     then = now;
 }
 
 requestAnimationFrame(animate);
 
-window.addEventListener("resize", resizeGraphicsTarget);
+window.addEventListener("resize", () => {
+    resizeGraphicsTarget({
+        width: window.innerWidth,
+        height: window.innerHeight
+    });
+});

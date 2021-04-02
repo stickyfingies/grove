@@ -12,7 +12,7 @@ class PointerLockControls {
 
     readonly #minPolarAngle = 0;
     readonly #maxPolarAngle = Math.PI;
-    readonly #velocityFactor = 2;
+    readonly #velocityFactor = 4;
     readonly #jumpVelocity = 4;
 
     #moveForward = false;
@@ -180,4 +180,4 @@ class PointerLockControls {
     }
 };
 
-export { PointerLockControls };
+export default PointerLockControls;
