@@ -12,6 +12,8 @@
  * first check that list to see if we can recycle any old, unused entity IDs.  If we cannot do that,
  * we increment a global counter and use that as the entity's ID - effectively, putting it at the
  * end of the shared array buffer.
+ *
+ * Assumptions: Camera has ID #0
  */
 
 import {
@@ -118,7 +120,6 @@ export const addToScene = (object: Mesh) => {
     id = availableEntityIds.shift()!;
   } else {
     entityId += 1;
-    console.info(`graphics: bumping entityId to ${entityId}`);
   }
 
   // register object with an ID

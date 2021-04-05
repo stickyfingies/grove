@@ -1,3 +1,9 @@
+/**
+ * See `graphics.ts` for information on how object transforms are communicated
+ *
+ * Assumptions: Camera has ID #0
+ */
+
 import {
   WebGLRenderer,
   Scene,
@@ -27,7 +33,6 @@ const scene = new Scene();
 let renderer: WebGLRenderer;
 
 const idToEntity: Map<number, Object3D> = new Map();
-const cameraID = 0; // camera always has ID 0
 
 // let geometryCache = {};
 const textureCache = {} as any;
@@ -54,7 +59,7 @@ const init = (data: any) => {
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
   scene.add(camera);
-  idToEntity.set(cameraID, camera);
+  idToEntity.set(0, camera); // see assumptions at top of this file
 
   const cube = new Mesh(new BoxGeometry(6, 6, 6), new MeshPhongMaterial({
     color: 0xff0000,
@@ -166,10 +171,6 @@ const addObject = ({ geometry, imageName, id }: any) => {
   scene.add(mesh);
 
   idToEntity.set(id, mesh);
-
-  if (id > 500) {
-    console.warn(id);
-  }
 };
 
 const removeObject = ({ id }: any) => {
