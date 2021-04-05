@@ -26,13 +26,8 @@ const camera = new PerspectiveCamera(45, 2, 0.01, 2000);
 const scene = new Scene();
 let renderer: WebGLRenderer;
 
-/**
- * map from id -> object
- * automatically copy transform from buffer @ id
- */
-
-const entityMap: Object3D[] = [];
-let entityId = 0;
+const idToEntity: Map<number, Object3D> = new Map();
+const cameraID = 0; // camera always has ID 0
 
 // let geometryCache = {};
 const textureCache = {} as any;
@@ -59,8 +54,7 @@ const init = (data: any) => {
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
   scene.add(camera);
-  entityMap[entityId] = camera;
-  entityId += 1;
+  idToEntity.set(cameraID, camera);
 
   const cube = new Mesh(new BoxGeometry(6, 6, 6), new MeshPhongMaterial({
     color: 0xff0000,
@@ -109,7 +103,9 @@ const init = (data: any) => {
   const render = () => {
     cube.rotateY(0.01);
     skybox.rotateY(0.0001);
-    entityMap.forEach((object, id) => {
+
+    // copy transforms from transform buffer
+    idToEntity.forEach((object, id) => {
       const offset = Number(id) * 10;
       object.position.copy(new Vector3(tArr[offset + 0], tArr[offset + 1], tArr[offset + 2]));
       // eslint-disable-next-line max-len
@@ -149,7 +145,7 @@ const uploadTexture = ({
   textureCache[imageName] = map;
 };
 
-const addObject = ({ geometry, imageName }: any) => {
+const addObject = ({ geometry, imageName, id }: any) => {
   const shallowGeometry = geometry;
   const buffergeo = new BufferGeometry();
 
@@ -169,8 +165,17 @@ const addObject = ({ geometry, imageName }: any) => {
   mesh.receiveShadow = true;
   scene.add(mesh);
 
-  entityMap[entityId] = mesh;
-  entityId += 1;
+  idToEntity.set(id, mesh);
+
+  if (id > 500) {
+    console.warn(id);
+  }
+};
+
+const removeObject = ({ id }: any) => {
+  const object = idToEntity.get(id)!;
+  idToEntity.delete(id);
+  scene.remove(object);
 };
 
 const resize = ({ width, height }: any) => {
@@ -184,6 +189,7 @@ const messageHandlers = {
   init,
   uploadTexture,
   addObject,
+  removeObject,
   resize,
 } as any;
 

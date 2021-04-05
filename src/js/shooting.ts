@@ -37,12 +37,15 @@ export default (globals: any, controls: PointerLockControls) => {
 
     b.body.position.set(x, y, z);
 
-    b.body.addEventListener('collide', () => {
+    const collideCb = () => {
+      b.body.removeEventListener('collide', collideCb);
       setTimeout(() => {
         globals.remove.bodies.push(b.body);
-        // removeFromScene(b.mesh);
+        globals.remove.meshes.push(b.mesh);
       }, 1500);
-    });
+    };
+
+    b.body.addEventListener('collide', collideCb);
   };
 
   $(document).on('mousedown', shoot);

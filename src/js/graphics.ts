@@ -1,3 +1,19 @@
+/**
+ * ===========================
+ * Adding and Removing Objects
+ * ===========================
+ *
+ * The situation is a little complicated, but it effectively works like this:
+ *
+ * Every time we create an object, we associate it with a unique ID that we can use to set/retrieve
+ * its transform info from the shared array buffer.  When we delete an object, we recycle its ID, so
+ * that future entities can reuse that slot in the shared buffer.  We do this by adding the removed
+ * entity's ID to a list, `availableEntityIds`.  Whenever a new entity is added to the scene, we
+ * first check that list to see if we can recycle any old, unused entity IDs.  If we cannot do that,
+ * we increment a global counter and use that as the entity's ID - effectively, putting it at the
+ * end of the shared array buffer.
+ */
+
 import {
   Vector3,
   Quaternion,
@@ -11,14 +27,9 @@ import {
 
 const worker = new Worker(new URL('./graphicsworker.ts', import.meta.url));
 
-const buffer = new SharedArrayBuffer(4 * 10 * 1024);
+const maxEntityCount = 1024;
+const buffer = new SharedArrayBuffer(4 * 10 * maxEntityCount);
 const array = new Float32Array(buffer);
-
-/**
- * I think this frontend should interface with the scene graph.
- *
- * (scene graph <-> frontend) ==> backend: (worker || wasm)
- */
 
 // this "camera" acts as a proxy for the actual rendering camera in the backend
 export const camera = new PerspectiveCamera();
@@ -26,6 +37,7 @@ export const camera = new PerspectiveCamera();
 const idToEntity = new Map<number, Object3D>();
 const entityToId = new WeakMap<Object3D, number>();
 let entityId = 0;
+const availableEntityIds: number[] = [];
 
 const writeTransformToArray = (object: Object3D) => {
   // extract position, quaternion, and scale
@@ -100,10 +112,18 @@ export const uploadTexture = (map: Texture) => {
 };
 
 export const addToScene = (object: Mesh) => {
+  let id = entityId;
+
+  if (availableEntityIds.length > 0) {
+    id = availableEntityIds.shift()!;
+  } else {
+    entityId += 1;
+    console.info(`graphics: bumping entityId to ${entityId}`);
+  }
+
   // register object with an ID
-  idToEntity.set(entityId, object);
-  entityToId.set(object, entityId);
-  entityId += 1;
+  idToEntity.set(id, object);
+  entityToId.set(object, id);
 
   // extract raw geometry data
   // @ts-ignore
@@ -123,7 +143,21 @@ export const addToScene = (object: Mesh) => {
     name: object.name,
     geometry: bufferGeometry,
     imageName: map?.name,
+    id,
   }, arrayBuffers);
+};
+
+export const removeFromScene = (object: Mesh) => {
+  const id = entityToId.get(object)!;
+
+  worker.postMessage({
+    type: 'removeObject',
+    id,
+  });
+
+  idToEntity.delete(id);
+  entityToId.delete(object);
+  availableEntityIds.push(id);
 };
 
 export const resizeGraphicsTarget = ({ width, height }: any) => {

@@ -11,7 +11,7 @@ import pointerlock from './pointerlock';
 import shooting from './shooting';
 import { loadPhysicsModel, loadModel } from './load';
 import {
-  initGraphics, updateGraphics, resizeGraphicsTarget, camera,
+  initGraphics, updateGraphics, resizeGraphicsTarget, camera, removeFromScene,
 } from './graphics';
 import { world, initPhysics } from './physics';
 import { getEntity, entityList } from './entities';
@@ -66,8 +66,8 @@ const animate = (now: number) => {
     });
     globals.remove.bodies = [];
 
-    globals.remove.meshes.forEach(() => {
-      // todo: remove mesh
+    globals.remove.meshes.forEach((mesh) => {
+      removeFromScene(mesh);
     });
     globals.remove.meshes = [];
 
