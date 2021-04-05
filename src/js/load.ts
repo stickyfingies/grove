@@ -1,158 +1,176 @@
-"use strict";
-
-import { ObjectLoader, BoxGeometry, SphereGeometry, Mesh, MeshPhongMaterial, Vector3, Quaternion as TQuaternion, Object3D } from "three";
-import { Vec3, Quaternion as CQuaternion, Body, Sphere, Box, Trimesh, Material } from "cannon-es";
-import { addEntity, getEntity } from "./entities";
-import { addToScene } from "./graphics";
+import {
+  ObjectLoader,
+  BoxGeometry,
+  SphereGeometry,
+  Mesh,
+  MeshPhongMaterial,
+  Vector3,
+  Quaternion as TQuaternion,
+  Object3D,
+} from 'three';
+import {
+  Vec3,
+  Quaternion as CQuaternion,
+  Body,
+  Sphere,
+  Box,
+  Trimesh,
+  Material,
+} from 'cannon-es';
+import { addEntity, getEntity } from './entities';
+import { addToScene } from './graphics';
+import { world } from './physics';
 
 ///
 
-let models = {} as any;
-let accessCount = {} as any;
-let callbacks = {} as any;
+const models = {} as any;
+const accessCount = {} as any;
+const callbacks = {} as any;
 
 export const loadModel = (uri: string, callback: any) => {
-    accessCount[uri] = accessCount[uri] ?? 0;
-    ++accessCount[uri];
+  accessCount[uri] = accessCount[uri] ?? 0;
+  accessCount[uri] += 1;
 
-    callbacks[uri] = callbacks[uri] ?? [];
-    callbacks[uri].push(callback);
+  callbacks[uri] = callbacks[uri] ?? [];
+  callbacks[uri].push(callback);
 
-    // if this is the first time this resource was requested, load it
-    if (accessCount[uri] === 1) {
-        let loader = new ObjectLoader();
-        loader.load(uri, object => {
-            models[uri] = object;
-            models[uri].updateMatrixWorld();
+  // if this is the first time this resource was requested, load it
+  if (accessCount[uri] === 1) {
+    const loader = new ObjectLoader();
+    loader.load(uri, (object) => {
+      models[uri] = object;
+      models[uri].updateMatrixWorld();
 
-            // for each child in object
-            //   upload child
-            //   for each texture in child
-            //      upload texture
+      // for each child in object
+      //   upload child
+      //   for each texture in child
+      //      upload texture
 
-            // model may have been requested again since it started loading,
-            // serve asset to all cached requests
-            models[uri].traverse((child: Object3D) => {
-                if (child instanceof Mesh) {
-                    for (let cb of callbacks[uri]) {
-                        let inst = child.clone();
-                        child.updateMatrixWorld();
-                        let p = new Vector3();
-                        let q = new TQuaternion();
-                        let s = new Vector3();
-                        child.matrixWorld.decompose(p, q, s);
-                        inst.position.copy(p);
-                        inst.quaternion.copy(q);
-                        inst.scale.copy(s);
-                        addToScene(inst as Mesh);
-                        cb(inst);
-                    }
-                }
-            });
-        });
-    }
-
-    // the model is cached
-    if (models[uri]) {
-        models[uri].traverse((child: Object3D) => {
-            let inst = child.clone();
+      // model may have been requested again since it started loading,
+      // serve asset to all cached requests
+      models[uri].traverse((child: Object3D) => {
+        if (child instanceof Mesh) {
+          callbacks[uri].forEach((cb: Function) => {
+            const inst = child.clone();
             child.updateMatrixWorld();
-            let p = new Vector3();
-            let q = new TQuaternion();
-            let s = new Vector3();
+            const p = new Vector3();
+            const q = new TQuaternion();
+            const s = new Vector3();
             child.matrixWorld.decompose(p, q, s);
             inst.position.copy(p);
             inst.quaternion.copy(q);
             inst.scale.copy(s);
             addToScene(inst as Mesh);
-            callback(inst);
-        });
-    }
+            cb(inst);
+          });
+        }
+      });
+    });
+  }
+
+  // the model is cached
+  if (models[uri]) {
+    models[uri].traverse((child: Object3D) => {
+      const inst = child.clone();
+      child.updateMatrixWorld();
+      const p = new Vector3();
+      const q = new TQuaternion();
+      const s = new Vector3();
+      child.matrixWorld.decompose(p, q, s);
+      inst.position.copy(p);
+      inst.quaternion.copy(q);
+      inst.scale.copy(s);
+      addToScene(inst as Mesh);
+      callback(inst);
+    });
+  }
 };
 
-export const loadPhysicsModel = (mesh: Mesh, mass: number, globals: any) => {
-    let verts = [];
-    let faces = [];
+export const loadPhysicsModel = (mesh: Mesh, mass: number) => {
+  const verts = [];
+  const faces = [];
 
-    const { geometry } = mesh;
+  const { geometry } = mesh;
+  // @ts-ignore
+  for (let i = 0; i < geometry.vertices.length; i++) {
     // @ts-ignore
-    for (let i = 0; i < geometry.vertices.length; i++) {
-        // @ts-ignore
-        const { x, y, z } = geometry.vertices[i];
-        verts.push(x);
-        verts.push(y);
-        verts.push(z);
-    }
+    const { x, y, z } = geometry.vertices[i];
+    verts.push(x);
+    verts.push(y);
+    verts.push(z);
+  }
+  // @ts-ignore
+  for (let i = 0; i < geometry.faces.length; i++) {
     // @ts-ignore
-    for (let i = 0; i < geometry.faces.length; i++) {
-        // @ts-ignore
-        const { a, b, c } = geometry.faces[i];
-        faces.push(a);
-        faces.push(b);
-        faces.push(c);
-    }
+    const { a, b, c } = geometry.faces[i];
+    faces.push(a);
+    faces.push(b);
+    faces.push(c);
+  }
 
-    let shape = new Trimesh(verts, faces);
-    let material = new Material("trimeshMaterial");
-    let body = new Body({
-        mass,
-        material
-    });
-    body.addShape(shape);
+  const shape = new Trimesh(verts, faces);
+  const material = new Material('trimeshMaterial');
+  const body = new Body({
+    mass,
+    material,
+  });
+  body.addShape(shape);
 
-    const { x: px, y: py, z: pz } = mesh.position;
-    const { x: qx, y: qy, z: qz, w: qw } = mesh.quaternion;
-    body.position.copy(new Vec3(px, py, pz));
-    body.quaternion.copy(new CQuaternion(qx, qy, qz, qw));
+  const { x: px, y: py, z: pz } = mesh.position;
+  const {
+    x: qx, y: qy, z: qz, w: qw,
+  } = mesh.quaternion;
+  body.position.copy(new Vec3(px, py, pz));
+  body.quaternion.copy(new CQuaternion(qx, qy, qz, qw));
 
-    globals.world.addBody(body);
+  world.addBody(body);
 
-    const index = addEntity(body, shape, mesh);
-    return getEntity(index);
-}
+  const index = addEntity(body, shape, mesh);
+  return getEntity(index);
+};
 
-export const ball = (opts = {} as any, globals: any) => {
-    let shape = new Sphere(opts.radius ?? 0.2);
-    let body = new Body({
-        mass: opts.mass ?? 10
-    });
-    body.addShape(shape);
-    globals.world.addBody(body);
+export const ball = (opts = {} as any) => {
+  const shape = new Sphere(opts.radius ?? 0.2);
+  const body = new Body({
+    mass: opts.mass ?? 10,
+  });
+  body.addShape(shape);
+  world.addBody(body);
 
-    let geometry = new SphereGeometry(shape.radius, 32, 32);
-    let ballMesh = opts.mesh || new Mesh(geometry, opts.mat || new MeshPhongMaterial({
-        color: opts.c ?? 0x00CCFF
-    }));
-    addToScene(ballMesh);
+  const geometry = new SphereGeometry(shape.radius, 32, 32);
+  const ballMesh = opts.mesh || new Mesh(geometry, opts.mat || new MeshPhongMaterial({
+    color: opts.c ?? 0x00CCFF,
+  }));
+  addToScene(ballMesh);
 
-    const index = addEntity(body, shape, ballMesh, opts?.norotate);
-    let entity = getEntity(index);
+  const index = addEntity(body, shape, ballMesh, opts?.norotate);
+  const entity = getEntity(index);
 
-    opts.cb?.(entity);
+  opts.cb?.(entity);
 
-    return entity;
-}
+  return entity;
+};
 
-export const box = (opts = {} as any, globals: any) => {
-    let halfExtents = new Vec3(opts.l ?? 1, opts.h ?? 1, opts.w ?? 1);
-    let boxShape = new Box(halfExtents);
-    let boxGeometry = new BoxGeometry(halfExtents.x * 2, halfExtents.y * 2, halfExtents.z * 2);
-    let boxBody = new Body({
-        mass: opts.mass ?? 0
-    });
-    boxBody.addShape(boxShape);
-    let boxMesh = opts.mesh ?? new Mesh(boxGeometry, opts.mat || new MeshPhongMaterial({
-        color: 0xFF0000
-    }));
-    const index = addEntity(boxBody, boxShape, boxMesh)
+export const box = (opts = {} as any) => {
+  const halfExtents = new Vec3(opts.l ?? 1, opts.h ?? 1, opts.w ?? 1);
+  const boxShape = new Box(halfExtents);
+  const boxGeometry = new BoxGeometry(halfExtents.x * 2, halfExtents.y * 2, halfExtents.z * 2);
+  const boxBody = new Body({
+    mass: opts.mass ?? 0,
+  });
+  boxBody.addShape(boxShape);
+  const boxMesh = opts.mesh ?? new Mesh(boxGeometry, opts.mat || new MeshPhongMaterial({
+    color: 0xFF0000,
+  }));
+  const index = addEntity(boxBody, boxShape, boxMesh);
 
-    let body = getEntity(index);
+  const body = getEntity(index);
 
-    globals.world.addBody(body.body);
-    body.mesh.castShadow = true;
-    body.mesh.receiveShadow = true;
-    opts.pos ? body.mesh.position.set(opts.pos.x, opts.pos.y, opts.pos.z) : null;
-    body.norotate = opts.norotate ?? false;
+  world.addBody(body.body);
+  body.mesh.castShadow = true;
+  body.mesh.receiveShadow = true;
+  if (opts.pos) body.mesh.position.set(opts.pos.x, opts.pos.y, opts.pos.z);
+  body.norotate = opts.norotate ?? false;
 
-    return body;
-}
+  return body;
+};

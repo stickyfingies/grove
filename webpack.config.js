@@ -15,15 +15,17 @@ export default {
     output: {
         filename: "[name].js",
         chunkFilename: "[chunkhash].js",
-        path: path.resolve("public/js/dist")
+        path: path.resolve("static/js/dist")
+    },
+    watchOptions: {
+        ignored: ["**/node_modules", "server/"]
     },
     module: {
         rules: [{
-            test: /\.sass$/,
+            test: /\.css$/,
             use: [
                 "style-loader",
-                "css-loader?minimize=true",
-                "sass-loader"
+                "css-loader?minimize=true"
             ]
         }, {
             test: /\.js$/,
@@ -67,7 +69,7 @@ export default {
         })
     ],
     resolve: {
-        extensions: [".ts", ".js", ".json", ".sass"]
+        extensions: [".ts", ".js", ".json", ".css"]
     }
 };
 

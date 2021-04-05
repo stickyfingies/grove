@@ -1,6 +1,5 @@
 {
     "compilerOptions": {
-        "outDir": "./public/js/dist/",
         "moduleResolution": "node",
         "noImplicitAny": true,
         "strictNullChecks": true,
@@ -10,6 +9,6 @@
         "allowSyntheticDefaultImports": true,
         "module": "esnext",
         "target": "es6",
-        "allowJs": true
+        "allowJs": false
     }
 }
