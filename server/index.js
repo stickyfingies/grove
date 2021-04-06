@@ -29,25 +29,24 @@ import HTTP from 'http';
 import path from 'path';
 import { Server as IOServer } from 'socket.io';
 import compression from 'compression';
-import postal from 'postal';
-import bodyParser from 'body-parser';
 import session from 'express-session';
 import ejs from 'ejs-locals';
 
+// eslint-disable-next-line import/extensions
 import { dbInit, dbFindUser, dbNewUser } from './mongo.js';
+// eslint-disable-next-line import/extensions
 import _client from './client-interact.js';
 
 const app = express();
 const http = HTTP.Server(app);
 const io = new IOServer(http);
-const events = postal.channel();
 
 ///
 
 app.engine('ejs', ejs);
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({
+app.use(express.json());
+app.use(express.urlencoded({
   extended: true,
 }));
 app.use(session({
@@ -61,7 +60,7 @@ app.use(compression());
 
 ///
 
-dbInit(events);
+dbInit();
 _client(io);
 
 ///

@@ -115,7 +115,7 @@ export const addToScene = (object: Mesh) => {
 
   // extract raw geometry data
   // @ts-ignore
-  const bufferGeometry: BufferGeometry = new BufferGeometry().fromGeometry(object.geometry);
+  const bufferGeometry = new BufferGeometry().fromGeometry(object.geometry);
   const arrayBuffers: ArrayBufferLike[] = [];
   Object.keys(bufferGeometry.attributes).forEach((attributeName) => {
     arrayBuffers.push((bufferGeometry.attributes[attributeName].array as Float32Array).buffer);
