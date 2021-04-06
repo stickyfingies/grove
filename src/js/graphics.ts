@@ -17,8 +17,6 @@
  */
 
 import {
-  Vector3,
-  Quaternion,
   BufferGeometry,
   PerspectiveCamera,
   Object3D,
@@ -29,41 +27,30 @@ import {
 
 const worker = new Worker(new URL('./graphicsworker.ts', import.meta.url));
 
+const bytesPerElement = Float32Array.BYTES_PER_ELEMENT;
+const elementsPerTransform = 16;
 const maxEntityCount = 1024;
-const buffer = new SharedArrayBuffer(4 * 10 * maxEntityCount);
+
+const buffer = new SharedArrayBuffer(bytesPerElement * elementsPerTransform * maxEntityCount);
 const array = new Float32Array(buffer);
 
-// this "camera" acts as a proxy for the actual rendering camera in the backend
+// this camera acts as a proxy for the actual rendering camera in the backend
 export const camera = new PerspectiveCamera();
 
 const idToEntity = new Map<number, Object3D>();
 const entityToId = new WeakMap<Object3D, number>();
-let entityId = 0;
 const availableEntityIds: number[] = [];
 
+let entityId = 0;
+
 const writeTransformToArray = (object: Object3D) => {
-  // extract position, quaternion, and scale
+  const offset = entityToId.get(object)! * elementsPerTransform;
+
+  // copy world matrix into transform buffer
   object.updateMatrixWorld();
-  const p = new Vector3();
-  const q = new Quaternion();
-  const s = new Vector3();
-  object.matrixWorld.decompose(p, q, s);
-
-  // place those values into the shared array
-  const offset = entityToId.get(object)! * 10;
-
-  array[offset + 0] = p.x;
-  array[offset + 1] = p.y;
-  array[offset + 2] = p.z;
-
-  array[offset + 3] = q.x;
-  array[offset + 4] = q.y;
-  array[offset + 5] = q.z;
-  array[offset + 6] = q.w;
-
-  array[offset + 7] = s.x;
-  array[offset + 8] = s.y;
-  array[offset + 9] = s.z;
+  for (let i = 0; i < elementsPerTransform; i++) {
+    array[offset + i] = object.matrixWorld.elements[i];
+  }
 };
 
 export const updateGraphics = () => {

@@ -23,16 +23,17 @@ import {
   MeshBasicMaterial,
   BackSide,
   LinearMipMapLinearFilter,
-  Vector3,
-  Quaternion,
   Object3D,
+  Matrix4,
 } from 'three';
+
+const elementsPerTransform = 16;
 
 const camera = new PerspectiveCamera(45, 2, 0.01, 2000);
 const scene = new Scene();
 let renderer: WebGLRenderer;
 
-const idToEntity: Map<number, Object3D> = new Map();
+const idToEntity = new Map<number, Object3D>();
 
 // let geometryCache = {};
 const textureCache = {} as any;
@@ -58,6 +59,7 @@ const init = (data: any) => {
 
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
+  camera.matrixAutoUpdate = false;
   scene.add(camera);
   idToEntity.set(0, camera); // see assumptions at top of this file
 
@@ -111,17 +113,16 @@ const init = (data: any) => {
 
     // copy transforms from transform buffer
     idToEntity.forEach((object, id) => {
-      const offset = Number(id) * 10;
-      object.position.copy(new Vector3(tArr[offset + 0], tArr[offset + 1], tArr[offset + 2]));
-      // eslint-disable-next-line max-len
-      object.quaternion.copy(new Quaternion(tArr[offset + 3], tArr[offset + 4], tArr[offset + 5], tArr[offset + 6]));
+      const offset = Number(id) * elementsPerTransform;
 
-      /**
-       * Scale sometimes resolves as 0, causing ThreeJS issues.
-       * todo: figure out why this happens.  for now, ignore scale
-       */
+      const matrix = new Matrix4().fromArray(tArr, offset);
 
-      // object.scale.copy(new Vector3(tArr[offset + 7], tArr[offset + 8], tArr[offset + 9]));
+      // before the main thread starts pushing object matrices to the transform buffer, there will
+      // be a period of time where `matrix` consists of entirely zeroes.  ThreeJS doesn't
+      // particularly like when scale elements are zero, so we set them to something else as a fix.
+      if (matrix.elements[0] === 0) matrix.makeScale(0.1, 0.1, 0.1);
+
+      object.matrix.copy(matrix);
     });
 
     skybox.position.copy(camera.position);
@@ -168,6 +169,7 @@ const addObject = ({ geometry, imageName, id }: any) => {
   if (imageName) mesh.material.map = textureCache[imageName];
   mesh.castShadow = true;
   mesh.receiveShadow = true;
+  mesh.matrixAutoUpdate = false;
   scene.add(mesh);
 
   idToEntity.set(id, mesh);
