@@ -17,6 +17,7 @@
 		"cannon-es": "^0.17.0",
 		"compression": "^1.7.4",
 		"css-loader": "^0.26.4",
+		"dotenv": "^8.2.0",
 		"ejs-locals": "^1.0.2",
 		"express": "^4.14.1",
 		"express-session": "^1.14.1",
@@ -36,8 +37,8 @@
 		"webpack-cli": "^4.6.0"
 	},
 	"scripts": {
-		"start": "node server/index.js",
-		"debug": "DEBUG=* node server/index.js",
+		"start": "node -r dotenv/config server/index.js",
+		"debug": "DEBUG=* node -r dotenv/config server/index.js",
 		"build": "webpack --watch --progress",
 		"test": "exit 0"
 	},

@@ -15,7 +15,7 @@ export const dbInit = () => {
   db.on('error', console.error);
   db.once('open', () => console.log('Successfully connected to MongoDB!'));
 
-  const uri = 'mongodb+srv://admin:admin@cluster0.vc0nb.mongodb.net/grove?retryWrites=true&w=majority';
+  const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_HOST}`;
   mongoose.connect(uri, {
     useNewUrlParser: true,
     useUnifiedTopology: true,

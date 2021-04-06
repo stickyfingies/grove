@@ -8,3 +8,4 @@ yarn-error.log
 .theia
 .vs
 .git
+.env
