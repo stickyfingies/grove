@@ -11,7 +11,6 @@ import {
   DirectionalLight,
   Mesh,
   MeshPhongMaterial,
-  BufferAttribute,
   BufferGeometry,
   DataTexture,
   RGBAFormat,
@@ -25,6 +24,7 @@ import {
   LinearMipMapLinearFilter,
   Object3D,
   Matrix4,
+  BufferGeometryLoader,
 } from 'three';
 
 const elementsPerTransform = 16;
@@ -35,7 +35,7 @@ let renderer: WebGLRenderer;
 
 const idToEntity = new Map<number, Object3D>();
 
-const textureCache = new Map<string, DataTexture>();
+const textureCache = new Map<number, DataTexture>();
 
 const init = (data: any) => {
   const {
@@ -93,6 +93,7 @@ const init = (data: any) => {
   });
   for (let i = 0; i < 6; i++) {
     loader.load(imagePrefix + directions[i] + imageSuffix, (image) => {
+      // @ts-ignore
       const map = new CanvasTexture(image);
       const mat = new MeshBasicMaterial({
         map,
@@ -135,7 +136,7 @@ const init = (data: any) => {
 };
 
 const uploadTexture = ({
-  imageName, imageData, imageWidth, imageHeight,
+  imageId, imageData, imageWidth, imageHeight,
 }: any) => {
   const map = new DataTexture(imageData, imageWidth, imageHeight, RGBAFormat);
   map.wrapS = RepeatWrapping;
@@ -145,25 +146,18 @@ const uploadTexture = ({
   map.generateMipmaps = true;
   map.needsUpdate = true;
 
-  textureCache.set(imageName, map);
+  textureCache.set(imageId, map);
 };
 
-const addObject = ({ geometry, imageName, id }: any) => {
-  const shallowGeometry = geometry;
-  const buffergeo = new BufferGeometry();
+const addObject = ({
+  geometry, imageId, id,
+}: any) => {
+  let buffergeo = new BufferGeometry();
 
-  Object.keys(shallowGeometry.attributes).forEach((attributeName) => {
-    const shallowAttribute = shallowGeometry.attributes[attributeName];
-    const attribute = new BufferAttribute(
-      shallowAttribute.array,
-      shallowAttribute.itemSize,
-      false,
-    );
-    buffergeo.addAttribute(attributeName, attribute);
-  });
+  buffergeo = new BufferGeometryLoader().parse(geometry);
 
   const mesh = new Mesh(buffergeo, new MeshPhongMaterial());
-  if (imageName) mesh.material.map = textureCache.get(imageName)!;
+  if (imageId) mesh.material.map = textureCache.get(imageId)!;
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   mesh.matrixAutoUpdate = false;

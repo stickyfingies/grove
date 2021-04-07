@@ -28,7 +28,7 @@ const player = new Player();
 const playerEnt = getEntity(0);
 const controls = new PointerLockControls(camera, document.body, playerEnt.body);
 shooting(globals, controls);
-loadModel('/models/skjar-isles/skjar-isles.json', (child: Mesh) => loadPhysicsModel(child, 0));
+loadModel('/models/blender-si/untitled.glb', (child: Mesh) => loadPhysicsModel(child, 0));
 // AI(globals);
 pointerlock();
 

@@ -17,12 +17,13 @@
  */
 
 import {
-  BufferGeometry,
   PerspectiveCamera,
   Object3D,
   Mesh,
   Texture,
   MeshBasicMaterial,
+  BufferGeometry,
+  Geometry,
 } from 'three';
 
 const worker = new Worker(new URL('./graphicsworker.ts', import.meta.url));
@@ -82,7 +83,7 @@ export const initGraphics = () => {
 };
 
 export const uploadTexture = (map: Texture) => {
-  if (textureCache.has(map.name)) return;
+  if (textureCache.has(map.uuid)) return;
 
   // draw the image to a canvas
   const canvas = document.createElement('canvas');
@@ -94,12 +95,12 @@ export const uploadTexture = (map: Texture) => {
   // grab raw pixel data from the canvas
   const imageData = ctx.getImageData(0, 0, map.image.width, map.image.height);
 
-  textureCache.set(map.name, imageData);
+  textureCache.set(map.uuid, imageData);
 
   // send pixel data to backend
   worker.postMessage({
     type: 'uploadTexture',
-    imageName: map.name,
+    imageId: map.uuid,
     imageData: imageData.data,
     imageWidth: map.image.width,
     imageHeight: map.image.height,
@@ -120,12 +121,9 @@ export const addToScene = (object: Mesh) => {
   entityToId.set(object, id);
 
   // extract raw geometry data
-  // @ts-ignore
-  const bufferGeometry = new BufferGeometry().fromGeometry(object.geometry);
-  const arrayBuffers: ArrayBufferLike[] = [];
-  Object.keys(bufferGeometry.attributes).forEach((attributeName) => {
-    arrayBuffers.push((bufferGeometry.attributes[attributeName].array as Float32Array).buffer);
-  });
+  const bufferGeometry = (object.geometry instanceof Geometry)
+    ? new BufferGeometry().fromGeometry(object.geometry)
+    : object.geometry;
 
   // send object's texture data to backend
   const { map } = object.material as MeshBasicMaterial;
@@ -135,10 +133,10 @@ export const addToScene = (object: Mesh) => {
   worker.postMessage({
     type: 'addObject',
     name: object.name,
-    geometry: bufferGeometry,
-    imageName: map?.name,
+    geometry: bufferGeometry.toJSON(),
+    imageId: map?.uuid,
     id,
-  }, arrayBuffers);
+  });
 };
 
 export const removeFromScene = (object: Mesh) => {

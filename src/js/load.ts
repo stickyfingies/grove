@@ -1,13 +1,15 @@
 import {
-  ObjectLoader,
+  // ObjectLoader,
   BoxGeometry,
   SphereGeometry,
+  BufferGeometry,
   Mesh,
   MeshPhongMaterial,
   Vector3,
   Quaternion as TQuaternion,
   Object3D,
 } from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import {
   Vec3,
   Quaternion as CQuaternion,
@@ -23,7 +25,7 @@ import { world } from './physics';
 
 ///
 
-const models: Record<string, Object3D> = {};
+const models: Record<string, any> = {};
 const accessCount: Record<string, number> = {};
 const callbacks: Record<string, Function[]> = {};
 
@@ -36,8 +38,8 @@ export const loadModel = (uri: string, callback: any) => {
 
   // if this is the first time this resource was requested, load it
   if (accessCount[uri] === 1) {
-    const loader = new ObjectLoader();
-    loader.load(uri, (object) => {
+    const loader = new GLTFLoader();
+    loader.load(uri, ({ scene: object }) => {
       models[uri] = object;
       models[uri].updateMatrixWorld();
 
@@ -90,22 +92,14 @@ export const loadPhysicsModel = (mesh: Mesh, mass: number) => {
   const verts = [];
   const faces = [];
 
-  const { geometry } = mesh;
-  // @ts-ignore
-  for (let i = 0; i < geometry.vertices.length; i++) {
-    // @ts-ignore
-    const { x, y, z } = geometry.vertices[i];
-    verts.push(x);
-    verts.push(y);
-    verts.push(z);
+  const geometry = mesh.geometry as BufferGeometry;
+
+  for (let i = 0; i < geometry.getAttribute('position').array.length; i++) {
+    verts.push(geometry.getAttribute('position').array[i]);
   }
-  // @ts-ignore
-  for (let i = 0; i < geometry.faces.length; i++) {
-    // @ts-ignore
-    const { a, b, c } = geometry.faces[i];
-    faces.push(a);
-    faces.push(b);
-    faces.push(c);
+
+  for (let i = 0; i < geometry.index!.array.length; i++) {
+    faces.push(geometry.index!.array[i]);
   }
 
   const shape = new Trimesh(verts, faces);
