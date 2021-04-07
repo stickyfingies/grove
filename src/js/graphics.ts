@@ -43,6 +43,8 @@ const availableEntityIds: number[] = [];
 
 let entityId = 0;
 
+const textureCache = new Map<string, ImageData>();
+
 const writeTransformToArray = (object: Object3D) => {
   const offset = entityToId.get(object)! * elementsPerTransform;
 
@@ -80,6 +82,8 @@ export const initGraphics = () => {
 };
 
 export const uploadTexture = (map: Texture) => {
+  if (textureCache.has(map.name)) return;
+
   // draw the image to a canvas
   const canvas = document.createElement('canvas');
   canvas.width = map.image.width;
@@ -89,6 +93,8 @@ export const uploadTexture = (map: Texture) => {
 
   // grab raw pixel data from the canvas
   const imageData = ctx.getImageData(0, 0, map.image.width, map.image.height);
+
+  textureCache.set(map.name, imageData);
 
   // send pixel data to backend
   worker.postMessage({

@@ -51,7 +51,7 @@ DefaultLoadingManager.onProgress = (url, loaded, total) => {
 let then = 0;
 
 const stats = new Stats();
-stats.showPanel(1);
+stats.showPanel(2);
 document.body.appendChild(stats.dom);
 
 const animate = (now: number) => {

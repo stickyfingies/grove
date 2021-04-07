@@ -68,8 +68,8 @@ class Player {
           contactNormal.copy(contact.ni);
         }
 
-        if (contactNormal.dot(upAxis) > 0.5 && body.velocity.y <= -10) {
-          this.hp.val -= Math.floor(Math.abs(body.velocity.y) / 5);
+        if (contactNormal.dot(upAxis) > 0.5 && body.velocity.y <= -20) {
+          this.hp.val -= Math.floor(Math.abs(body.velocity.y) / 10);
           console.log(this.hp.val);
         }
       });

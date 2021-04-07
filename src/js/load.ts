@@ -23,9 +23,9 @@ import { world } from './physics';
 
 ///
 
-const models = {} as any;
-const accessCount = {} as any;
-const callbacks = {} as any;
+const models: Record<string, Object3D> = {};
+const accessCount: Record<string, number> = {};
+const callbacks: Record<string, Function[]> = {};
 
 export const loadModel = (uri: string, callback: any) => {
   accessCount[uri] = accessCount[uri] ?? 0;

@@ -1,6 +1,6 @@
 node_modules
 src/node_modules
-public/js/dist
+static/js/dist
 push.sh
 npm-debug.log
 yarn-error.log

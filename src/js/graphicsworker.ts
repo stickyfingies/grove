@@ -35,8 +35,7 @@ let renderer: WebGLRenderer;
 
 const idToEntity = new Map<number, Object3D>();
 
-// let geometryCache = {};
-const textureCache = {} as any;
+const textureCache = new Map<string, DataTexture>();
 
 const init = (data: any) => {
   const {
@@ -138,8 +137,6 @@ const init = (data: any) => {
 const uploadTexture = ({
   imageName, imageData, imageWidth, imageHeight,
 }: any) => {
-  if (textureCache[imageName]) return;
-
   const map = new DataTexture(imageData, imageWidth, imageHeight, RGBAFormat);
   map.wrapS = RepeatWrapping;
   map.wrapT = RepeatWrapping;
@@ -148,7 +145,7 @@ const uploadTexture = ({
   map.generateMipmaps = true;
   map.needsUpdate = true;
 
-  textureCache[imageName] = map;
+  textureCache.set(imageName, map);
 };
 
 const addObject = ({ geometry, imageName, id }: any) => {
@@ -166,7 +163,7 @@ const addObject = ({ geometry, imageName, id }: any) => {
   });
 
   const mesh = new Mesh(buffergeo, new MeshPhongMaterial());
-  if (imageName) mesh.material.map = textureCache[imageName];
+  if (imageName) mesh.material.map = textureCache.get(imageName)!;
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   mesh.matrixAutoUpdate = false;
