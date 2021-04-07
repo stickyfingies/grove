@@ -11,7 +11,6 @@ import {
   DirectionalLight,
   Mesh,
   MeshPhongMaterial,
-  BufferGeometry,
   DataTexture,
   RGBAFormat,
   ImageBitmapLoader,
@@ -152,9 +151,7 @@ const uploadTexture = ({
 const addObject = ({
   geometry, imageId, id,
 }: any) => {
-  let buffergeo = new BufferGeometry();
-
-  buffergeo = new BufferGeometryLoader().parse(geometry);
+  const buffergeo = new BufferGeometryLoader().parse(geometry);
 
   const mesh = new Mesh(buffergeo, new MeshPhongMaterial());
   if (imageId) mesh.material.map = textureCache.get(imageId)!;

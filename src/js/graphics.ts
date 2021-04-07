@@ -22,8 +22,6 @@ import {
   Mesh,
   Texture,
   MeshBasicMaterial,
-  BufferGeometry,
-  Geometry,
 } from 'three';
 
 const worker = new Worker(new URL('./graphicsworker.ts', import.meta.url));
@@ -120,20 +118,19 @@ export const addToScene = (object: Mesh) => {
   idToEntity.set(id, object);
   entityToId.set(object, id);
 
-  // extract raw geometry data
-  const bufferGeometry = (object.geometry instanceof Geometry)
-    ? new BufferGeometry().fromGeometry(object.geometry)
-    : object.geometry;
-
   // send object's texture data to backend
   const { map } = object.material as MeshBasicMaterial;
   if (map) uploadTexture(map);
+
+  // @ts-ignore
+  // eslint-disable-next-line no-param-reassign
+  delete object.geometry.parameters;
 
   // send that bitch to the backend
   worker.postMessage({
     type: 'addObject',
     name: object.name,
-    geometry: bufferGeometry.toJSON(),
+    geometry: object.geometry.toJSON(),
     imageId: map?.uuid,
     id,
   });
