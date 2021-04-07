@@ -24,6 +24,7 @@ import {
   Object3D,
   Matrix4,
   BufferGeometryLoader,
+  MaterialLoader,
 } from 'three';
 
 const elementsPerTransform = 16;
@@ -116,6 +117,7 @@ const init = (data: any) => {
 
       const matrix = new Matrix4().fromArray(tArr, offset);
 
+      // <hack/>
       // before the main thread starts pushing object matrices to the transform buffer, there will
       // be a period of time where `matrix` consists of entirely zeroes.  ThreeJS doesn't
       // particularly like when scale elements are zero, so we set them to something else as a fix.
@@ -149,15 +151,19 @@ const uploadTexture = ({
 };
 
 const addObject = ({
-  geometry, imageId, id,
+  geometry, material, imageId, id,
 }: any) => {
-  const buffergeo = new BufferGeometryLoader().parse(geometry);
+  const geo = new BufferGeometryLoader().parse(geometry);
+  const mat = new MaterialLoader().parse(material);
 
-  const mesh = new Mesh(buffergeo, new MeshPhongMaterial());
-  if (imageId) mesh.material.map = textureCache.get(imageId)!;
+  const mesh = new Mesh(geo, mat);
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   mesh.matrixAutoUpdate = false;
+
+  // @ts-ignore
+  if (imageId) mesh.material.map = textureCache.get(imageId)!;
+
   scene.add(mesh);
 
   idToEntity.set(id, mesh);

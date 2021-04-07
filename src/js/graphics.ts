@@ -21,7 +21,7 @@ import {
   Object3D,
   Mesh,
   Texture,
-  MeshBasicMaterial,
+  Material,
 } from 'three';
 
 const worker = new Worker(new URL('./graphicsworker.ts', import.meta.url));
@@ -119,18 +119,28 @@ export const addToScene = (object: Mesh) => {
   entityToId.set(object, id);
 
   // send object's texture data to backend
-  const { map } = object.material as MeshBasicMaterial;
+  // @ts-ignore
+  const { map } = object.material;
   if (map) uploadTexture(map);
 
+  // <hack>
   // @ts-ignore
   // eslint-disable-next-line no-param-reassign
   delete object.geometry.parameters;
+  // @ts-ignore
+  // eslint-disable-next-line no-param-reassign
+  delete object.material.map;
+  // @ts-ignore
+  // eslint-disable-next-line no-param-reassign
+  delete object.material.normalMap;
+  // </hack>
 
   // send that bitch to the backend
   worker.postMessage({
     type: 'addObject',
     name: object.name,
     geometry: object.geometry.toJSON(),
+    material: (object.material as Material).toJSON(),
     imageId: map?.uuid,
     id,
   });
