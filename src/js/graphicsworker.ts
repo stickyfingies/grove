@@ -25,11 +25,12 @@ import {
   Matrix4,
   BufferGeometryLoader,
   MaterialLoader,
+  PCFSoftShadowMap,
 } from 'three';
 
 const elementsPerTransform = 16;
 
-const camera = new PerspectiveCamera(45, 2, 0.01, 2000);
+const camera = new PerspectiveCamera(45, 2, 0.1, 2000);
 const scene = new Scene();
 let renderer: WebGLRenderer;
 
@@ -37,11 +38,9 @@ const idToEntity = new Map<number, Object3D>();
 
 const textureCache = new Map<number, DataTexture>();
 
-const init = (data: any) => {
-  const {
-    canvas, buffer, width, height, pixelRatio,
-  } = data;
-
+const init = ({
+  canvas, buffer, width, height, pixelRatio,
+}: any) => {
   const tArr = new Float32Array(buffer);
 
   const context = canvas.getContext('webgl2', { antialias: true });
@@ -55,6 +54,7 @@ const init = (data: any) => {
   renderer.setSize(width, height, false);
   renderer.setPixelRatio(pixelRatio);
   renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = PCFSoftShadowMap;
 
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
@@ -69,9 +69,11 @@ const init = (data: any) => {
   scene.add(cube);
 
   const light = new DirectionalLight(0xffffff, 1);
-  light.position.set(10, 30, -20);
+  light.position.set(10, 30, 20);
   light.castShadow = true;
   const { shadow } = light;
+  shadow.bias = -0.008;
+  shadow.camera.near = 1;
   shadow.camera.left = -1024;
   shadow.camera.right = 1024;
   shadow.camera.top = 1024;

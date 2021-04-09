@@ -12,6 +12,7 @@ export default {
     filename: '[name].js',
     chunkFilename: '[chunkhash].js',
     path: path.resolve('static/js/dist'),
+    clean: true,
   },
   watchOptions: {
     ignored: ['**/node_modules', 'server/'],
@@ -32,10 +33,7 @@ export default {
     }, {
       test: /\.ts$/,
       exclude: /node_modules/,
-      loader: 'ts-loader',
-      options: {
-        transpileOnly: true,
-      },
+      use: ['ts-loader?transpileOnly=true', 'webpack-import-glob-loader'],
     }],
   },
   optimization: {

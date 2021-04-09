@@ -1,7 +1,7 @@
 {
     "skjar-isles": {
         "objects": [
-            "/models/skjar-isles/skjar-isles.json"
+            "/models/skjar-isles-glb/skjarisles.glb"
         ]
     }
 }

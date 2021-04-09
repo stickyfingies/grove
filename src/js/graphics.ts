@@ -23,6 +23,7 @@ import {
   Texture,
   Material,
 } from 'three';
+import { DataManager, registerDataManager } from './entities';
 
 const worker = new Worker(new URL('./graphicsworker.ts', import.meta.url));
 
@@ -33,9 +34,6 @@ const maxEntityCount = 1024;
 const buffer = new SharedArrayBuffer(bytesPerElement * elementsPerTransform * maxEntityCount);
 const array = new Float32Array(buffer);
 
-// this camera acts as a proxy for the actual rendering camera in the backend
-export const camera = new PerspectiveCamera();
-
 const idToEntity = new Map<number, Object3D>();
 const entityToId = new WeakMap<Object3D, number>();
 const availableEntityIds: number[] = [];
@@ -43,6 +41,13 @@ const availableEntityIds: number[] = [];
 let entityId = 0;
 
 const textureCache = new Map<string, ImageData>();
+
+// this camera acts as a proxy for the actual rendering camera in the backend
+export const camera = new PerspectiveCamera();
+
+export type GraphicsData = Object3D;
+// eslint-disable-next-line no-redeclare
+export const GraphicsData = Object3D;
 
 const writeTransformToArray = (object: Object3D) => {
   const offset = entityToId.get(object)! * elementsPerTransform;
@@ -54,33 +59,22 @@ const writeTransformToArray = (object: Object3D) => {
   }
 };
 
-export const updateGraphics = () => {
-  idToEntity.forEach((object) => {
-    writeTransformToArray(object);
-  });
+const assignIdToObject = (object: Object3D): number => {
+  let id = entityId;
+
+  if (availableEntityIds.length > 0) {
+    id = availableEntityIds.shift()!;
+  } else {
+    entityId += 1;
+  }
+
+  idToEntity.set(id, object);
+  entityToId.set(object, id);
+
+  return id;
 };
 
-export const initGraphics = () => {
-  const offscreenCanvas = document.getElementById('main-canvas') as HTMLCanvasElement;
-  const offscreen = offscreenCanvas.transferControlToOffscreen();
-
-  idToEntity.set(entityId, camera);
-  entityToId.set(camera, entityId);
-  entityId += 1;
-
-  updateGraphics();
-
-  worker.postMessage({
-    type: 'init',
-    buffer,
-    canvas: offscreen,
-    width: window.innerWidth,
-    height: window.innerHeight,
-    pixelRatio: window.devicePixelRatio,
-  }, [offscreen]);
-};
-
-export const uploadTexture = (map: Texture) => {
+const uploadTexture = (map: Texture) => {
   if (textureCache.has(map.uuid)) return;
 
   // draw the image to a canvas
@@ -105,18 +99,9 @@ export const uploadTexture = (map: Texture) => {
   });
 };
 
-export const addToScene = (object: Mesh) => {
-  let id = entityId;
-
-  if (availableEntityIds.length > 0) {
-    id = availableEntityIds.shift()!;
-  } else {
-    entityId += 1;
-  }
-
-  // register object with an ID
-  idToEntity.set(id, object);
-  entityToId.set(object, id);
+const addToScene = (object: Mesh) => {
+  const id = assignIdToObject(object);
+  console.log(`addToScene: adding mesh#${id}`);
 
   // send object's texture data to backend
   // @ts-ignore
@@ -125,14 +110,35 @@ export const addToScene = (object: Mesh) => {
 
   // <hack>
   // @ts-ignore
-  // eslint-disable-next-line no-param-reassign
   delete object.geometry.parameters;
   // @ts-ignore
-  // eslint-disable-next-line no-param-reassign
   delete object.material.map;
   // @ts-ignore
-  // eslint-disable-next-line no-param-reassign
+  delete object.material.matcap;
+  // @ts-ignore
+  delete object.material.alphaMap;
+  // @ts-ignore
+  delete object.material.bumpMap;
+  // @ts-ignore
   delete object.material.normalMap;
+  // @ts-ignore
+  delete object.material.displacementMap;
+  // @ts-ignore
+  delete object.material.roughnessMap;
+  // @ts-ignore
+  delete object.material.metalnessMap;
+  // @ts-ignore
+  delete object.material.emissiveMap;
+  // @ts-ignore
+  delete object.material.specularMap;
+  // @ts-ignore
+  delete object.material.envMap;
+  // @ts-ignore
+  delete object.material.lightMap;
+  // @ts-ignore
+  delete object.material.aoMap;
+  // @ts-ignore
+  delete object.material.gradientMap;
   // </hack>
 
   // send that bitch to the backend
@@ -146,7 +152,7 @@ export const addToScene = (object: Mesh) => {
   });
 };
 
-export const removeFromScene = (object: Mesh) => {
+const removeFromScene = (object: Mesh) => {
   const id = entityToId.get(object)!;
 
   worker.postMessage({
@@ -165,4 +171,51 @@ export const resizeGraphicsTarget = ({ width, height }: any) => {
     width,
     height,
   });
+};
+
+class GraphicsManager implements DataManager {
+  components = new Map<number, Object3D>();
+
+  setComponent(entity: number, data: any) {
+    console.log(`manager: adding entity#${entity}`);
+    addToScene(data);
+    this.components.set(entity, data);
+  }
+
+  getComponent(entity: number) {
+    return this.components.get(entity)!;
+  }
+
+  hasComponent(entity: number) {
+    return this.components.has(entity);
+  }
+
+  deleteComponent(entity: number) {
+    removeFromScene(this.components.get(entity) as Mesh);
+    return this.components.delete(entity);
+  }
+}
+
+export const updateGraphics = () => {
+  idToEntity.forEach(writeTransformToArray);
+};
+
+export const initGraphics = () => {
+  const offscreenCanvas = document.getElementById('main-canvas') as HTMLCanvasElement;
+  const offscreen = offscreenCanvas.transferControlToOffscreen();
+
+  registerDataManager(GraphicsData, new GraphicsManager());
+
+  assignIdToObject(camera);
+
+  updateGraphics();
+
+  worker.postMessage({
+    type: 'init',
+    buffer,
+    canvas: offscreen,
+    width: window.innerWidth,
+    height: window.innerHeight,
+    pixelRatio: window.devicePixelRatio,
+  }, [offscreen]);
 };

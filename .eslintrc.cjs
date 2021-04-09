@@ -17,17 +17,20 @@ module.exports = {
   settings: {
     'import/resolver': {
       node: {
-        extensions: ['.js', '.ts', '.css'],
+        extensions: ['.json', '.js', '.ts', '.css'],
       },
     },
   },
   rules: {
     'no-console': 'off',
     'no-plusplus': [2, { allowForLoopAfterthoughts: true }],
+    'no-param-reassign': [2, { props: false }],
+    'no-unused-vars': [2, { args: 'none' }],
     'import/extensions': [
       'error',
       'ignorePackages',
       {
+        json: 'never',
         js: 'never',
         ts: 'never',
         css: 'never',

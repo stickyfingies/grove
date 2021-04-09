@@ -1,58 +1,109 @@
 import 'bootstrap/dist/css/bootstrap';
 import '../css/play';
 
-import { DefaultLoadingManager, Mesh } from 'three';
+import {
+  DefaultLoadingManager, Mesh, Quaternion, Vector3,
+} from 'three';
 import $ from 'jquery';
 // @ts-ignore
 import Stats from 'stats-js';
-import globals from './globals';
-import Player from './player';
+import { GUI } from 'dat.gui';
+import { initPlayer, playerSystem } from './player';
 import pointerlock from './pointerlock';
 import shooting from './shooting';
 import { loadPhysicsModel, loadModel } from './load';
 import {
-  initGraphics, updateGraphics, resizeGraphicsTarget, camera, removeFromScene,
+  initGraphics, updateGraphics, resizeGraphicsTarget, camera, GraphicsData,
 } from './graphics';
-import { world, initPhysics } from './physics';
-import { getEntity, entityList } from './entities';
+import { initPhysics, PhysicsData, updatePhysics } from './physics';
+import { Entity, System, runSystem } from './entities';
 import PointerLockControls from './threex/pointerlockControls';
 
+// eslint-disable-next-line import/extensions
+import maps from './json/maps.json';
+import AI from './AI';
+
+// @ts-ignore
+// eslint-disable-next-line import/no-unresolved
+// impor gameModules from './game/*.*';
+
+// gameModules.forEach((module: any) => {
+//   const inst = new module.Plugin();
+//   inst.run();
+// });
+
+class TransformSystem implements System {
+  queries = [GraphicsData, PhysicsData];
+
+  // eslint-disable-next-line class-methods-use-this
+  update([mesh, body]: [GraphicsData, PhysicsData]) {
+    const pos = new Vector3(body.position.x, body.position.y, body.position.z);
+    // eslint-disable-next-line max-len
+    const quat = new Quaternion(body.quaternion.x, body.quaternion.y, body.quaternion.z, body.quaternion.w);
+    mesh.position.copy(pos);
+    if (!mesh.userData.norotate) mesh.quaternion.copy(quat);
+  }
+}
+
 let gameStarted = false;
+let controls: PointerLockControls;
+let then = 0;
+let stats: Stats;
+let transform: TransformSystem;
 
 // initiate the game
 
-// guiInit(globals, player);
-initGraphics();
-initPhysics();
-const player = new Player();
-const playerEnt = getEntity(0);
-const controls = new PointerLockControls(camera, document.body, playerEnt.body);
-shooting(globals, controls);
-loadModel('/models/blender-si/untitled.glb', (child: Mesh) => loadPhysicsModel(child, 0));
-// AI(globals);
-pointerlock();
+const init = () => {
+  initGraphics();
+  initPhysics();
+  initPlayer();
+  const playerid = Entity.getTag('player');
+  controls = new PointerLockControls(camera, document.body, playerid.getComponent(PhysicsData));
+  shooting(controls);
+  AI();
 
-// asset loading handler
+  maps['skjar-isles'].objects.forEach((path: string) => {
+    loadModel(path, (mesh: Mesh) => {
+      const body = loadPhysicsModel(mesh, 0);
+      new Entity()
+        .setComponent(GraphicsData, mesh)
+        .setComponent(PhysicsData, body);
+    });
+  });
 
-console.groupCollapsed('[LoadingManager]');
-DefaultLoadingManager.onProgress = (url, loaded, total) => {
-  console.log(`${url} (${loaded}/${total})`);
-  if (loaded === total) {
-    console.groupEnd();
-    $('#spinner').hide();
-    $('#load-play-btn, .play-btn').show();
-    gameStarted = true;
-    // quests();
-  }
+  pointerlock();
+
+  console.groupCollapsed('[LoadingManager]');
+  DefaultLoadingManager.onProgress = (url, loaded, total) => {
+    console.log(`${url} (${loaded}/${total})`);
+    if (loaded === total) {
+      console.groupEnd();
+      $('#spinner').hide();
+      $('#load-play-btn, .play-btn').show();
+      gameStarted = true;
+    }
+  };
+
+  stats = new Stats();
+  stats.showPanel(1);
+  document.body.appendChild(stats.dom);
+
+  const gui = new GUI();
+  gui.add(playerid.getComponent(PhysicsData).position, 'x').listen();
+  gui.add(playerid.getComponent(PhysicsData).position, 'y').listen();
+  gui.add(playerid.getComponent(PhysicsData).position, 'z').listen();
+
+  transform = new TransformSystem();
+
+  window.addEventListener('resize', () => {
+    resizeGraphicsTarget({
+      width: window.innerWidth,
+      height: window.innerHeight,
+    });
+  });
 };
 
 // main game loop
-
-let then = 0;
-
-const stats = new Stats();
-stats.showPanel(2);
-document.body.appendChild(stats.dom);
 
 const animate = (now: number) => {
   const delta = now - then;
@@ -60,49 +111,27 @@ const animate = (now: number) => {
   stats.begin();
 
   if (gameStarted && controls.isLocked) {
-    // remove entities that need to be removed
-    globals.remove.bodies.forEach((body) => {
-      world.removeBody(body);
-    });
-    globals.remove.bodies = [];
-
-    globals.remove.meshes.forEach((mesh) => {
-      removeFromScene(mesh);
-    });
-    globals.remove.meshes = [];
-
     // update physics
-    world.step(1 / 60, Math.min(delta, 1 / 30));
+    updatePhysics(delta);
 
     // copy physical body transforms to their corresponding mesh
-    entityList.forEach((e: any) => {
-      e.mesh.position.copy(e.body.position);
-      if (!e.norotate) e.mesh.quaternion.copy(e.body.quaternion);
-    });
+    runSystem(transform);
 
     // update controls & graphics
     controls.update(delta);
     updateGraphics();
 
     // death
-    if (player.hp.val <= 0) {
-      $('#blocker').fadeIn(5000);
-      $('#load').show().html('<h1>You Have Perished. Game Over...</h1>');
-      return;
-    }
+    runSystem(playerSystem);
   }
 
   stats.end();
 
-  requestAnimationFrame(animate);
   then = now;
+  requestAnimationFrame(animate);
 };
 
-requestAnimationFrame(animate);
+// my quasi main method
 
-window.addEventListener('resize', () => {
-  resizeGraphicsTarget({
-    width: window.innerWidth,
-    height: window.innerHeight,
-  });
-});
+init();
+requestAnimationFrame(animate);
