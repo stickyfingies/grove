@@ -4,7 +4,7 @@ const toggleFullScreen = () => {
   document.body.requestFullscreen();
 };
 
-export default () => {
+export default (engineData: any) => {
   const blocker = document.getElementById('blocker')!;
   const hud = document.getElementById('hud')!;
 
@@ -24,23 +24,15 @@ export default () => {
       }
     };
 
-    const pointerlockerror = () => { };
-
     document.addEventListener('pointerlockchange', pointerlockchange);
-    document.addEventListener('mozpointerlockchange', pointerlockchange);
-    document.addEventListener('webkitpointerlockchange', pointerlockchange);
-
-    document.addEventListener('pointerlockerror', pointerlockerror);
-    document.addEventListener('mozpointerlockerror', pointerlockerror);
-    document.addEventListener('webkitpointerlockerror', pointerlockerror);
 
     const click = () => {
       toggleFullScreen();
       element.requestPointerLock();
+      engineData.running = true;
     };
 
-    const playButton = document.getElementsByClassName('play-btn')[0] as HTMLElement;
-    playButton.onclick = click;
+    $('.play-btn').on('click', click);
   } else {
     console.error('HTML5 PointerLock API is not supported');
   }

@@ -54,9 +54,9 @@ export interface DataManager {
   deleteComponent: (entity: number) => void;
 }
 
-export interface System {
+export interface Task {
+  (data: object[], delta: number): void;
   queries: Function[];
-  update: (data: object[]) => void;
 }
 
 //
@@ -164,12 +164,12 @@ export class Entity {
 
 //
 
-export const runSystem = (system: System) => {
+export const executeTask = (task: Task, delta: number) => {
   idList.forEach((id) => {
     const entity = new Entity(id);
     const data: any[] = [];
     let matches = true;
-    system.queries.forEach((type) => {
+    task.queries.forEach((type) => {
       if (!(matches && entity.hasComponent(type))) {
         matches = false;
         return;
@@ -178,7 +178,7 @@ export const runSystem = (system: System) => {
     });
 
     if (matches) {
-      system.update(data);
+      task(data, delta);
     }
   });
 };

@@ -23,7 +23,7 @@ import {
   Texture,
   Material,
 } from 'three';
-import { DataManager, registerDataManager } from './entities';
+import { DataManager, Entity, registerDataManager } from './entities';
 
 const worker = new Worker(new URL('./graphicsworker.ts', import.meta.url));
 
@@ -43,8 +43,11 @@ let entityId = 0;
 const textureCache = new Map<string, ImageData>();
 
 // this camera acts as a proxy for the actual rendering camera in the backend
-export const camera = new PerspectiveCamera();
+const camera = new PerspectiveCamera();
 
+export type CameraData = PerspectiveCamera;
+// eslint-disable-next-line no-redeclare
+export const CameraData = PerspectiveCamera;
 export type GraphicsData = Object3D;
 // eslint-disable-next-line no-redeclare
 export const GraphicsData = Object3D;
@@ -101,7 +104,6 @@ const uploadTexture = (map: Texture) => {
 
 const addToScene = (object: Mesh) => {
   const id = assignIdToObject(object);
-  console.log(`addToScene: adding mesh#${id}`);
 
   // send object's texture data to backend
   // @ts-ignore
@@ -165,19 +167,10 @@ const removeFromScene = (object: Mesh) => {
   availableEntityIds.push(id);
 };
 
-export const resizeGraphicsTarget = ({ width, height }: any) => {
-  worker.postMessage({
-    type: 'resize',
-    width,
-    height,
-  });
-};
-
 class GraphicsManager implements DataManager {
   components = new Map<number, Object3D>();
 
   setComponent(entity: number, data: any) {
-    console.log(`manager: adding entity#${entity}`);
     addToScene(data);
     this.components.set(entity, data);
   }
@@ -206,6 +199,10 @@ export const initGraphics = () => {
 
   registerDataManager(GraphicsData, new GraphicsManager());
 
+  new Entity()
+    .addTag('camera')
+    .setComponent(CameraData, camera);
+
   assignIdToObject(camera);
 
   updateGraphics();
@@ -218,4 +215,12 @@ export const initGraphics = () => {
     height: window.innerHeight,
     pixelRatio: window.devicePixelRatio,
   }, [offscreen]);
+
+  window.addEventListener('resize', () => {
+    worker.postMessage({
+      type: 'resize',
+      width: window.innerWidth,
+      height: window.innerHeight,
+    });
+  });
 };

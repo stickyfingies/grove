@@ -73,16 +73,18 @@ export const loadModel = (uri: string, callback: Function) => {
   // the model is cached
   if (models[uri]) {
     models[uri].traverse((child: Object3D) => {
-      child.updateMatrixWorld();
-      const p = new Vector3();
-      const q = new TQuaternion();
-      const s = new Vector3();
-      child.matrixWorld.decompose(p, q, s);
-      const inst = child.clone();
-      inst.position.copy(p);
-      inst.quaternion.copy(q);
-      inst.scale.copy(s);
-      callback(inst);
+      if (child instanceof Mesh) {
+        child.updateMatrixWorld();
+        const p = new Vector3();
+        const q = new TQuaternion();
+        const s = new Vector3();
+        child.matrixWorld.decompose(p, q, s);
+        const inst = child.clone();
+        inst.position.copy(p);
+        inst.quaternion.copy(q);
+        inst.scale.copy(s);
+        callback(inst);
+      }
     });
   }
 };

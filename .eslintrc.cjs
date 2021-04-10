@@ -26,6 +26,7 @@ module.exports = {
     'no-plusplus': [2, { allowForLoopAfterthoughts: true }],
     'no-param-reassign': [2, { props: false }],
     'no-unused-vars': [2, { args: 'none' }],
+    'linebreak-style': ['error', (require('os').EOL === '\r\n' ? 'windows' : 'unix')],
     'import/extensions': [
       'error',
       'ignorePackages',

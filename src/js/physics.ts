@@ -1,5 +1,5 @@
 import {
-  World, GSSolver, SplitSolver, NaiveBroadphase, Body,
+  World, GSSolver, SplitSolver, NaiveBroadphase, Body, Vec3, Ray, RaycastResult,
 } from 'cannon-es';
 import { DataManager, registerDataManager } from './entities';
 
@@ -31,6 +31,13 @@ class PhysicsManager implements DataManager {
   }
 }
 
+export const raycast = (from: Vec3, to: Vec3) => {
+  const ray = new Ray(from, to);
+  const result = new RaycastResult();
+  ray.intersectWorld(world, { result });
+  return result.hasHit;
+};
+
 export const initPhysics = () => {
   registerDataManager(PhysicsData, new PhysicsManager());
 
@@ -47,9 +54,11 @@ export const initPhysics = () => {
   world.solver = split ? new SplitSolver(solver) : solver;
 
   world.gravity.set(0, -9.8, 0);
+
   world.broadphase = new NaiveBroadphase();
+  world.broadphase.useBoundingBoxes = true;
 };
 
 export const updatePhysics = (delta: number) => {
-  world.step(1 / 60, Math.min(delta, 1 / 30));
+  world.step(1 / 60, Math.min(delta, 1 / 30), 10);
 };

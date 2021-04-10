@@ -1,66 +1,79 @@
+/**
+ * === GOALS ===
+ * A revamp of the model / scene loding system is coming up soon
+ */
+
 import 'bootstrap/dist/css/bootstrap';
 import '../css/play';
 
-import {
-  DefaultLoadingManager, Mesh, Quaternion, Vector3,
-} from 'three';
+import { DefaultLoadingManager, Mesh } from 'three';
 import $ from 'jquery';
 // @ts-ignore
 import Stats from 'stats-js';
 import { GUI } from 'dat.gui';
-import { initPlayer, playerSystem } from './player';
 import pointerlock from './pointerlock';
-import shooting from './shooting';
 import { loadPhysicsModel, loadModel } from './load';
-import {
-  initGraphics, updateGraphics, resizeGraphicsTarget, camera, GraphicsData,
-} from './graphics';
+import { initGraphics, updateGraphics, GraphicsData } from './graphics';
 import { initPhysics, PhysicsData, updatePhysics } from './physics';
-import { Entity, System, runSystem } from './entities';
-import PointerLockControls from './threex/pointerlockControls';
+import { Entity, executeTask, Task } from './entities';
 
 // eslint-disable-next-line import/extensions
 import maps from './json/maps.json';
-import AI from './AI';
+import transformTask from './transformTask';
 
 // @ts-ignore
 // eslint-disable-next-line import/no-unresolved
-// impor gameModules from './game/*.*';
+import gameModules from './game/*.*';
+import { initKeyboardControls, keyboardControlTask } from './keyboardControls';
 
-// gameModules.forEach((module: any) => {
-//   const inst = new module.Plugin();
-//   inst.run();
-// });
+// this gets passed to game modules when they initialize.
+// eventually, I'd like this to be an entire class, but it depends on how engine organization
+// pans out.
+const engineData = {
+  running: false,
+  gui: new GUI(),
+};
 
-class TransformSystem implements System {
-  queries = [GraphicsData, PhysicsData];
-
-  // eslint-disable-next-line class-methods-use-this
-  update([mesh, body]: [GraphicsData, PhysicsData]) {
-    const pos = new Vector3(body.position.x, body.position.y, body.position.z);
-    // eslint-disable-next-line max-len
-    const quat = new Quaternion(body.quaternion.x, body.quaternion.y, body.quaternion.z, body.quaternion.w);
-    mesh.position.copy(pos);
-    if (!mesh.userData.norotate) mesh.quaternion.copy(quat);
-  }
-}
-
-let gameStarted = false;
-let controls: PointerLockControls;
 let then = 0;
+
 let stats: Stats;
-let transform: TransformSystem;
+
+const gameTasks: Task[] = [];
 
 // initiate the game
 
 const init = () => {
   initGraphics();
   initPhysics();
-  initPlayer();
-  const playerid = Entity.getTag('player');
-  controls = new PointerLockControls(camera, document.body, playerid.getComponent(PhysicsData));
-  shooting(controls);
-  AI();
+
+  gameModules.forEach((module: any) => {
+    module.init(engineData);
+
+    if (module.tasks) {
+      module.tasks.forEach((task: Task) => {
+        gameTasks.push(task);
+      });
+    }
+  });
+
+  initKeyboardControls(engineData);
+
+  DefaultLoadingManager.onStart = (url) => {
+    console.log(url);
+    console.groupCollapsed(url);
+  };
+
+  DefaultLoadingManager.onProgress = (url, loaded, total) => {
+    console.log(`${url} (${loaded}/${total})`);
+    if (loaded === total) {
+      $('#spinner').hide();
+      $('#load-play-btn, .play-btn').show();
+    }
+  };
+
+  DefaultLoadingManager.onLoad = () => {
+    console.groupEnd();
+  };
 
   maps['skjar-isles'].objects.forEach((path: string) => {
     loadModel(path, (mesh: Mesh) => {
@@ -71,36 +84,13 @@ const init = () => {
     });
   });
 
-  pointerlock();
-
-  console.groupCollapsed('[LoadingManager]');
-  DefaultLoadingManager.onProgress = (url, loaded, total) => {
-    console.log(`${url} (${loaded}/${total})`);
-    if (loaded === total) {
-      console.groupEnd();
-      $('#spinner').hide();
-      $('#load-play-btn, .play-btn').show();
-      gameStarted = true;
-    }
-  };
+  pointerlock(engineData);
 
   stats = new Stats();
+
   stats.showPanel(1);
+
   document.body.appendChild(stats.dom);
-
-  const gui = new GUI();
-  gui.add(playerid.getComponent(PhysicsData).position, 'x').listen();
-  gui.add(playerid.getComponent(PhysicsData).position, 'y').listen();
-  gui.add(playerid.getComponent(PhysicsData).position, 'z').listen();
-
-  transform = new TransformSystem();
-
-  window.addEventListener('resize', () => {
-    resizeGraphicsTarget({
-      width: window.innerWidth,
-      height: window.innerHeight,
-    });
-  });
 };
 
 // main game loop
@@ -110,28 +100,35 @@ const animate = (now: number) => {
 
   stats.begin();
 
-  if (gameStarted && controls.isLocked) {
+  if (engineData.running) {
     // update physics
+
     updatePhysics(delta);
 
+    gameTasks.forEach((task) => {
+      executeTask(task, delta);
+    });
+
+    executeTask(keyboardControlTask, delta);
+
     // copy physical body transforms to their corresponding mesh
-    runSystem(transform);
 
-    // update controls & graphics
-    controls.update(delta);
+    executeTask(transformTask, delta);
+
+    // update graphics
+
     updateGraphics();
-
-    // death
-    runSystem(playerSystem);
   }
 
   stats.end();
 
   then = now;
+
   requestAnimationFrame(animate);
 };
 
 // my quasi main method
 
 init();
+
 requestAnimationFrame(animate);
