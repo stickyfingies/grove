@@ -1,3 +1,5 @@
+const os = require('os');
+
 module.exports = {
   env: {
     browser: true,
@@ -23,15 +25,15 @@ module.exports = {
   },
   rules: {
     'no-console': 'off',
-    'no-plusplus': [2, { allowForLoopAfterthoughts: true }],
-    'no-param-reassign': [2, { props: false }],
-    'no-unused-vars': [2, { args: 'none' }],
-    'linebreak-style': ['error', (require('os').EOL === '\r\n' ? 'windows' : 'unix')],
+    'no-plusplus': ['error', { allowForLoopAfterthoughts: true }],
+    'no-param-reassign': ['error', { props: false }],
+    'no-unused-vars': ['error', { args: 'none' }],
+    'linebreak-style': ['error', (os.EOL === '\r\n' ? 'windows' : 'unix')],
     'import/extensions': [
       'error',
       'ignorePackages',
       {
-        json: 'never',
+        json: 'always',
         js: 'never',
         ts: 'never',
         css: 'never',

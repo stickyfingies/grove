@@ -11,20 +11,13 @@ import $ from 'jquery';
 // @ts-ignore
 import Stats from 'stats-js';
 import { GUI } from 'dat.gui';
-import pointerlock from './pointerlock';
 import { loadPhysicsModel, loadModel } from './load';
 import { initGraphics, updateGraphics, GraphicsData } from './graphics';
 import { initPhysics, PhysicsData, updatePhysics } from './physics';
 import { Entity, executeTask, Task } from './entities';
 
-// eslint-disable-next-line import/extensions
 import maps from './json/maps.json';
-import transformTask from './transformTask';
-
-// @ts-ignore
-// eslint-disable-next-line import/no-unresolved
-import gameModules from './game/*.*';
-import { initKeyboardControls, keyboardControlTask } from './keyboardControls';
+import gameScripts from './game/_scripts.json';
 
 // this gets passed to game modules when they initialize.
 // eventually, I'd like this to be an entire class, but it depends on how engine organization
@@ -40,29 +33,13 @@ let stats: Stats;
 
 const gameTasks: Task[] = [];
 
-// initiate the game
-
+// initialize the game
 const init = () => {
+  // initialize engine systems
   initGraphics();
   initPhysics();
 
-  gameModules.forEach((module: any) => {
-    module.init(engineData);
-
-    if (module.tasks) {
-      module.tasks.forEach((task: Task) => {
-        gameTasks.push(task);
-      });
-    }
-  });
-
-  initKeyboardControls(engineData);
-
-  DefaultLoadingManager.onStart = (url) => {
-    console.log(url);
-    console.groupCollapsed(url);
-  };
-
+  // show asset loading progress
   DefaultLoadingManager.onProgress = (url, loaded, total) => {
     console.log(`${url} (${loaded}/${total})`);
     if (loaded === total) {
@@ -71,10 +48,24 @@ const init = () => {
     }
   };
 
-  DefaultLoadingManager.onLoad = () => {
-    console.groupEnd();
-  };
+  // load game scripts
+  gameScripts.scripts.forEach(async (scriptName: string) => {
+    const script = await import(`./game/${scriptName}`);
 
+    // initialize script
+    if ('init' in script) {
+      script.init(engineData);
+    }
+
+    // register `update` tasks
+    if ('tasks' in script) {
+      script.tasks.forEach((task: Task) => {
+        gameTasks.push(task);
+      });
+    }
+  });
+
+  // load the map
   maps['skjar-isles'].objects.forEach((path: string) => {
     loadModel(path, (mesh: Mesh) => {
       const body = loadPhysicsModel(mesh, 0);
@@ -84,17 +75,13 @@ const init = () => {
     });
   });
 
-  pointerlock(engineData);
-
+  // show performance statistics
   stats = new Stats();
-
   stats.showPanel(1);
-
   document.body.appendChild(stats.dom);
 };
 
 // main game loop
-
 const animate = (now: number) => {
   const delta = now - then;
 
@@ -102,21 +89,14 @@ const animate = (now: number) => {
 
   if (engineData.running) {
     // update physics
-
     updatePhysics(delta);
 
+    // update game
     gameTasks.forEach((task) => {
       executeTask(task, delta);
     });
 
-    executeTask(keyboardControlTask, delta);
-
-    // copy physical body transforms to their corresponding mesh
-
-    executeTask(transformTask, delta);
-
     // update graphics
-
     updateGraphics();
   }
 

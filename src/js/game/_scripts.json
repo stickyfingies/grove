@@ -1,0 +1,10 @@
+{
+    "scripts": [
+        "updateTransforms",
+        "rabbit",
+        "player",
+        "shooting",
+        "keyboardControls",
+        "pauseMenu"
+    ]
+}

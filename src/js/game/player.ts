@@ -4,7 +4,7 @@ import {
 import $ from 'jquery';
 import { Entity, Task } from '../entities';
 import { PhysicsData } from '../physics';
-import { KeyboardControlData } from '../keyboardControls';
+import { KeyboardControlData } from './keyboardControls';
 
 //
 
@@ -16,14 +16,14 @@ class PlayerData {
   hp: { val: number, max: number };
 }
 
-const playerTask: Task = ([playerData]: [PlayerData]) => {
+const playerTask: Task = (_, [playerData]: [PlayerData]) => {
   if (playerData.hp.val <= 0) {
     engineData.running = false;
-    $('#blocker').fadeIn(5000);
-    $('#load').show().html('<h1>You Have Perished. Game Over...</h1>');
+    $('#blocker').show();
+    $('#load').hide().fadeIn(5000).html('<h1>You Have Perished. Game Over...</h1>');
   }
 };
-playerTask.queries = [PlayerData];
+playerTask.queries = new Set([PlayerData]);
 
 //
 
@@ -34,14 +34,14 @@ export const init = (engine: any) => {
 
   const data: PlayerData = {
     hp: {
-      val: 10,
+      val: 1,
       max: 10,
     },
   };
 
   const kbControl: KeyboardControlData = {
     velocityFactor: 4,
-    jumpVelocity: 4,
+    jumpVelocity: 1.5,
   };
 
   // create physics body
@@ -52,7 +52,7 @@ export const init = (engine: any) => {
   const shape = new Sphere(radius);
   const material = new Material('playerMaterial');
   const body = new Body({
-    fixedRotation: false,
+    collisionFilterGroup: 2,
     allowSleep: false,
     mass,
     material,
@@ -91,4 +91,4 @@ export const init = (engine: any) => {
     .setComponent(KeyboardControlData, kbControl);
 };
 
-export const tasks: Task[] = [playerTask];
+export const tasks = [playerTask];

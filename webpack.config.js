@@ -33,7 +33,7 @@ export default {
     }, {
       test: /\.ts$/,
       exclude: /node_modules/,
-      use: ['ts-loader?transpileOnly=true', 'webpack-import-glob-loader'],
+      use: ['ts-loader?transpileOnly=true'],
     }],
   },
   optimization: {

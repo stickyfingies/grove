@@ -1,7 +1,7 @@
 import {
   World, GSSolver, SplitSolver, NaiveBroadphase, Body, Vec3, Ray, RaycastResult,
 } from 'cannon-es';
-import { DataManager, registerDataManager } from './entities';
+import { events } from './entities';
 
 export const PhysicsData = Body;
 // eslint-disable-next-line no-redeclare
@@ -9,38 +9,14 @@ export type PhysicsData = Body;
 
 const world = new World();
 
-class PhysicsManager implements DataManager {
-  components = new Map<number, Body>();
-
-  setComponent(entity: number, data: any) {
-    this.components.set(entity, data);
-    world.addBody(data);
-  }
-
-  getComponent(entity: number) {
-    return this.components.get(entity)!;
-  }
-
-  hasComponent(entity: number) {
-    return this.components.has(entity);
-  }
-
-  deleteComponent(entity: number) {
-    world.removeBody(this.components.get(entity)!);
-    return this.components.delete(entity);
-  }
-}
-
 export const raycast = (from: Vec3, to: Vec3) => {
   const ray = new Ray(from, to);
   const result = new RaycastResult();
-  ray.intersectWorld(world, { result });
+  ray.intersectWorld(world, { result, collisionFilterMask: 1 });
   return result.hasHit;
 };
 
 export const initPhysics = () => {
-  registerDataManager(PhysicsData, new PhysicsManager());
-
   world.allowSleep = true;
   world.defaultContactMaterial.contactEquationStiffness = 1e9;
   world.defaultContactMaterial.contactEquationRelaxation = 4;
@@ -57,6 +33,14 @@ export const initPhysics = () => {
 
   world.broadphase = new NaiveBroadphase();
   world.broadphase.useBoundingBoxes = true;
+
+  events.on(`set${PhysicsData.name}Component`, (id: number, data: PhysicsData) => {
+    world.addBody(data);
+  });
+
+  events.on(`delete${PhysicsData.name}Component`, (id: number, data: PhysicsData) => {
+    world.removeBody(data);
+  });
 };
 
 export const updatePhysics = (delta: number) => {

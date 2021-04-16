@@ -23,7 +23,7 @@ import {
   Texture,
   Material,
 } from 'three';
-import { DataManager, Entity, registerDataManager } from './entities';
+import { Entity, events } from './entities';
 
 const worker = new Worker(new URL('./graphicsworker.ts', import.meta.url));
 
@@ -167,28 +167,6 @@ const removeFromScene = (object: Mesh) => {
   availableEntityIds.push(id);
 };
 
-class GraphicsManager implements DataManager {
-  components = new Map<number, Object3D>();
-
-  setComponent(entity: number, data: any) {
-    addToScene(data);
-    this.components.set(entity, data);
-  }
-
-  getComponent(entity: number) {
-    return this.components.get(entity)!;
-  }
-
-  hasComponent(entity: number) {
-    return this.components.has(entity);
-  }
-
-  deleteComponent(entity: number) {
-    removeFromScene(this.components.get(entity) as Mesh);
-    return this.components.delete(entity);
-  }
-}
-
 export const updateGraphics = () => {
   idToEntity.forEach(writeTransformToArray);
 };
@@ -197,8 +175,6 @@ export const initGraphics = () => {
   const offscreenCanvas = document.getElementById('main-canvas') as HTMLCanvasElement;
   const offscreen = offscreenCanvas.transferControlToOffscreen();
 
-  registerDataManager(GraphicsData, new GraphicsManager());
-
   new Entity()
     .addTag('camera')
     .setComponent(CameraData, camera);
@@ -206,6 +182,14 @@ export const initGraphics = () => {
   assignIdToObject(camera);
 
   updateGraphics();
+
+  events.on(`set${GraphicsData.name}Component`, (id, mesh: Mesh) => {
+    addToScene(mesh);
+  });
+
+  events.on(`delete${GraphicsData.name}Component`, (id, mesh: Mesh) => {
+    removeFromScene(mesh);
+  });
 
   worker.postMessage({
     type: 'init',

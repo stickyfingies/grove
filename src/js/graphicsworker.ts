@@ -95,7 +95,6 @@ const init = ({
   });
   for (let i = 0; i < 6; i++) {
     loader.load(imagePrefix + directions[i] + imageSuffix, (image) => {
-      // @ts-ignore
       const map = new CanvasTexture(image);
       const mat = new MeshBasicMaterial({
         map,
@@ -135,7 +134,7 @@ const init = ({
     requestAnimationFrame(render);
   };
 
-  render();
+  requestAnimationFrame(render);
 };
 
 const uploadTexture = ({
@@ -163,8 +162,7 @@ const addObject = ({
   mesh.receiveShadow = true;
   mesh.matrixAutoUpdate = false;
 
-  // @ts-ignore
-  if (imageId) mesh.material.map = textureCache.get(imageId)!;
+  if (imageId) (mesh.material as MeshPhongMaterial).map = textureCache.get(imageId)!;
 
   scene.add(mesh);
 
@@ -190,7 +188,7 @@ const messageHandlers = {
   addObject,
   removeObject,
   resize,
-} as any;
+} as Record<string, Function>;
 
 onmessage = ({ data }: any) => {
   const { type } = data;
