@@ -1,8 +1,13 @@
 import { Vec3 } from 'cannon-es';
 import { Euler, Vector3 } from 'three';
+import Engine from '../engine';
 import { Entity, Task } from '../entities';
 import { CameraData } from '../graphics';
-import { PhysicsData, raycast } from '../physics';
+import { PhysicsData } from '../physics';
+
+/**
+ * Script State
+ */
 
 let moveForward = false;
 let moveBackward = false;
@@ -11,12 +16,14 @@ let moveRight = false;
 let canJump = false;
 let wantsToJump = false;
 
-let engineData: any;
+let engine: Engine;
 
 const minPolarAngle = 0;
 const maxPolarAngle = Math.PI;
 
-//
+/**
+ * Entity Tasks
+ */
 
 export class KeyboardControlData {
   velocityFactor: number;
@@ -29,7 +36,8 @@ export const keyboardControlTask: Task = (d, [body, kb]: [PhysicsData, KeyboardC
 
   const inputVelocity = new Vector3(0, 0, 0);
 
-  canJump = raycast(body.position, new Vec3(body.position.x, body.position.y - 2, body.position.z));
+  const raycastDst = new Vec3(body.position.x, body.position.y - 2, body.position.z);
+  canJump = engine.physics.raycast(body.position, raycastDst);
 
   if (moveForward) {
     inputVelocity.z = -kb.velocityFactor * delta;
@@ -64,10 +72,12 @@ export const keyboardControlTask: Task = (d, [body, kb]: [PhysicsData, KeyboardC
 };
 keyboardControlTask.queries = new Set([PhysicsData, KeyboardControlData]);
 
-//
+/**
+ * Script Specifics
+ */
 
 const onMouseMove = ({ movementX, movementY }: MouseEvent) => {
-  if (!engineData.running) return;
+  if (!engine.running) return;
 
   const euler = new Euler(0, 0, 0, 'YXZ');
 
@@ -134,8 +144,12 @@ const onKeyUp = ({ key }: KeyboardEvent) => {
   }
 };
 
-export const init = (engine: any) => {
-  engineData = engine;
+/**
+ * Script Interface
+ */
+
+export const init = (engineData: Engine) => {
+  engine = engineData;
 
   document.addEventListener('mousemove', (e) => onMouseMove(e));
   document.addEventListener('keydown', (e) => onKeyDown(e));

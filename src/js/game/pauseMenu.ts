@@ -1,12 +1,13 @@
 import $ from 'jquery';
+import Engine from '../engine';
 
 // eslint-disable-next-line import/prefer-default-export
-export const init = (engineData: any) => {
+export const init = (engine: Engine) => {
   const blocker = document.getElementById('blocker')!;
 
   const pointerlockchange = () => {
     const isLocked = (document.pointerLockElement === document.body);
-    engineData.running = isLocked;
+    engine.running = isLocked;
 
     $('#pause').toggle(!isLocked);
     if (isLocked) {

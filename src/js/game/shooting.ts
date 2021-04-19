@@ -1,9 +1,14 @@
 import { Ray, Vector3 } from 'three';
 import $ from 'jquery';
-import { ball } from '../load';
 import { Entity } from '../entities';
-import { PhysicsData } from '../physics';
-import { CameraData } from '../graphics';
+import { Physics, PhysicsData } from '../physics';
+import { CameraData, GraphicsData } from '../graphics';
+import Engine from '../engine';
+import GraphicsUtils from '../graphicsutils';
+
+/**
+ * Script Specifics
+ */
 
 const getShootDir = () => {
   const camera = Entity.getTag('camera').getComponent(CameraData);
@@ -19,39 +24,40 @@ const getShootDir = () => {
 };
 
 const shoot = () => {
-  const entity = ball({
-    color: 0xFF4500,
-  });
-  const body = entity.getComponent(PhysicsData);
-
+  const ball = new Entity();
   const playerid = Entity.getTag('player');
-  let { x: px, y: py, z: pz } = playerid.getComponent(PhysicsData).position;
-  const { x: vx, y: vy, z: vz } = playerid.getComponent(PhysicsData).velocity;
 
+  const { x: px, y: py, z: pz } = playerid.getComponent(PhysicsData).position;
+  const { x: vx, y: vy, z: vz } = playerid.getComponent(PhysicsData).velocity;
   const { x: sdx, y: sdy, z: sdz } = getShootDir();
 
+  const radius = 0.2;
+  const mass = 10;
   const shootVelo = 20;
+
+  const mesh = GraphicsUtils.makeBall(radius);
+  ball.setComponent(GraphicsData, mesh);
+
+  const body = Physics.makeBall(mass, radius);
+  ball.setComponent(PhysicsData, body);
   body.velocity.set(vx + sdx * shootVelo, vy + sdy * shootVelo, vz + sdz * shootVelo);
-
-  px += sdx * 2;
-  py += sdy * 2;
-  pz += sdz * 2;
-
-  body.position.set(px, py, pz);
+  body.position.set(px + sdx * 2, py + sdy * 2, pz + sdz * 2);
 
   const collideCb = () => {
     body.removeEventListener('collide', collideCb);
-    setTimeout(() => {
-      entity.delete();
-    }, 1500);
+    setTimeout(() => ball.delete(), 1500);
   };
 
   body.addEventListener('collide', collideCb);
 };
 
+/**
+ * Script Interface
+ */
+
 // eslint-disable-next-line import/prefer-default-export
-export const init = (engineData: any) => {
+export const init = (engine: Engine) => {
   $(document).on('mousedown', () => {
-    if (engineData.running) shoot();
+    if (engine.running) shoot();
   });
 };

@@ -3,12 +3,17 @@
  */
 
 import { Mesh } from 'three';
+import Engine from '../engine';
 import { Entity, Task } from '../entities';
 import { GraphicsData } from '../graphics';
-import { ball, loadModel } from '../load';
-import { PhysicsData } from '../physics';
+import AssetLoader from '../load';
+import { Physics, PhysicsData } from '../physics';
 
-//
+let assetLoader: AssetLoader;
+
+/**
+ * Entity Tasks
+ */
 
 class RabbitData {
   jumpRadius: number;
@@ -22,37 +27,40 @@ const rabbitTask: Task = (_, [rabbitData, body]: [RabbitData, PhysicsData]) => {
 
   if (distanceToPlayer < rabbitData.jumpRadius) {
     body.wakeUp();
-    body.velocity.y = rabbitData.jumpVelocity;
+    // body.velocity.y = rabbitData.jumpVelocity;
   }
 };
 rabbitTask.queries = new Set([RabbitData, PhysicsData]);
 
-//
+/**
+ * Script Specifics
+ */
 
 const createRabbit = () => {
-  const entity = ball({
-    radius: 3,
-    color: 0xFF4500,
-    norotate: true,
-  });
+  const rabbit = new Entity();
 
-  entity.setComponent(RabbitData, {
+  const radius = 100;
+  const mass = 3;
+  const body = Physics.makeBall(radius, mass);
+  body.position.x = Math.random() * 150 - 75;
+  body.position.y = 30;
+  body.position.z = Math.random() * 150 - 75;
+  rabbit.setComponent(PhysicsData, body);
+
+  rabbit.setComponent(RabbitData, {
     jumpRadius: 30,
     jumpVelocity: 7,
   });
 
-  const body = entity.getComponent(PhysicsData);
-
-  loadModel('/models/rabbit-glb/Rabbit.glb', (child: Mesh) => entity.setComponent(GraphicsData, child));
-
-  body.position.x = Math.random() * 300 - 150;
-  body.position.y = 50;
-  body.position.z = Math.random() * 300 - 150;
+  assetLoader.loadModel('/models/rabbit-glb/Rabbit.glb', (child: Mesh) => rabbit.setComponent(GraphicsData, child));
 };
 
-//
+/**
+ * Script Interface
+ */
 
-export const init = ({ gui }: any) => {
+export const init = ({ gui, assetLoader: al }: Engine) => {
+  assetLoader = al;
   gui.add({ createRabbit }, 'createRabbit').name('Spawn Rabbit');
 
   for (let i = 0; i < 1; i++) {

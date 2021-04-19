@@ -3,6 +3,10 @@ import { Task } from '../entities';
 import { GraphicsData } from '../graphics';
 import { PhysicsData } from '../physics';
 
+/**
+ * Entity Tasks
+ */
+
 const updateTransforms: Task = (_, [mesh, body]: [GraphicsData, PhysicsData]) => {
   const { x: px, y: py, z: pz } = body.interpolatedPosition;
   const {
@@ -14,6 +18,10 @@ const updateTransforms: Task = (_, [mesh, body]: [GraphicsData, PhysicsData]) =>
 };
 
 updateTransforms.queries = new Set([GraphicsData, PhysicsData]);
+
+/**
+ * Script Interface
+ */
 
 // eslint-disable-next-line import/prefer-default-export
 export const tasks = [updateTransforms];

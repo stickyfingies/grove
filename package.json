@@ -2,13 +2,15 @@
 	"name": "the-grove",
 	"version": "0.0.1",
 	"description": "The Grove",
-	"main": "server/index.js",
+	"authors": "stickyfingies",
+	"main": "src/js/app.cjs",
 	"respository": "stickyfingies/grove",
 	"type": "module",
 	"sideEffects": [
 		"*.css"
 	],
 	"dependencies": {
+		"@electron-forge/cli": "^6.0.0-beta.54",
 		"@types/dat.gui": "^0.7.6",
 		"@types/events": "^3.0.0",
 		"@types/jquery": "^3.5.5",
@@ -23,6 +25,8 @@
 		"dotenv": "^8.2.0",
 		"ejs": "^3.1.6",
 		"ejs-locals": "^1.0.2",
+		"electron": "^12.0.4",
+		"electron-squirrel-startup": "^1.0.0",
 		"events": "^3.3.0",
 		"express": "^4.14.1",
 		"express-session": "^1.14.1",
@@ -42,16 +46,49 @@
 		"webpack-cli": "^4.6.0"
 	},
 	"scripts": {
-		"start": "node -r dotenv/config server/index.js",
+		"start": "electron-forge start",
 		"debug": "DEBUG=* node -r dotenv/config server/index.js",
 		"build": "webpack --watch --progress",
-		"test": "exit 0"
+		"test": "exit 0",
+		"package": "electron-forge package",
+		"make": "electron-forge make"
 	},
 	"devDependencies": {
+		"@electron-forge/maker-deb": "^6.0.0-beta.54",
+		"@electron-forge/maker-rpm": "^6.0.0-beta.54",
+		"@electron-forge/maker-squirrel": "^6.0.0-beta.54",
+		"@electron-forge/maker-zip": "^6.0.0-beta.54",
 		"@typescript-eslint/eslint-plugin": "^4.21.0",
 		"@typescript-eslint/parser": "^4.21.0",
 		"eslint": "^7.23.0",
 		"eslint-config-airbnb-base": "^14.2.1",
 		"eslint-plugin-import": "^2.22.1"
+	},
+	"config": {
+		"forge": {
+			"packagerConfig": {},
+			"makers": [
+				{
+					"name": "@electron-forge/maker-squirrel",
+					"config": {
+						"name": "the_grove"
+					}
+				},
+				{
+					"name": "@electron-forge/maker-zip",
+					"platforms": [
+						"darwin"
+					]
+				},
+				{
+					"name": "@electron-forge/maker-deb",
+					"config": {}
+				},
+				{
+					"name": "@electron-forge/maker-rpm",
+					"config": {}
+				}
+			]
+		}
 	}
 }

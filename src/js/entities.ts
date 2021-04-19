@@ -203,6 +203,7 @@ export class Entity {
   }
 
   getComponent<T>(type: DataType<T>): T {
+    // lazily initialize data manager
     if (!dataManagers.has(type)) {
       console.error(`component type ${type.name} is not registered`);
       dataManagers.set(type, new DataManager());
@@ -212,6 +213,7 @@ export class Entity {
   }
 
   hasComponent(type: DataType): boolean {
+    // lazily initialize data manager
     if (!dataManagers.has(type)) {
       console.warn(`component type ${type.name} is not registered`);
       dataManagers.set(type, new DataManager());
@@ -238,8 +240,10 @@ export class Entity {
 
 export const executeTask = (task: Task, delta: number) => {
   archetypes.forEach((arch) => {
+    // ensure this archetype has all required components
     if (!queryComponents(task.queries, arch.signature)) return;
 
+    // pass entity data to task
     arch.entities.forEach((id) => {
       const entity = new Entity(id);
       const data: DataType[] = [];
