@@ -2,9 +2,10 @@ import { Ray, Vector3 } from 'three';
 import $ from 'jquery';
 import { Entity } from '../entities';
 import { Physics, PhysicsData } from '../physics';
-import { CameraData, GraphicsData } from '../graphics';
+import { CameraData, MeshData } from '../graphics/graphics';
 import Engine from '../engine';
-import GraphicsUtils from '../graphicsutils';
+import GraphicsUtils from '../graphics/utils';
+import { HealthData } from './health';
 
 /**
  * Script Specifics
@@ -35,13 +36,13 @@ const shoot = () => {
   const mass = 10;
   const shootVelo = 20;
 
-  const mesh = GraphicsUtils.makeBall(radius);
-  ball.setComponent(GraphicsData, mesh);
-
   const body = Physics.makeBall(mass, radius);
-  ball.setComponent(PhysicsData, body);
   body.velocity.set(vx + sdx * shootVelo, vy + sdy * shootVelo, vz + sdz * shootVelo);
   body.position.set(px + sdx * 2, py + sdy * 2, pz + sdz * 2);
+  ball.setComponent(PhysicsData, body);
+
+  const mesh = GraphicsUtils.makeBall(radius);
+  ball.setComponent(MeshData, mesh);
 
   const collideCb = () => {
     body.removeEventListener('collide', collideCb);
@@ -59,5 +60,21 @@ const shoot = () => {
 export const init = (engine: Engine) => {
   $(document).on('mousedown', () => {
     if (engine.running) shoot();
+  });
+
+  // update crosshair with information about what the player is looking at
+  $(document).on('mousemove', () => {
+    const lookingAt = engine.graphics.raycast();
+    let text = '';
+
+    if (lookingAt.length && lookingAt[0].distance < 30) {
+      const e = new Entity(lookingAt[0].object.userData.id);
+      if (e.hasComponent(HealthData)) {
+        const health = e.getComponent(HealthData);
+        text = `${health.hp.value}/${health.hp.max} hp`;
+      }
+    }
+
+    $('#crosshair-info').text(text);
   });
 };

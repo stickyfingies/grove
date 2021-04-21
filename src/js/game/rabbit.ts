@@ -1,15 +1,17 @@
 /**
  * Current Required AIs Include: Wicket, Ferdinand, Nicholas Czerwinski
+ *
+ * === DEPRECATED ===
+ *
+ * THIS FILE IS NOT USED ANYMORE - KEPT FOR REFERENCE PURPOSES
  */
 
-import { Mesh } from 'three';
 import Engine from '../engine';
 import { Entity, Task } from '../entities';
-import { GraphicsData } from '../graphics';
-import AssetLoader from '../load';
+import { MeshData } from '../graphics/graphics';
 import { Physics, PhysicsData } from '../physics';
 
-let assetLoader: AssetLoader;
+let engine: Engine;
 
 /**
  * Entity Tasks
@@ -52,16 +54,19 @@ const createRabbit = () => {
     jumpVelocity: 7,
   });
 
-  assetLoader.loadModel('/models/rabbit-glb/Rabbit.glb', (child: Mesh) => rabbit.setComponent(GraphicsData, child));
+  engine.assetLoader.loadModel('/models/rabbit-glb/Rabbit.glb', (mesh) => {
+    mesh.userData.norotate = true;
+    rabbit.setComponent(MeshData, mesh);
+  });
 };
 
 /**
  * Script Interface
  */
 
-export const init = ({ gui, assetLoader: al }: Engine) => {
-  assetLoader = al;
-  gui.add({ createRabbit }, 'createRabbit').name('Spawn Rabbit');
+export const init = (engineData: Engine) => {
+  engine = engineData;
+  engine.gui.add({ createRabbit }, 'createRabbit').name('Spawn Rabbit');
 
   for (let i = 0; i < 1; i++) {
     createRabbit();

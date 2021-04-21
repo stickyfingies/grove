@@ -20,10 +20,13 @@ import {
   PerspectiveCamera,
   Object3D,
   Mesh,
+  Sprite,
   Texture,
   Material,
+  Raycaster,
+  Vector2,
 } from 'three';
-import { Entity, events } from './entities';
+import { Entity, eManager } from '../entities';
 
 /**
  * Component Types
@@ -32,9 +35,12 @@ import { Entity, events } from './entities';
 export type CameraData = PerspectiveCamera;
 // eslint-disable-next-line no-redeclare
 export const CameraData = PerspectiveCamera;
-export type GraphicsData = Object3D;
+export type MeshData = Object3D;
 // eslint-disable-next-line no-redeclare
-export const GraphicsData = Object3D;
+export const MeshData = Object3D;
+export type SpriteData = Sprite;
+// eslint-disable-next-line no-redeclare
+export const SpriteData = Sprite;
 
 /**
  * Graphics Frontend
@@ -44,24 +50,24 @@ export class Graphics {
   // a map between mesh ID's and mesh instances
   // mesh ID's are not the same as entity ID's, as we need a compact list of meshes, but not all
   // entities will have mesh components.
-  #idToEntity = new Map<number, Object3D>();
+  #idToObject = new Map<number, Object3D>();
 
   // a map between a mesh instance and it's mesh ID
   // inverse of #idToEntity
-  #entityToId = new WeakMap<Object3D, number>();
+  #objectToId = new WeakMap<Object3D, number>();
 
   // every time a mesh gets removed from the scene, we recycle its ID so that the list of meshes
   // stays compact.  recycled, unused IDs go into this list.
-  #availableEntityIds: number[] = [];
+  #availableObjectIds: number[] = [];
 
   // the current next available entity ID
-  #entityId = 0;
+  #objectId = 0;
 
   // a set of all texture UUID's that have already been uploaded to the backend
   #textureCache = new Set<string>();
 
   // the worker thread handle on which the graphics backend is ran
-  #worker = new Worker(new URL('./graphicsworker.ts', import.meta.url));
+  #worker = new Worker(new URL('./worker.ts', import.meta.url));
 
   // a cross-thread buffer of mesh transforms
   #buffer: SharedArrayBuffer;
@@ -75,10 +81,10 @@ export class Graphics {
   // number of bytes per each element in the shared array buffer
   readonly #bytesPerElement = Float32Array.BYTES_PER_ELEMENT;
 
-  // the number of elements per each transform matrix in the shared array buffer
+  // the number of elements per each matrix in the transform buffer (4x4 matrix = 16)
   readonly #elementsPerTransform = 16;
 
-  // the maximum number of meshes whcih may exist concurrently on the scene
+  // the maximum number of meshes whcih may exist concurrently
   readonly #maxEntityCount = 1024;
 
   constructor() {
@@ -98,11 +104,25 @@ export class Graphics {
     this.assignIdToObject(this.#camera);
 
     // listen to component events
-    events.on(`set${GraphicsData.name}Component`, (id, mesh: Mesh) => {
-      this.addToScene(mesh);
+    eManager.events.on(`set${MeshData.name}Component`, (id, object: Object3D) => {
+      object.traverse((child) => {
+        if (child instanceof Mesh) {
+          this.addMeshToScene(child);
+        }
+      });
     });
-    events.on(`delete${GraphicsData.name}Component`, (id, mesh: Mesh) => {
+    eManager.events.on(`delete${MeshData.name}Component`, (id, mesh: Mesh) => {
       this.removeFromScene(mesh);
+    });
+    eManager.events.on(`set${SpriteData.name}Component`, (id, sprite: Sprite) => {
+      sprite.traverse((child) => {
+        if (child instanceof Sprite) {
+          this.addSpriteToScene(child);
+        }
+      });
+    });
+    eManager.events.on(`delete${SpriteData.name}Component`, (id, sprite: Sprite) => {
+      this.removeFromScene(sprite);
     });
 
     // initialize graphics backend
@@ -126,11 +146,26 @@ export class Graphics {
   }
 
   update() {
-    this.#idToEntity.forEach((mesh) => this.writeTransformToArray(mesh));
+    this.#idToObject.forEach((mesh) => this.writeTransformToArray(mesh));
   }
 
-  private removeFromScene = (object: Mesh) => {
-    const id = this.#entityToId.get(object)!;
+  updateMaterial(mesh: Mesh) {
+    this.#worker.postMessage({
+      type: 'updateMaterial',
+      material: (mesh.material as Material).toJSON(),
+      id: this.#objectToId.get(mesh),
+    });
+  }
+
+  raycast() {
+    const raycaster = new Raycaster();
+    raycaster.setFromCamera(new Vector2(), this.#camera);
+
+    return raycaster.intersectObjects(Array.from(this.#idToObject.values()));
+  }
+
+  private removeFromScene = (object: Object3D) => {
+    const id = this.#objectToId.get(object)!;
 
     // inform the graphics backend
     this.#worker.postMessage({
@@ -139,16 +174,16 @@ export class Graphics {
     });
 
     // delete all relationships to meshes/IDs
-    this.#idToEntity.delete(id);
-    this.#entityToId.delete(object);
+    this.#idToObject.delete(id);
+    this.#objectToId.delete(object);
 
     // recycle the mesh ID
-    this.#availableEntityIds.push(id);
+    this.#availableObjectIds.push(id);
   };
 
   private writeTransformToArray(object: Object3D) {
     // calculate offset into array given mesh ID
-    const offset = this.#entityToId.get(object)! * this.#elementsPerTransform;
+    const offset = this.#objectToId.get(object)! * this.#elementsPerTransform;
 
     // copy world matrix into transform buffer
     object.updateMatrixWorld();
@@ -158,18 +193,18 @@ export class Graphics {
   }
 
   private assignIdToObject(object: Object3D): number {
-    let id = this.#entityId;
+    let id = this.#objectId;
 
     // pick a recycled ID if one is available
-    if (this.#availableEntityIds.length > 0) {
-      id = this.#availableEntityIds.shift()!;
+    if (this.#availableObjectIds.length > 0) {
+      id = this.#availableObjectIds.shift()!;
     } else {
-      this.#entityId += 1;
+      this.#objectId += 1;
     }
 
     // set mesh/ID relationships
-    this.#idToEntity.set(id, object);
-    this.#entityToId.set(object, id);
+    this.#idToObject.set(id, object);
+    this.#objectToId.set(object, id);
 
     return id;
   }
@@ -200,52 +235,40 @@ export class Graphics {
     });
   }
 
-  private addToScene(object: Mesh) {
-    const id = this.assignIdToObject(object);
+  private addMeshToScene(mesh: Mesh) {
+    const id = this.assignIdToObject(mesh);
+    mesh.userData.id = id;
 
     // send object's texture data to backend
     // @ts-ignore
-    const { map } = object.material;
+    const { map } = mesh.material;
     if (map) this.uploadTexture(map);
 
-    // <hack>
     // @ts-ignore
-    delete object.geometry.parameters;
-    // @ts-ignore
-    delete object.material.map;
-    // @ts-ignore
-    delete object.material.matcap;
-    // @ts-ignore
-    delete object.material.alphaMap;
-    // @ts-ignore
-    delete object.material.bumpMap;
-    // @ts-ignore
-    delete object.material.normalMap;
-    // @ts-ignore
-    delete object.material.displacementMap;
-    // @ts-ignore
-    delete object.material.roughnessMap;
-    // @ts-ignore
-    delete object.material.metalnessMap;
-    // @ts-ignore
-    delete object.material.emissiveMap;
-    // @ts-ignore
-    delete object.material.specularMap;
-    // @ts-ignore
-    delete object.material.envMap;
-    // @ts-ignore
-    delete object.material.lightMap;
-    // @ts-ignore
-    delete object.material.aoMap;
-    // </hack>
+    delete mesh.geometry.parameters;
 
     // send that bitch to the backend
     this.#worker.postMessage({
-      type: 'addObject',
-      name: object.name,
-      geometry: object.geometry.toJSON(),
-      material: (object.material as Material).toJSON(),
-      imageId: map?.uuid,
+      type: 'addMesh',
+      name: mesh.name,
+      geometry: mesh.geometry.toJSON(),
+      material: (mesh.material as Material).toJSON(),
+      id,
+    });
+  }
+
+  private addSpriteToScene(sprite: Sprite) {
+    const id = this.assignIdToObject(sprite);
+    sprite.userData.id = id;
+
+    // send object's texture data to backend
+    const { map, alphaMap } = sprite.material;
+    if (map) this.uploadTexture(map);
+    if (alphaMap) this.uploadTexture(alphaMap);
+
+    this.#worker.postMessage({
+      type: 'addSprite',
+      material: sprite.material.toJSON(),
       id,
     });
   }

@@ -2,7 +2,7 @@ import { Vec3 } from 'cannon-es';
 import { Euler, Vector3 } from 'three';
 import Engine from '../engine';
 import { Entity, Task } from '../entities';
-import { CameraData } from '../graphics';
+import { CameraData } from '../graphics/graphics';
 import { PhysicsData } from '../physics';
 
 /**

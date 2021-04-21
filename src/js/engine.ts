@@ -1,12 +1,12 @@
-import { DefaultLoadingManager, Mesh } from 'three';
+import { DefaultLoadingManager } from 'three';
 import $ from 'jquery';
 // @ts-ignore
 import Stats from 'stats-js';
 import { GUI } from 'dat.gui';
 import AssetLoader from './load';
-import { Graphics, GraphicsData } from './graphics';
+import { Graphics, MeshData } from './graphics/graphics';
 import { Physics, PhysicsData } from './physics';
-import { Entity, executeTask, Task } from './entities';
+import { Entity, eManager, Task } from './entities';
 
 import maps from './json/maps.json';
 import gameScripts from './game/_scripts.json';
@@ -82,10 +82,10 @@ export default class Engine {
     // load the map
     const map = maps['test-arena'];
     map.objects.forEach((path) => {
-      this.assetLoader.loadModel(path, (mesh: Mesh) => {
+      this.assetLoader.loadModel(path, (mesh) => {
         const body = AssetLoader.loadPhysicsModel(mesh, 0);
         new Entity()
-          .setComponent(GraphicsData, mesh)
+          .setComponent(MeshData, mesh)
           .setComponent(PhysicsData, body);
       });
     });
@@ -113,7 +113,7 @@ export default class Engine {
 
       // update game
       this.#gameTasks.forEach((task) => {
-        executeTask(task, delta);
+        eManager.executeTask(task, delta);
       });
 
       // update graphics

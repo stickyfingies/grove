@@ -3,44 +3,20 @@ import {
 } from 'cannon-es';
 import $ from 'jquery';
 import Engine from '../engine';
-import { Entity, Task } from '../entities';
+import { eManager, Entity } from '../entities';
 import { PhysicsData } from '../physics';
+import { HealthData } from './health';
 import { KeyboardControlData } from './keyboardControls';
-
-//
-
-let engine: Engine;
-
-/**
- * Entity Tasks
- */
-
-class PlayerData {
-  hp: { val: number, max: number };
-}
-
-const playerTask: Task = (_, [playerData]: [PlayerData]) => {
-  // check for death
-  if (playerData.hp.val <= 0) {
-    engine.running = false;
-    $('#blocker').show();
-    $('#load').hide().fadeIn(5000).html('<h1>You Have Perished. Game Over...</h1>');
-  }
-};
-playerTask.queries = new Set([PlayerData]);
 
 /**
  * Script Interface
  */
 
-export const init = (engineData: Engine) => {
-  // expose engine data to entire module
-  engine = engineData;
-
-  // initialize player stats
-  const data: PlayerData = {
+// eslint-disable-next-line import/prefer-default-export
+export const init = (engine: Engine) => {
+  const health: HealthData = {
     hp: {
-      val: 1,
+      value: 5,
       max: 10,
     },
   };
@@ -76,15 +52,22 @@ export const init = (engineData: Engine) => {
       contactNormal.copy(contact.ni);
     }
 
-    if (contactNormal.dot(upAxis) > 0.5 && body.velocity.y <= -20) {
-      const playerdata = Entity.getTag('player').getComponent(PlayerData);
-      playerdata.hp.val -= Math.floor(Math.abs(body.velocity.y) / 7);
+    if (contactNormal.dot(upAxis) > 0.5 && body.velocity.length() >= 15) {
+      health.hp.value -= Math.floor(Math.abs(body.velocity.length()) / 10);
+    }
+  });
+
+  // handle death
+  eManager.events.on(`delete${HealthData.name}Component`, (id) => {
+    if (id === Entity.getTag('player').id) {
+      $('#blocker').show();
+      $('#load').hide().fadeIn(5000).html('<h1>You Have Perished. Game Over...</h1>');
     }
   });
 
   // attach data to debug GUI
   const { gui } = engine;
-  gui.add(data.hp, 'val').name('HP').listen();
+  gui.add(health.hp, 'value').name('HP').listen();
   gui.add(body.position, 'x').listen();
   gui.add(body.position, 'y').listen();
   gui.add(body.position, 'z').listen();
@@ -93,8 +76,6 @@ export const init = (engineData: Engine) => {
   new Entity()
     .addTag('player')
     .setComponent(PhysicsData, body)
-    .setComponent(PlayerData, data)
+    .setComponent(HealthData, health)
     .setComponent(KeyboardControlData, kbControl);
 };
-
-export const tasks = [playerTask];

@@ -9,7 +9,10 @@ import {
   Scene,
   PerspectiveCamera,
   DirectionalLight,
+  AmbientLight,
   Mesh,
+  Sprite,
+  SpriteMaterial,
   MeshPhongMaterial,
   DataTexture,
   RGBAFormat,
@@ -48,9 +51,9 @@ interface GraphicsBackendUploadTextureData {
 }
 
 interface GraphicsBackendAddObjectData {
-  geometry: string,
-  material: string,
-  imageId: number,
+  geometry: object,
+  material: object,
+  colorMapId: number,
   id: number
 }
 
@@ -64,10 +67,13 @@ interface GraphicsBackendResizeData {
 }
 
 /**
-   * Graphics Backend
-   */
+ * Graphics Backend
+ */
 
 export default class GraphicsBackend {
+  // eslint-disable-next-line no-undef
+  [idx: string]: Function;
+
   // main camera used to render the scene
   #camera = new PerspectiveCamera(45, 2, 0.1, 2000);
 
@@ -78,7 +84,7 @@ export default class GraphicsBackend {
   #renderer: WebGLRenderer;
 
   // map of mesh IDs to mesh instances
-  #idToEntity = new Map<number, Object3D>();
+  #idToObject = new Map<number, Object3D>();
 
   // map of texture identifiers to raw image data
   #textureCache = new Map<number, DataTexture>();
@@ -110,7 +116,7 @@ export default class GraphicsBackend {
     this.#camera.updateProjectionMatrix();
     this.#camera.matrixAutoUpdate = false;
     this.#scene.add(this.#camera);
-    this.#idToEntity.set(0, this.#camera); // see assumptions at top of this file
+    this.#idToObject.set(0, this.#camera); // see assumptions at top of this file
 
     // test cube
     const cube = new Mesh(new BoxGeometry(6, 6, 6), new MeshPhongMaterial({
@@ -118,6 +124,11 @@ export default class GraphicsBackend {
     }));
     cube.position.y = 30;
     this.#scene.add(cube);
+
+    // test sprite
+    // const sprite = new Sprite();
+    // sprite.position.y = 15;
+    // this.#scene.add(sprite);
 
     // sun light
     const light = new DirectionalLight(0xffffff, 1);
@@ -133,6 +144,9 @@ export default class GraphicsBackend {
     shadow.mapSize.width = 1024;
     shadow.mapSize.height = 1024;
     this.#scene.add(light);
+
+    const ambient = new AmbientLight(0xffffff, 0.2);
+    this.#scene.add(ambient);
 
     // skybox state
     const imagePrefix = '/img/skybox/';
@@ -170,7 +184,7 @@ export default class GraphicsBackend {
       skybox.rotateY(0.0001);
 
       // copy transforms from transform buffer
-      this.#idToEntity.forEach((object, id) => {
+      this.#idToObject.forEach((object, id) => {
         const offset = Number(id) * this.#elementsPerTransform;
 
         const matrix = new Matrix4().fromArray(tArr, offset);
@@ -212,11 +226,19 @@ export default class GraphicsBackend {
     this.#textureCache.set(imageId, map);
   }
 
-  addObject({
-    geometry, material, imageId, id,
+  updateMaterial({ material, id }: any) {
+    const mat = new MaterialLoader().parse(material);
+
+    const mesh = this.#idToObject.get(id)! as Mesh | Sprite;
+
+    mesh.material = mat;
+  }
+
+  addMesh({
+    geometry, material, id,
   }: GraphicsBackendAddObjectData) {
     const geo = new BufferGeometryLoader().parse(geometry);
-    const mat = new MaterialLoader().parse(material);
+    const mat = this.deserializeMaterial(material) as MeshPhongMaterial;
 
     // create and configure mesh
     const mesh = new Mesh(geo, mat);
@@ -224,17 +246,26 @@ export default class GraphicsBackend {
     mesh.receiveShadow = true;
     mesh.matrixAutoUpdate = false;
 
-    // set texture if applicable
-    if (imageId) (mesh.material as MeshPhongMaterial).map = this.#textureCache.get(imageId)!;
-
     this.#scene.add(mesh);
 
-    this.#idToEntity.set(id, mesh);
+    this.#idToObject.set(id, mesh);
+  }
+
+  addSprite({
+    material, id,
+  }: any) {
+    const mat = this.deserializeMaterial(material) as SpriteMaterial;
+    const sprite = new Sprite(mat);
+    sprite.matrixAutoUpdate = false;
+
+    this.#scene.add(sprite);
+
+    this.#idToObject.set(id, sprite);
   }
 
   removeObject({ id }: GraphicsBackendRemoveObjectData) {
-    const object = this.#idToEntity.get(id)!;
-    this.#idToEntity.delete(id);
+    const object = this.#idToObject.get(id)!;
+    this.#idToObject.delete(id);
     this.#scene.remove(object);
   }
 
@@ -243,5 +274,31 @@ export default class GraphicsBackend {
     this.#camera.updateProjectionMatrix();
 
     this.#renderer.setSize(width, height, false);
+  }
+
+  private deserializeMaterial(json: any) {
+    const { map, alphaMap } = json;
+
+    delete json.map; //
+    delete json.matcap;
+    delete json.alphaMap; //
+    delete json.bumpMap;
+    delete json.normalMap;
+    delete json.displacementMap;
+    delete json.roughnessMap;
+    delete json.metalnessMap;
+    delete json.emissiveMap;
+    delete json.specularMap;
+    delete json.envMap;
+    delete json.lightMap;
+    delete json.aoMap;
+
+    const mat = new MaterialLoader().parse(json) as MeshPhongMaterial | SpriteMaterial;
+
+    // assign textures
+    if (map) mat.map = this.#textureCache.get(map)!;
+    if (alphaMap) mat.alphaMap = this.#textureCache.get(alphaMap)!;
+
+    return mat;
   }
 }

@@ -1,8 +1,9 @@
 {
     "scripts": [
         "updateTransforms",
-        "rabbit",
+        "hominid",
         "player",
+        "health",
         "shooting",
         "keyboardControls",
         "pauseMenu"

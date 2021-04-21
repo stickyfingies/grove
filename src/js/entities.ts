@@ -56,7 +56,7 @@ interface DataType<T = any> {
 type ComponentSignature = Set<DataType>;
 
 export interface Task {
-  (delta: number, data: object[]): void;
+  (delta: number, data: object[], entity?: number): void;
   queries: ComponentSignature;
 }
 
@@ -87,21 +87,6 @@ class Archetype {
 
 //
 
-export const events = new EventEmitter();
-
-const tagList = new Map<string, number>();
-
-const dataManagers = new Map<DataType, DataManager>();
-
-// maps an entity ID to its component signature
-let entityId = 0;
-
-const idToArchetype: Map<number, Archetype> = new Map();
-
-const archetypes: Archetype[] = [];
-
-//
-
 const areSetsEqual = <T>(setA: Set<T>, setB: Set<T>) => {
   let equal = setA.size === setB.size;
   setA.forEach((value) => {
@@ -123,14 +108,170 @@ const queryComponents = (queries: ComponentSignature, signature: ComponentSignat
   return matches;
 };
 
+//
+
+export class EntityManager {
+  #events = new EventEmitter();
+
+  #tagList = new Map<string, number>();
+
+  #dataManagers = new Map<DataType, DataManager>();
+
+  // maps an entity ID to its component signature
+  #entityId = 0;
+
+  #idToArchetype: Map<number, Archetype> = new Map();
+
+  #archetypes: Archetype[] = [];
+
+  get events() {
+    return this.#events;
+  }
+
+  createEntity() {
+    const id = this.#entityId;
+    this.#entityId += 1;
+    return id;
+  }
+
+  deleteEntity(id: number) {
+    const archetype = this.#idToArchetype.get(id)!;
+
+    archetype.signature.forEach((type) => {
+      this.events.emit(`delete${type.name}Component`, id, this.getComponent(id, type));
+      this.#dataManagers.get(type)?.deleteComponent(id);
+    });
+
+    archetype.entities.delete(id);
+
+    this.#idToArchetype.delete(id);
+  }
+
+  setComponent(id: number, type: DataType, data: object) {
+    // assign to new entity archetype
+    const signature = new Set(this.#idToArchetype.get(id)?.signature);
+    signature.add(type);
+    this.refreshArchetype(id, signature);
+
+    // lazily initialize data manager
+    if (!this.#dataManagers.has(type)) {
+      this.#dataManagers.set(type, new DataManager());
+    }
+
+    this.#dataManagers.get(type)?.setComponent(id, data);
+
+    // emit a `set` event
+    this.events.emit(`set${type.name}Component`, id, data);
+  }
+
+  deleteComponent(id: number, type: DataType) {
+    // assign to new entity archetype
+    const signature = new Set(this.#idToArchetype.get(id)?.signature);
+    signature.delete(type);
+    this.refreshArchetype(id, signature);
+
+    // lazily initialize data manager
+    if (!this.#dataManagers.has(type)) {
+      console.warn(`component type ${type.name} is not registered`);
+      this.#dataManagers.set(type, new DataManager());
+    }
+
+    // emit a `delete` event
+    this.events.emit(`delete${type.name}Component`, id, this.getComponent(id, type));
+
+    this.#dataManagers.get(type)?.deleteComponent(id);
+  }
+
+  getComponent<T>(id: number, type: DataType<T>): T {
+    // lazily initialize data manager
+    if (!this.#dataManagers.has(type)) {
+      console.error(`component type ${type.name} is not registered`);
+      this.#dataManagers.set(type, new DataManager());
+    }
+
+    return this.#dataManagers.get(type)?.getComponent(id)!;
+  }
+
+  hasComponent(id: number, type: DataType): boolean {
+    // lazily initialize data manager
+    if (!this.#dataManagers.has(type)) {
+      console.warn(`component type ${type.name} is not registered`);
+      this.#dataManagers.set(type, new DataManager());
+    }
+
+    return this.#dataManagers.get(type)?.hasComponent(id)!;
+  }
+
+  addTag(id: number, tag: string) {
+    this.#tagList.set(tag, id);
+  }
+
+  getTag(tag: string) {
+    if (!this.#tagList.has(tag)) {
+      console.error(`no entity found with tag:${tag}`);
+    }
+
+    return this.#tagList.get(tag)!;
+  }
+
+  executeTask(task: Task, delta: number) {
+    this.#archetypes.forEach((arch) => {
+      // ensure this archetype has all required components
+      if (!queryComponents(task.queries, arch.signature)) return;
+
+      // pass entity data to task
+      arch.entities.forEach((id) => {
+        const data: DataType[] = [];
+
+        // push this entity's component data into a list
+        task.queries.forEach((type) => {
+          data.push(this.getComponent(id, type));
+        });
+
+        // pass that list to the task
+        task(delta, data, id);
+      });
+    });
+  }
+
+  private refreshArchetype(id: number, signature: ComponentSignature) {
+    // component signature changed; remove affiliations with any old archetypes
+    this.#idToArchetype.delete(id);
+    this.#archetypes.forEach((arch) => {
+      arch.entities.delete(id);
+    });
+
+    let entityInArchetype = false;
+
+    // we should attempt to add this entity to an existing archetype
+    // it's more than likely that one already exists
+    this.#archetypes.forEach((arch) => {
+      if (areSetsEqual(arch.signature, signature)) {
+        entityInArchetype = true;
+        this.#idToArchetype.set(id, arch);
+        arch.entities.add(id);
+      }
+    });
+
+    // if we couldn't find an archetype that matches this entity's list of components,
+    // create one that contains this entity
+    if (!entityInArchetype) {
+      const arch = new Archetype(new Set(signature), new Set([id]));
+      this.#archetypes.push(arch);
+      this.#idToArchetype.set(id, arch);
+    }
+  }
+}
+
+export const eManager = new EntityManager();
+
 export class Entity {
   #id: number;
 
   //
 
   constructor(id?: number) {
-    this.#id = id ?? entityId;
-    if (!id) entityId += 1;
+    this.#id = id ?? eManager.createEntity();
   }
 
   get id() {
@@ -140,121 +281,34 @@ export class Entity {
   //
 
   delete() {
-    idToArchetype.get(this.#id)!.signature.forEach((type) => {
-      events.emit(`delete${type.name}Component`, this.#id, this.getComponent(type));
-    });
-    idToArchetype.delete(this.#id);
-    archetypes.forEach((arch) => {
-      arch.entities.delete(this.#id);
-    });
-    dataManagers.forEach((manager) => {
-      if (manager.hasComponent(this.#id)) {
-        manager.deleteComponent(this.#id);
-      }
-    });
-    this.#id = -1;
+    eManager.deleteEntity(this.id);
   }
 
   setComponent(type: DataType, data: object) {
-    // attaching a component changes the entity's component signature, invalidating whichever
-    // archetype (if any) it was previously a part of
+    eManager.setComponent(this.id, type, data);
+    return this;
+  }
 
-    const oldSignature = new Set(idToArchetype.get(this.#id)?.signature);
-    oldSignature.add(type);
-
-    idToArchetype.delete(this.#id);
-    archetypes.forEach((arch) => {
-      arch.entities.delete(this.#id);
-    });
-
-    if (!dataManagers.has(type)) {
-      dataManagers.set(type, new DataManager());
-    }
-
-    dataManagers.get(type)?.setComponent(this.#id, data);
-
-    // we should attempt to add this entity to an existing archetype
-    // it's more than likely that one already exists
-
-    let entityInArchetype = false;
-
-    archetypes.forEach((arch) => {
-      if (areSetsEqual(arch.signature, oldSignature)) {
-        entityInArchetype = true;
-        idToArchetype.set(this.#id, arch);
-        arch.entities.add(this.#id);
-      }
-    });
-
-    // if we couldn't find an archetype that matches this entity's list of components,
-    // create one that contains this entity
-
-    if (!entityInArchetype) {
-      const arch = new Archetype(new Set(oldSignature), new Set([this.#id]));
-      archetypes.push(arch);
-      idToArchetype.set(this.#id, arch);
-    }
-
-    // emit an event indicating what happened
-
-    events.emit(`set${type.name}Component`, this.#id, data);
-
+  deleteComponent(type: DataType) {
+    eManager.deleteComponent(this.id, type);
     return this;
   }
 
   getComponent<T>(type: DataType<T>): T {
-    // lazily initialize data manager
-    if (!dataManagers.has(type)) {
-      console.error(`component type ${type.name} is not registered`);
-      dataManagers.set(type, new DataManager());
-    }
-
-    return dataManagers.get(type)?.getComponent(this.#id)!;
+    return eManager.getComponent(this.id, type);
   }
 
   hasComponent(type: DataType): boolean {
-    // lazily initialize data manager
-    if (!dataManagers.has(type)) {
-      console.warn(`component type ${type.name} is not registered`);
-      dataManagers.set(type, new DataManager());
-    }
-
-    return dataManagers.get(type)?.hasComponent(this.#id)!;
+    return eManager.hasComponent(this.id, type);
   }
 
   addTag(tag: string) {
-    tagList.set(tag, this.#id);
+    eManager.addTag(this.id, tag);
     return this;
   }
 
   static getTag(tag: string) {
-    if (!tagList.has(tag)) {
-      console.error(`no entity found with tag:${tag}`);
-    }
-
-    return new Entity(tagList.get(tag)!);
+    const id = eManager.getTag(tag);
+    return new Entity(id);
   }
 }
-
-//
-
-export const executeTask = (task: Task, delta: number) => {
-  archetypes.forEach((arch) => {
-    // ensure this archetype has all required components
-    if (!queryComponents(task.queries, arch.signature)) return;
-
-    // pass entity data to task
-    arch.entities.forEach((id) => {
-      const entity = new Entity(id);
-      const data: DataType[] = [];
-
-      // push this entity's component data into a list
-      task.queries.forEach((type) => {
-        data.push(entity.getComponent(type));
-      });
-
-      // pass that list to the task
-      task(delta, data);
-    });
-  });
-};
