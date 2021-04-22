@@ -55,11 +55,6 @@ interface DataType<T = any> {
 
 type ComponentSignature = Set<DataType>;
 
-export interface Task {
-  (delta: number, data: object[], entity?: number): void;
-  queries: ComponentSignature;
-}
-
 class DataManager {
   components = new Map<number, object>();
 
@@ -110,7 +105,82 @@ const queryComponents = (queries: ComponentSignature, signature: ComponentSignat
 
 //
 
-export class EntityManager {
+interface IEntityManager {
+  createEntity(): number;
+
+  deleteEntity(id: number): void;
+
+  setComponent(id: number, type: DataType, data: object): void;
+
+  deleteComponent(id: number, type: DataType): void;
+
+  getComponent<T>(id: number, type: DataType<T>): T;
+
+  hasComponent(id: number, type: DataType): boolean;
+
+  addTag(id: number, tag: string): void;
+
+  getTag(tag: string): number;
+}
+
+export class Entity {
+  #manager: IEntityManager;
+
+  #id: number;
+
+  // eslint-disable-next-line
+  constructor(manager: IEntityManager, id: number = manager.createEntity()) {
+    this.#manager = manager;
+    this.#id = id;
+  }
+
+  get id() {
+    return this.#id;
+  }
+
+  get manager() {
+    return this.#manager;
+  }
+
+  delete() {
+    this.manager.deleteEntity(this.id);
+  }
+
+  setComponent(type: DataType, data: object) {
+    this.manager.setComponent(this.id, type, data);
+    return this;
+  }
+
+  deleteComponent(type: DataType) {
+    this.manager.deleteComponent(this.id, type);
+    return this;
+  }
+
+  getComponent<T>(type: DataType<T>): T {
+    return this.manager.getComponent(this.id, type);
+  }
+
+  hasComponent(type: DataType): boolean {
+    return this.manager.hasComponent(this.id, type);
+  }
+
+  addTag(tag: string) {
+    this.manager.addTag(this.id, tag);
+    return this;
+  }
+
+  static getTag(manager: IEntityManager, tag: string) {
+    const id = manager.getTag(tag);
+    return new Entity(manager, id);
+  }
+}
+
+export interface Task {
+  execute(delta: number, entity: Entity): void;
+  queries: ComponentSignature;
+}
+
+export class EntityManager implements IEntityManager {
   #events = new EventEmitter();
 
   #tagList = new Map<string, number>();
@@ -229,7 +299,7 @@ export class EntityManager {
         });
 
         // pass that list to the task
-        task(delta, data, id);
+        task.execute(delta, new Entity(this, id));
       });
     });
   }
@@ -260,55 +330,5 @@ export class EntityManager {
       this.#archetypes.push(arch);
       this.#idToArchetype.set(id, arch);
     }
-  }
-}
-
-export const eManager = new EntityManager();
-
-export class Entity {
-  #id: number;
-
-  //
-
-  constructor(id?: number) {
-    this.#id = id ?? eManager.createEntity();
-  }
-
-  get id() {
-    return this.#id;
-  }
-
-  //
-
-  delete() {
-    eManager.deleteEntity(this.id);
-  }
-
-  setComponent(type: DataType, data: object) {
-    eManager.setComponent(this.id, type, data);
-    return this;
-  }
-
-  deleteComponent(type: DataType) {
-    eManager.deleteComponent(this.id, type);
-    return this;
-  }
-
-  getComponent<T>(type: DataType<T>): T {
-    return eManager.getComponent(this.id, type);
-  }
-
-  hasComponent(type: DataType): boolean {
-    return eManager.hasComponent(this.id, type);
-  }
-
-  addTag(tag: string) {
-    eManager.addTag(this.id, tag);
-    return this;
-  }
-
-  static getTag(tag: string) {
-    const id = eManager.getTag(tag);
-    return new Entity(id);
   }
 }

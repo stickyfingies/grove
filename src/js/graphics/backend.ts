@@ -220,6 +220,7 @@ export default class GraphicsBackend {
     map.magFilter = LinearFilter;
     map.minFilter = LinearMipMapLinearFilter;
     map.generateMipmaps = true;
+    map.flipY = true;
     map.needsUpdate = true;
 
     // store texture in cache
@@ -227,7 +228,7 @@ export default class GraphicsBackend {
   }
 
   updateMaterial({ material, id }: any) {
-    const mat = new MaterialLoader().parse(material);
+    const mat = this.deserializeMaterial(material);
 
     const mesh = this.#idToObject.get(id)! as Mesh | Sprite;
 
@@ -237,18 +238,24 @@ export default class GraphicsBackend {
   addMesh({
     geometry, material, id,
   }: GraphicsBackendAddObjectData) {
-    const geo = new BufferGeometryLoader().parse(geometry);
-    const mat = this.deserializeMaterial(material) as MeshPhongMaterial;
+    let object: Mesh | Sprite;
 
-    // create and configure mesh
-    const mesh = new Mesh(geo, mat);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    mesh.matrixAutoUpdate = false;
+    const mat = this.deserializeMaterial(material);
 
-    this.#scene.add(mesh);
+    if (geometry) {
+      const geo = new BufferGeometryLoader().parse(geometry);
+      object = new Mesh(geo, mat);
+      object.castShadow = true;
+      object.receiveShadow = true;
+    } else {
+      object = new Sprite(mat as SpriteMaterial);
+    }
 
-    this.#idToObject.set(id, mesh);
+    object.matrixAutoUpdate = false;
+
+    this.#scene.add(object);
+
+    this.#idToObject.set(id, object);
   }
 
   addSprite({

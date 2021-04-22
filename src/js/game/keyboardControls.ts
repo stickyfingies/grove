@@ -1,28 +1,12 @@
 import { Vec3 } from 'cannon-es';
 import { Euler, Vector3 } from 'three';
-import Engine from '../engine';
-import { Entity, Task } from '../entities';
+import { Entity } from '../entities';
 import { CameraData } from '../graphics/graphics';
 import { PhysicsData } from '../physics';
+import GameScript from '../script';
 
 /**
- * Script State
- */
-
-let moveForward = false;
-let moveBackward = false;
-let moveLeft = false;
-let moveRight = false;
-let canJump = false;
-let wantsToJump = false;
-
-let engine: Engine;
-
-const minPolarAngle = 0;
-const maxPolarAngle = Math.PI;
-
-/**
- * Entity Tasks
+ * Components
  */
 
 export class KeyboardControlData {
@@ -31,129 +15,142 @@ export class KeyboardControlData {
   jumpVelocity: number;
 }
 
-export const keyboardControlTask: Task = (d, [body, kb]: [PhysicsData, KeyboardControlData]) => {
-  const delta = d * 0.1;
-
-  const inputVelocity = new Vector3(0, 0, 0);
-
-  const raycastDst = new Vec3(body.position.x, body.position.y - 2, body.position.z);
-  canJump = engine.physics.raycast(body.position, raycastDst);
-
-  if (moveForward) {
-    inputVelocity.z = -kb.velocityFactor * delta;
-  }
-  if (moveBackward) {
-    inputVelocity.z = kb.velocityFactor * delta;
-  }
-  if (moveLeft) {
-    inputVelocity.x = -kb.velocityFactor * delta;
-  }
-  if (moveRight) {
-    inputVelocity.x = kb.velocityFactor * delta;
-  }
-  if (wantsToJump && canJump) {
-    body.velocity.y += kb.jumpVelocity;
-  }
-
-  const camera = Entity.getTag('camera').getComponent(CameraData);
-
-  inputVelocity.applyQuaternion(camera.quaternion);
-
-  // eslint-disable-next-line max-len
-  const clamp = (num: number, a: number, b: number) => Math.max(Math.min(num, Math.max(a, b)), Math.min(a, b));
-
-  body.velocity.x += inputVelocity.x;
-  body.velocity.z += inputVelocity.z;
-  body.velocity.x = clamp(body.velocity.x, -inputVelocity.x, inputVelocity.x);
-  body.velocity.z = clamp(body.velocity.z, -inputVelocity.z, inputVelocity.z);
-
-  const { x: px, y: py, z: pz } = body.position;
-  camera.position.copy(new Vector3(px, py, pz));
-};
-keyboardControlTask.queries = new Set([PhysicsData, KeyboardControlData]);
-
 /**
- * Script Specifics
+ * Script
  */
 
-const onMouseMove = ({ movementX, movementY }: MouseEvent) => {
-  if (!engine.running) return;
+export default class KeyboardControlScript extends GameScript {
+  moveForward = false;
 
-  const euler = new Euler(0, 0, 0, 'YXZ');
+  moveBackward = false;
 
-  const camera = Entity.getTag('camera').getComponent(CameraData);
+  moveLeft = false;
 
-  euler.setFromQuaternion(camera.quaternion);
+  moveRight = false;
 
-  euler.y -= movementX * 0.002;
-  euler.x -= movementY * 0.002;
+  canJump = false;
 
-  const PI_2 = Math.PI / 2;
-  euler.x = Math.max(PI_2 - maxPolarAngle, Math.min(PI_2 - minPolarAngle, euler.x));
+  wantsToJump = false;
 
-  camera.quaternion.setFromEuler(euler);
-};
+  readonly minPolarAngle = 0;
 
-const onKeyDown = ({ key }: KeyboardEvent) => {
-  switch (key) {
-    case 'ArrowUp':
-    case 'w':
-      moveForward = true;
-      break;
-    case 'ArrowLeft':
-    case 'a':
-      moveLeft = true;
-      break;
-    case 'ArrowDown':
-    case 's':
-      moveBackward = true;
-      break;
-    case 'ArrowRight':
-    case 'd':
-      moveRight = true;
-      break;
-    case ' ':
-      wantsToJump = true;
-      break;
-    default:
+  readonly maxPolarAngle = Math.PI;
+
+  queries = new Set([PhysicsData, KeyboardControlData]);
+
+  init() {
+    document.addEventListener('mousemove', (e) => this.onMouseMove(e));
+    document.addEventListener('keydown', (e) => this.onKeyDown(e));
+    document.addEventListener('keyup', (e) => this.onKeyUp(e));
   }
-};
 
-const onKeyUp = ({ key }: KeyboardEvent) => {
-  switch (key) {
-    case 'ArrowUp':
-    case 'w':
-      moveForward = false;
-      break;
-    case 'ArrowLeft':
-    case 'a':
-      moveLeft = false;
-      break;
-    case 'ArrowDown':
-    case 's':
-      moveBackward = false;
-      break;
-    case 'ArrowRight':
-    case 'd':
-      moveRight = false;
-      break;
-    case ' ':
-      wantsToJump = false;
-      break;
-    default:
+  update(dt: number, entity: Entity) {
+    const body = entity.getComponent(PhysicsData);
+    const kb = entity.getComponent(KeyboardControlData);
+
+    const delta = dt * 0.1;
+    const inputVelocity = new Vector3(0, 0, 0);
+
+    const raycastDst = new Vec3(body.position.x, body.position.y - 2, body.position.z);
+    this.canJump = this.physics.raycast(body.position, raycastDst);
+
+    if (this.moveForward) {
+      inputVelocity.z = -kb.velocityFactor * delta;
+    }
+    if (this.moveBackward) {
+      inputVelocity.z = kb.velocityFactor * delta;
+    }
+    if (this.moveLeft) {
+      inputVelocity.x = -kb.velocityFactor * delta;
+    }
+    if (this.moveRight) {
+      inputVelocity.x = kb.velocityFactor * delta;
+    }
+    if (this.wantsToJump && this.canJump) {
+      body.velocity.y += kb.jumpVelocity;
+    }
+
+    const camera = Entity.getTag(this.eManager, 'camera').getComponent(CameraData);
+
+    inputVelocity.applyQuaternion(camera.quaternion);
+
+    const { max, min } = Math;
+    const clamp = (num: number, a: number, b: number) => max(min(num, max(a, b)), min(a, b));
+
+    body.velocity.x += inputVelocity.x;
+    body.velocity.z += inputVelocity.z;
+    body.velocity.x = clamp(body.velocity.x, -inputVelocity.x, inputVelocity.x);
+    body.velocity.z = clamp(body.velocity.z, -inputVelocity.z, inputVelocity.z);
+
+    const { x: px, y: py, z: pz } = body.position;
+    camera.position.copy(new Vector3(px, py, pz));
   }
-};
 
-/**
- * Script Interface
- */
+  private onMouseMove({ movementX, movementY }: MouseEvent) {
+    if (!this.engine.running) return;
 
-export const init = (engineData: Engine) => {
-  engine = engineData;
+    const euler = new Euler(0, 0, 0, 'YXZ');
 
-  document.addEventListener('mousemove', (e) => onMouseMove(e));
-  document.addEventListener('keydown', (e) => onKeyDown(e));
-  document.addEventListener('keyup', (e) => onKeyUp(e));
-};
+    const camera = Entity.getTag(this.eManager, 'camera').getComponent(CameraData);
 
-export const tasks = [keyboardControlTask];
+    euler.setFromQuaternion(camera.quaternion);
+
+    euler.y -= movementX * 0.002;
+    euler.x -= movementY * 0.002;
+
+    const PI_2 = Math.PI / 2;
+    euler.x = Math.max(PI_2 - this.maxPolarAngle, Math.min(PI_2 - this.minPolarAngle, euler.x));
+
+    camera.quaternion.setFromEuler(euler);
+  }
+
+  private onKeyDown({ key }: KeyboardEvent) {
+    switch (key) {
+      case 'ArrowUp':
+      case 'w':
+        this.moveForward = true;
+        break;
+      case 'ArrowLeft':
+      case 'a':
+        this.moveLeft = true;
+        break;
+      case 'ArrowDown':
+      case 's':
+        this.moveBackward = true;
+        break;
+      case 'ArrowRight':
+      case 'd':
+        this.moveRight = true;
+        break;
+      case ' ':
+        this.wantsToJump = true;
+        break;
+      default:
+    }
+  }
+
+  private onKeyUp({ key }: KeyboardEvent) {
+    switch (key) {
+      case 'ArrowUp':
+      case 'w':
+        this.moveForward = false;
+        break;
+      case 'ArrowLeft':
+      case 'a':
+        this.moveLeft = false;
+        break;
+      case 'ArrowDown':
+      case 's':
+        this.moveBackward = false;
+        break;
+      case 'ArrowRight':
+      case 'd':
+        this.moveRight = false;
+        break;
+      case ' ':
+        this.wantsToJump = false;
+        break;
+      default:
+    }
+  }
+}

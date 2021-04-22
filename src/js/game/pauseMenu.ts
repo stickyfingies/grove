@@ -1,26 +1,27 @@
 import $ from 'jquery';
-import Engine from '../engine';
+import GameScript from '../script';
 
-// eslint-disable-next-line import/prefer-default-export
-export const init = (engine: Engine) => {
-  const blocker = document.getElementById('blocker')!;
+export default class PauseMenuScript extends GameScript {
+  init() {
+    const blocker = document.getElementById('blocker')!;
 
-  const pointerlockchange = () => {
-    const isLocked = (document.pointerLockElement === document.body);
-    engine.running = isLocked;
+    const pointerlockchange = () => {
+      const isLocked = (document.pointerLockElement === document.body);
+      this.engine.running = isLocked;
 
-    $('#pause').toggle(!isLocked);
-    if (isLocked) {
-      blocker.style.display = 'none';
-    }
-  };
+      $('#pause').toggle(!isLocked);
+      if (isLocked) {
+        blocker.style.display = 'none';
+      }
+    };
 
-  document.addEventListener('pointerlockchange', pointerlockchange);
+    document.addEventListener('pointerlockchange', pointerlockchange);
 
-  const click = () => {
-    document.body.requestFullscreen();
-    document.body.requestPointerLock();
-  };
+    const click = () => {
+      document.body.requestFullscreen();
+      document.body.requestPointerLock();
+    };
 
-  $('.play-btn').on('click', click);
-};
+    $('.play-btn').on('click', click);
+  }
+}

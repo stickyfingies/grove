@@ -12,7 +12,7 @@ import {
   Cylinder,
   PointToPointConstraint,
 } from 'cannon-es';
-import { eManager } from './entities';
+import Engine from './engine';
 
 export const PhysicsData = Body;
 // eslint-disable-next-line no-redeclare
@@ -26,15 +26,15 @@ export class Physics {
   // world container which holds all physical bodies
   #world = new World();
 
-  init() {
+  init(engine: Engine) {
     // general world options
     this.#world.gravity.set(0, -9.8, 0);
     this.#world.allowSleep = true;
 
-    // default contact options
+    // default contact options (disabled friction for character controllers)
     this.#world.defaultContactMaterial.contactEquationStiffness = 1e9;
     this.#world.defaultContactMaterial.contactEquationRelaxation = 4;
-    this.#world.defaultContactMaterial.friction = 2;
+    this.#world.defaultContactMaterial.friction = 0.0;
 
     // provide broadphase
     this.#world.broadphase = new NaiveBroadphase();
@@ -48,16 +48,16 @@ export class Physics {
     this.#world.solver = split ? new SplitSolver(solver) : solver;
 
     // listen for entity events
-    eManager.events.on(`set${PhysicsData.name}Component`, (_, data: PhysicsData) => {
+    engine.eManager.events.on(`set${PhysicsData.name}Component`, (_, data: PhysicsData) => {
       this.#world.addBody(data);
     });
-    eManager.events.on(`set${ConstraintData.name}Component`, (_, data: ConstraintData) => {
+    engine.eManager.events.on(`set${ConstraintData.name}Component`, (_, data: ConstraintData) => {
       this.#world.addConstraint(data);
     });
-    eManager.events.on(`delete${PhysicsData.name}Component`, (_, data: PhysicsData) => {
+    engine.eManager.events.on(`delete${PhysicsData.name}Component`, (_, data: PhysicsData) => {
       this.#world.removeBody(data);
     });
-    eManager.events.on(`delete${ConstraintData.name}Component`, (_, data: ConstraintData) => {
+    engine.eManager.events.on(`delete${ConstraintData.name}Component`, (_, data: ConstraintData) => {
       this.#world.removeConstraint(data);
     });
   }
@@ -77,7 +77,6 @@ export class Physics {
     return result.hasHit;
   }
 
-  // utility method for making a spherical body
   static makeBall(mass: number, radius: number) {
     const shape = new Sphere(radius);
     const body = new Body({ mass });

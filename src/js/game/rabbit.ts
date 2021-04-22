@@ -5,6 +5,7 @@
  *
  * THIS FILE IS NOT USED ANYMORE - KEPT FOR REFERENCE PURPOSES
  */
+// @ts-nocheck
 
 import Engine from '../engine';
 import { Entity, Task } from '../entities';
@@ -24,7 +25,7 @@ class RabbitData {
 }
 
 const rabbitTask: Task = (_, [rabbitData, body]: [RabbitData, PhysicsData]) => {
-  const playerPos = Entity.getTag('player').getComponent(PhysicsData).interpolatedPosition;
+  const playerPos = Entity.getTag(engine.eManager, 'player').getComponent(PhysicsData).interpolatedPosition;
   const distanceToPlayer = body.interpolatedPosition.distanceTo(playerPos);
 
   if (distanceToPlayer < rabbitData.jumpRadius) {
@@ -39,7 +40,7 @@ rabbitTask.queries = new Set([RabbitData, PhysicsData]);
  */
 
 const createRabbit = () => {
-  const rabbit = new Entity();
+  const rabbit = new Entity(engine.eManager);
 
   const radius = 100;
   const mass = 3;

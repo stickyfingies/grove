@@ -28,6 +28,9 @@ module.exports = {
     'no-plusplus': ['error', { allowForLoopAfterthoughts: true }],
     'no-param-reassign': ['error', { props: false }],
     'no-unused-vars': ['error', { args: 'none' }],
+    'no-useless-constructor': 'off',
+    'no-empty-function': ['error', { allow: ['constructors'] }],
+    'max-classes-per-file': 'off',
     'linebreak-style': ['error', (os.EOL === '\r\n' ? 'windows' : 'unix')],
     'import/extensions': [
       'error',

@@ -23,4 +23,12 @@ export default class GraphicsUtils {
 
     return mesh;
   }
+
+  // creates a temporary canvas element and returns its context.  may leak memory
+  static scratchCanvasContext(width: number, height: number) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    return { canvas, ctx: canvas.getContext('2d')! };
+  }
 }

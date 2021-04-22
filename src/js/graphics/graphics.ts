@@ -25,8 +25,11 @@ import {
   Material,
   Raycaster,
   Vector2,
+  Scene,
 } from 'three';
-import { Entity, eManager } from '../entities';
+import Engine from '../engine';
+import { Entity } from '../entities';
+import GraphicsUtils from './utils';
 
 /**
  * Component Types
@@ -35,26 +38,21 @@ import { Entity, eManager } from '../entities';
 export type CameraData = PerspectiveCamera;
 // eslint-disable-next-line no-redeclare
 export const CameraData = PerspectiveCamera;
-export type MeshData = Object3D;
+export type MeshData = Mesh | Sprite;
 // eslint-disable-next-line no-redeclare
 export const MeshData = Object3D;
-export type SpriteData = Sprite;
-// eslint-disable-next-line no-redeclare
-export const SpriteData = Sprite;
 
 /**
  * Graphics Frontend
  */
 
 export class Graphics {
+  #scene = new Scene();
+
   // a map between mesh ID's and mesh instances
   // mesh ID's are not the same as entity ID's, as we need a compact list of meshes, but not all
   // entities will have mesh components.
   #idToObject = new Map<number, Object3D>();
-
-  // a map between a mesh instance and it's mesh ID
-  // inverse of #idToEntity
-  #objectToId = new WeakMap<Object3D, number>();
 
   // every time a mesh gets removed from the scene, we recycle its ID so that the list of meshes
   // stays compact.  recycled, unused IDs go into this list.
@@ -93,36 +91,26 @@ export class Graphics {
     this.#array = new Float32Array(this.#buffer);
   }
 
-  init() {
+  init(engine: Engine) {
     const offscreenCanvas = document.getElementById('main-canvas') as HTMLCanvasElement;
     const offscreen = offscreenCanvas.transferControlToOffscreen();
 
     // create the camera as a game entity
-    new Entity()
+    new Entity(engine.eManager)
       .addTag('camera')
       .setComponent(CameraData, this.#camera);
     this.assignIdToObject(this.#camera);
 
     // listen to component events
-    eManager.events.on(`set${MeshData.name}Component`, (id, object: Object3D) => {
+    engine.eManager.events.on(`set${MeshData.name}Component`, (id, object: Mesh | Sprite) => {
       object.traverse((child) => {
-        if (child instanceof Mesh) {
-          this.addMeshToScene(child);
+        if (child instanceof Mesh || child instanceof Sprite) {
+          this.addObjectToScene(child);
         }
       });
     });
-    eManager.events.on(`delete${MeshData.name}Component`, (id, mesh: Mesh) => {
+    engine.eManager.events.on(`delete${MeshData.name}Component`, (id, mesh: Mesh) => {
       this.removeFromScene(mesh);
-    });
-    eManager.events.on(`set${SpriteData.name}Component`, (id, sprite: Sprite) => {
-      sprite.traverse((child) => {
-        if (child instanceof Sprite) {
-          this.addSpriteToScene(child);
-        }
-      });
-    });
-    eManager.events.on(`delete${SpriteData.name}Component`, (id, sprite: Sprite) => {
-      this.removeFromScene(sprite);
     });
 
     // initialize graphics backend
@@ -149,11 +137,13 @@ export class Graphics {
     this.#idToObject.forEach((mesh) => this.writeTransformToArray(mesh));
   }
 
-  updateMaterial(mesh: Mesh) {
+  updateMaterial(object: Mesh | Sprite) {
+    this.extractMaterialTextures(object.material as Material);
+
     this.#worker.postMessage({
       type: 'updateMaterial',
-      material: (mesh.material as Material).toJSON(),
-      id: this.#objectToId.get(mesh),
+      material: (object.material as Material).toJSON(),
+      id: object.userData.meshId,
     });
   }
 
@@ -165,7 +155,7 @@ export class Graphics {
   }
 
   private removeFromScene = (object: Object3D) => {
-    const id = this.#objectToId.get(object)!;
+    const id = object.userData.meshId;
 
     // inform the graphics backend
     this.#worker.postMessage({
@@ -175,7 +165,6 @@ export class Graphics {
 
     // delete all relationships to meshes/IDs
     this.#idToObject.delete(id);
-    this.#objectToId.delete(object);
 
     // recycle the mesh ID
     this.#availableObjectIds.push(id);
@@ -183,7 +172,7 @@ export class Graphics {
 
   private writeTransformToArray(object: Object3D) {
     // calculate offset into array given mesh ID
-    const offset = this.#objectToId.get(object)! * this.#elementsPerTransform;
+    const offset = object.userData.meshId * this.#elementsPerTransform;
 
     // copy world matrix into transform buffer
     object.updateMatrixWorld();
@@ -204,25 +193,25 @@ export class Graphics {
 
     // set mesh/ID relationships
     this.#idToObject.set(id, object);
-    this.#objectToId.set(object, id);
+    object.userData.meshId = id;
 
     return id;
   }
 
+  /**
+   * Ship a texture to the graphics backend, but only if the texture has not already been uploaded.
+   * Responsible for both graphics and asset loading; being on the backend is where it 'matters'
+   */
   private uploadTexture(map: Texture) {
     // if we've already loaded this texture and cached it, there's no work to be done.
     if (this.#textureCache.has(map.uuid)) return;
 
-    // draw the image to a canvas
-    const canvas = document.createElement('canvas');
-    canvas.width = map.image.width;
-    canvas.height = map.image.height;
-    const ctx = canvas.getContext('2d')!;
+    // grab raw image data from the texture
+    const { ctx } = GraphicsUtils.scratchCanvasContext(map.image.width, map.image.height);
     ctx.drawImage(map.image, 0, 0);
-
-    // grab raw pixel data from the canvas
     const imageData = ctx.getImageData(0, 0, map.image.width, map.image.height);
 
+    // cache it
     this.#textureCache.add(map.uuid);
 
     // send pixel data to backend
@@ -235,40 +224,38 @@ export class Graphics {
     });
   }
 
-  private addMeshToScene(mesh: Mesh) {
-    const id = this.assignIdToObject(mesh);
-    mesh.userData.id = id;
+  private extractMaterialTextures(material: Material) {
+    // @ts-ignore
+    const { map, alphaMap } = material;
+    if (map) this.uploadTexture(map);
+    if (alphaMap) this.uploadTexture(alphaMap);
+  }
+
+  /**
+   * Upload a renderable object and all its attributes/textures to the graphics backend.
+   * Establishing a scene hierarchy is possible by specifying `object.parent`
+   * Current supported objects: Mesh, Sprite
+   */
+  private addObjectToScene(object: Mesh | Sprite) {
+    // maintain a scene-graph-like structure
+    if (object.parent) object.parent.add(object);
+    else this.#scene.add(object);
+
+    const id = this.assignIdToObject(object);
+    object.userData.id = id;
 
     // send object's texture data to backend
-    // @ts-ignore
-    const { map } = mesh.material;
-    if (map) this.uploadTexture(map);
+    this.extractMaterialTextures(object.material as Material);
 
     // @ts-ignore
-    delete mesh.geometry.parameters;
+    if (object.geometry) delete object.geometry.parameters;
 
     // send that bitch to the backend
     this.#worker.postMessage({
       type: 'addMesh',
-      name: mesh.name,
-      geometry: mesh.geometry.toJSON(),
-      material: (mesh.material as Material).toJSON(),
-      id,
-    });
-  }
-
-  private addSpriteToScene(sprite: Sprite) {
-    const id = this.assignIdToObject(sprite);
-    sprite.userData.id = id;
-
-    // send object's texture data to backend
-    const { map, alphaMap } = sprite.material;
-    if (map) this.uploadTexture(map);
-    if (alphaMap) this.uploadTexture(alphaMap);
-
-    this.#worker.postMessage({
-      type: 'addSprite',
-      material: sprite.material.toJSON(),
+      name: object.name,
+      geometry: object instanceof Mesh ? object.geometry.toJSON() : null,
+      material: (object.material as Material).toJSON(),
       id,
     });
   }

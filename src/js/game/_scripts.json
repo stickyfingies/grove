@@ -1,8 +1,8 @@
 {
     "scripts": [
-        "updateTransforms",
-        "hominid",
+        "meshTransform",
         "player",
+        "hominid",
         "health",
         "shooting",
         "keyboardControls",

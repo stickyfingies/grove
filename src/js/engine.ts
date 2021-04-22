@@ -1,3 +1,12 @@
+/**
+ * System {
+ *  constructor(engine) - defaulted, provides dependencies
+ *  init() - called in appropriate order
+ *  update() - fixed update, generic work
+ *  ecs tasks...
+ * }
+ */
+
 import { DefaultLoadingManager } from 'three';
 import $ from 'jquery';
 // @ts-ignore
@@ -6,7 +15,7 @@ import { GUI } from 'dat.gui';
 import AssetLoader from './load';
 import { Graphics, MeshData } from './graphics/graphics';
 import { Physics, PhysicsData } from './physics';
-import { Entity, eManager, Task } from './entities';
+import { Entity, EntityManager, Task } from './entities';
 
 import maps from './json/maps.json';
 import gameScripts from './game/_scripts.json';
@@ -16,7 +25,7 @@ export default class Engine {
 
   #then = 0;
 
-  #gameTasks: Task[] = [];
+  #gameScripts: any[] = [];
 
   #stats = new Stats();
 
@@ -27,6 +36,8 @@ export default class Engine {
   #physics = new Physics();
 
   #assetLoader = new AssetLoader();
+
+  #eManager = new EntityManager();
 
   /**
    * Getters for game scripts
@@ -48,10 +59,14 @@ export default class Engine {
     return this.#assetLoader;
   }
 
+  get eManager() {
+    return this.#eManager;
+  }
+
   init() {
     // initialize engine systems
-    this.graphics.init();
-    this.physics.init();
+    this.graphics.init(this);
+    this.physics.init(this);
 
     // show asset loading progress
     DefaultLoadingManager.onProgress = (url, loaded, total) => {
@@ -66,16 +81,13 @@ export default class Engine {
     gameScripts.scripts.forEach(async (scriptName) => {
       const script = await import(`./game/${scriptName}`);
 
-      // initialize script
-      if ('init' in script) {
-        script.init(this);
-      }
+      // eslint-disable-next-line new-cap
+      const foo: any = new script.default(this);
 
-      // register `update` tasks
-      if ('tasks' in script) {
-        script.tasks.forEach((task: Task) => {
-          this.#gameTasks.push(task);
-        });
+      this.#gameScripts.push(foo);
+
+      if ('init' in foo) {
+        foo.init();
       }
     });
 
@@ -84,7 +96,7 @@ export default class Engine {
     map.objects.forEach((path) => {
       this.assetLoader.loadModel(path, (mesh) => {
         const body = AssetLoader.loadPhysicsModel(mesh, 0);
-        new Entity()
+        new Entity(this.eManager)
           .setComponent(MeshData, mesh)
           .setComponent(PhysicsData, body);
       });
@@ -92,7 +104,7 @@ export default class Engine {
 
     // </hack> this needs to be done in the player init script
     setTimeout(() => {
-      Entity.getTag('player').getComponent(PhysicsData).position.set(map.spawn[0], map.spawn[1], map.spawn[2]);
+      Entity.getTag(this.eManager, 'player').getComponent(PhysicsData).position.set(map.spawn[0], map.spawn[1], map.spawn[2]);
     }, 500);
 
     // show performance statistics
@@ -112,8 +124,16 @@ export default class Engine {
       this.physics.update(delta);
 
       // update game
-      this.#gameTasks.forEach((task) => {
-        eManager.executeTask(task, delta);
+      this.#gameScripts.forEach((script) => {
+        if ('queries' in script && 'update' in script) {
+          const task: Task = {
+            execute(a, b) { script.update(a, b); },
+            queries: script.queries,
+          };
+          this.eManager.executeTask(task, delta);
+        } else if ('update' in script) {
+          script.update();
+        }
       });
 
       // update graphics

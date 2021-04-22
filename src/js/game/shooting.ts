@@ -1,40 +1,22 @@
 import { Ray, Vector3 } from 'three';
 import $ from 'jquery';
-import { Entity } from '../entities';
+import { Entity, EntityManager } from '../entities';
 import { Physics, PhysicsData } from '../physics';
 import { CameraData, MeshData } from '../graphics/graphics';
-import Engine from '../engine';
 import GraphicsUtils from '../graphics/utils';
 import { HealthData } from './health';
+import GameScript from '../script';
 
-/**
- * Script Specifics
- */
+export const shoot = (eManager: EntityManager, origin: Entity, shootDir: Vector3) => {
+  const ball = new Entity(eManager);
 
-const getShootDir = () => {
-  const camera = Entity.getTag('camera').getComponent(CameraData);
-  const targetVec = new Vector3(0, 0, 1);
-  targetVec.unproject(camera);
-  const playerid = Entity.getTag('player');
-  const { x, y, z } = playerid.getComponent(PhysicsData).position;
-  const position = new Vector3(x, y, z);
-  const ray = new Ray(position, targetVec.sub(position).normalize());
-  targetVec.copy(ray.direction);
-
-  return targetVec;
-};
-
-const shoot = () => {
-  const ball = new Entity();
-  const playerid = Entity.getTag('player');
-
-  const { x: px, y: py, z: pz } = playerid.getComponent(PhysicsData).position;
-  const { x: vx, y: vy, z: vz } = playerid.getComponent(PhysicsData).velocity;
-  const { x: sdx, y: sdy, z: sdz } = getShootDir();
+  const { x: px, y: py, z: pz } = origin.getComponent(PhysicsData).position;
+  const { x: vx, y: vy, z: vz } = origin.getComponent(PhysicsData).velocity;
+  const { x: sdx, y: sdy, z: sdz } = shootDir;
 
   const radius = 0.2;
   const mass = 10;
-  const shootVelo = 20;
+  const shootVelo = 40;
 
   const body = Physics.makeBall(mass, radius);
   body.velocity.set(vx + sdx * shootVelo, vy + sdy * shootVelo, vz + sdz * shootVelo);
@@ -52,29 +34,39 @@ const shoot = () => {
   body.addEventListener('collide', collideCb);
 };
 
-/**
- * Script Interface
- */
+export default class ShootingScript extends GameScript {
+  init() {
+    $(document).on('mousedown', () => {
+      if (this.engine.running) shoot(this.eManager, Entity.getTag(this.eManager, 'player'), this.getShootDir());
+    });
 
-// eslint-disable-next-line import/prefer-default-export
-export const init = (engine: Engine) => {
-  $(document).on('mousedown', () => {
-    if (engine.running) shoot();
-  });
+    // update crosshair with information about what the player is looking at
+    $(document).on('mousemove', () => {
+      const lookingAt = this.graphics.raycast();
+      let text = '';
 
-  // update crosshair with information about what the player is looking at
-  $(document).on('mousemove', () => {
-    const lookingAt = engine.graphics.raycast();
-    let text = '';
-
-    if (lookingAt.length && lookingAt[0].distance < 30) {
-      const e = new Entity(lookingAt[0].object.userData.id);
-      if (e.hasComponent(HealthData)) {
-        const health = e.getComponent(HealthData);
-        text = `${health.hp.value}/${health.hp.max} hp`;
+      if (lookingAt.length && lookingAt[0].distance < 30) {
+        const entity = new Entity(this.eManager, lookingAt[0].object.userData.id);
+        if (entity.hasComponent(HealthData)) {
+          const health = entity.getComponent(HealthData);
+          text = `${health.hp.value}/${health.hp.max} hp`;
+        }
       }
-    }
 
-    $('#crosshair-info').text(text);
-  });
-};
+      $('#crosshair-info').text(text);
+    });
+  }
+
+  private getShootDir() {
+    const camera = Entity.getTag(this.eManager, 'camera').getComponent(CameraData);
+    const targetVec = new Vector3(0, 0, 1);
+    targetVec.unproject(camera);
+    const playerid = Entity.getTag(this.eManager, 'player');
+    const { x, y, z } = playerid.getComponent(PhysicsData).position;
+    const position = new Vector3(x, y, z);
+    const ray = new Ray(position, targetVec.sub(position).normalize());
+    targetVec.copy(ray.direction);
+
+    return targetVec;
+  }
+}

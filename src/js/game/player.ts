@@ -1,81 +1,94 @@
-import {
-  Body, Sphere, Material, Vec3,
-} from 'cannon-es';
+import { Body, Sphere } from 'cannon-es';
 import $ from 'jquery';
-import Engine from '../engine';
-import { eManager, Entity } from '../entities';
+import { CanvasTexture, Sprite, SpriteMaterial } from 'three';
+import { Entity } from '../entities';
+import { CameraData, MeshData } from '../graphics/graphics';
+import GraphicsUtils from '../graphics/utils';
 import { PhysicsData } from '../physics';
+import GameScript from '../script';
 import { HealthData } from './health';
 import { KeyboardControlData } from './keyboardControls';
 
-/**
- * Script Interface
- */
+export default class PlayerScript extends GameScript {
+  init() {
+    const health: HealthData = {
+      hp: {
+        value: 100,
+        max: 100,
+      },
+    };
 
-// eslint-disable-next-line import/prefer-default-export
-export const init = (engine: Engine) => {
-  const health: HealthData = {
-    hp: {
-      value: 5,
-      max: 10,
-    },
-  };
+    // initialize KB control options
+    const kbControl: KeyboardControlData = {
+      velocityFactor: 4,
+      jumpVelocity: 1.5,
+    };
 
-  // initialize KB control options
-  const kbControl: KeyboardControlData = {
-    velocityFactor: 4,
-    jumpVelocity: 1.5,
-  };
+    // create physics body
+    const mass = 100;
+    const radius = 1.7;
+    const shape = new Sphere(radius);
+    const playerBody = new Body({
+      collisionFilterGroup: 2,
+      allowSleep: false,
+      mass,
+    });
+    playerBody.addShape(shape);
 
-  // create physics body
-  const mass = 1;
-  const radius = 1.7;
-  const shape = new Sphere(radius);
-  const material = new Material('playerMaterial');
-  const body = new Body({
-    collisionFilterGroup: 2,
-    allowSleep: false,
-    mass,
-    material,
-  });
-  body.addShape(shape);
-  // body.position.set(0, 30, 0);
+    //
 
-  // handle fall damage
-  body.addEventListener('collide', ({ contact }: any) => {
-    const upAxis = new Vec3(0, 1, 0);
-    const contactNormal = new Vec3();
+    const hud = new Entity(this.eManager);
 
-    if (contact.bi.id === body.id) {
-      contact.ni.negate(contactNormal);
-    } else {
-      contactNormal.copy(contact.ni);
-    }
+    const drawHUD = () => {
+      const { canvas, ctx } = GraphicsUtils.scratchCanvasContext(256, 256);
+      ctx.font = '54px Arial';
+      ctx.fillStyle = 'red';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${health.hp.value}/${health.hp.max}HP`, canvas.width / 2, canvas.height / 2);
+      return new CanvasTexture(canvas);
+    };
 
-    if (contactNormal.dot(upAxis) > 0.5 && body.velocity.length() >= 15) {
-      health.hp.value -= Math.floor(Math.abs(body.velocity.length()) / 10);
-    }
-  });
+    const hudSprite = new Sprite();
+    hudSprite.material = new SpriteMaterial({ map: drawHUD(), color: 0x55ff55 });
+    hudSprite.position.set(0, -0.5, -1.3);
+    hudSprite.scale.set(0.2, 0.2, 0.2);
+    hudSprite.parent = Entity.getTag(this.eManager, 'camera').getComponent(CameraData);
+    hud.setComponent(MeshData, hudSprite);
 
-  // handle death
-  eManager.events.on(`delete${HealthData.name}Component`, (id) => {
-    if (id === Entity.getTag('player').id) {
-      $('#blocker').show();
-      $('#load').hide().fadeIn(5000).html('<h1>You Have Perished. Game Over...</h1>');
-    }
-  });
+    const refreshHud = () => {
+      hudSprite.material.map = drawHUD();
+      this.graphics.updateMaterial(hudSprite);
+    };
 
-  // attach data to debug GUI
-  const { gui } = engine;
-  gui.add(health.hp, 'value').name('HP').listen();
-  gui.add(body.position, 'x').listen();
-  gui.add(body.position, 'y').listen();
-  gui.add(body.position, 'z').listen();
+    //
 
-  // register the entity
-  new Entity()
-    .addTag('player')
-    .setComponent(PhysicsData, body)
-    .setComponent(HealthData, health)
-    .setComponent(KeyboardControlData, kbControl);
-};
+    // handle fall damage
+    playerBody.addEventListener('collide', ({ body }: any) => {
+      if (body.velocity.length() >= 15) {
+        health.hp.value -= Math.floor(Math.abs(body.velocity.length()) / 10);
+        refreshHud();
+      }
+    });
+
+    // handle death
+    this.eManager.events.on(`delete${HealthData.name}Component`, (id) => {
+      if (id === Entity.getTag(this.eManager, 'player').id) {
+        $('#blocker').show();
+        $('#load').hide().fadeIn(5000).html('<h1>You Have Perished. Game Over...</h1>');
+      }
+    });
+
+    // attach data to debug GUI
+    this.gui.add(health.hp, 'value').name('HP').listen();
+    this.gui.add(playerBody.position, 'x').listen();
+    this.gui.add(playerBody.position, 'y').listen();
+    this.gui.add(playerBody.position, 'z').listen();
+
+    // register the entity
+    new Entity(this.eManager)
+      .addTag('player')
+      .setComponent(PhysicsData, playerBody)
+      .setComponent(HealthData, health)
+      .setComponent(KeyboardControlData, kbControl);
+  }
+}
