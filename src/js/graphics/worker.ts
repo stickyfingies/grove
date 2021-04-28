@@ -1,8 +1,9 @@
-import GraphicsBackend from './backend';
+import GraphicsBackend from './backend.three';
 
 const backend = new GraphicsBackend();
 
 onmessage = ({ data }) => {
   const type = data.type as string;
-  backend[type](data);
+  if (type in backend) backend[type](data);
+  else console.error(`[render thread] command ${type} does not exist on this graphics backend`);
 };

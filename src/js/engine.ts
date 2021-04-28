@@ -92,7 +92,7 @@ export default class Engine {
     });
 
     // load the map
-    const map = maps['test-arena'];
+    const map = maps['skjar-isles'];
     map.objects.forEach((path) => {
       this.assetLoader.loadModel(path, (mesh) => {
         const body = AssetLoader.loadPhysicsModel(mesh, 0);

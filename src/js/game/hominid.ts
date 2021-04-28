@@ -18,7 +18,7 @@ export default class HominidScript extends GameScript {
   init() {
     this.gui.add(this, 'createHominid').name('Spawn Hominid');
 
-    for (let i = 0; i < 16; i++) this.createHominid();
+    for (let i = 0; i < 1; i++) this.createHominid();
   }
 
   update(dt: number, hominid: Entity) {
@@ -31,6 +31,7 @@ export default class HominidScript extends GameScript {
     const speed = 4;
     const bubble = 15;
 
+    // crude movement
     if (hominidPos.x < playerPos.x - bubble) hominidPhysics.velocity.x = speed;
     else if (hominidPos.x > playerPos.x + bubble) hominidPhysics.velocity.x = -speed;
     if (hominidPos.z < playerPos.z - bubble) hominidPhysics.velocity.z = speed;
@@ -63,7 +64,8 @@ export default class HominidScript extends GameScript {
     torsoBody.updateMassProperties();
     torso.setComponent(PhysicsData, torsoBody);
 
-    const torsoMesh = GraphicsUtils.makeCylinder(radius, height + radius * 2);
+    const torsoMesh = GraphicsUtils.makeCylinder(1, height + radius * 2);
+    torsoMesh.scale.set(radius, height + radius * 2, radius);
     torso.setComponent(MeshData, torsoMesh);
 
     const health: HealthData = {
@@ -97,6 +99,7 @@ export default class HominidScript extends GameScript {
       new Vec3(0, height + radius * 1.5, 0),
       4,
     );
+    neck.collideConnected = false;
     // @ts-ignore
     head.setComponent(ConstraintData, neck);
 
@@ -114,7 +117,7 @@ export default class HominidScript extends GameScript {
     const haloSprite = new Sprite();
     haloSprite.material = new SpriteMaterial({ map: drawHaloTexture(), color: 0x55ff55 });
     haloSprite.scale.set(2, 2, 2);
-    haloSprite.position.y += radius * 2;
+    haloSprite.position.y += radius * 4;
     haloSprite.parent = headMesh;
     halo.setComponent(MeshData, haloSprite);
 
@@ -148,8 +151,9 @@ export default class HominidScript extends GameScript {
     // headshots deal damage
 
     headBody.addEventListener('collide', (event: any) => {
-      if (event.body.velocity.length() >= 15 && torso.hasComponent(HealthData)) {
-        health.hp.value -= Math.floor(Math.abs(event.body.velocity.length()) / 10);
+      const impact = event.contact.getImpactVelocityAlongNormal();
+      if (Math.abs(impact) >= 15 && torso.hasComponent(HealthData)) {
+        health.hp.value -= Math.floor(Math.abs(impact) / 10);
         haloSprite.material.map = drawHaloTexture();
         haloSprite.material.opacity = health.hp.value / health.hp.max;
         this.graphics.updateMaterial(haloSprite);

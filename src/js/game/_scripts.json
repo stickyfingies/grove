@@ -1,11 +1,12 @@
 {
     "scripts": [
         "meshTransform",
+        "keyboardControls",
         "player",
         "hominid",
+        "rabbit",
         "health",
         "shooting",
-        "keyboardControls",
         "pauseMenu"
     ]
 }

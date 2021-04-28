@@ -7,12 +7,10 @@
  */
 // @ts-nocheck
 
-import Engine from '../engine';
-import { Entity, Task } from '../entities';
+import GameScript from '../script';
+import { Entity } from '../entities';
 import { MeshData } from '../graphics/graphics';
 import { Physics, PhysicsData } from '../physics';
-
-let engine: Engine;
 
 /**
  * Entity Tasks
@@ -24,54 +22,47 @@ class RabbitData {
   jumpVelocity: number;
 }
 
-const rabbitTask: Task = (_, [rabbitData, body]: [RabbitData, PhysicsData]) => {
-  const playerPos = Entity.getTag(engine.eManager, 'player').getComponent(PhysicsData).interpolatedPosition;
-  const distanceToPlayer = body.interpolatedPosition.distanceTo(playerPos);
+export default class RabbitScript extends GameScript {
+  queries = [RabbitData, PhysicsData];
 
-  if (distanceToPlayer < rabbitData.jumpRadius) {
-    body.wakeUp();
-    // body.velocity.y = rabbitData.jumpVelocity;
+  init() {
+    this.gui.add(this, 'createRabbit').name('Spawn Rabbit');
+
+    for (let i = 0; i < 10; i++) {
+      this.createRabbit();
+    }
   }
-};
-rabbitTask.queries = new Set([RabbitData, PhysicsData]);
 
-/**
- * Script Specifics
- */
+  createRabbit() {
+    const rabbit = new Entity(this.eManager);
 
-const createRabbit = () => {
-  const rabbit = new Entity(engine.eManager);
+    const radius = 100;
+    const mass = 3;
+    const body = Physics.makeBall(radius, mass);
+    body.position.x = Math.random() * 150 - 75;
+    body.position.y = 30;
+    body.position.z = Math.random() * 150 - 75;
+    rabbit.setComponent(PhysicsData, body);
 
-  const radius = 100;
-  const mass = 3;
-  const body = Physics.makeBall(radius, mass);
-  body.position.x = Math.random() * 150 - 75;
-  body.position.y = 30;
-  body.position.z = Math.random() * 150 - 75;
-  rabbit.setComponent(PhysicsData, body);
+    rabbit.setComponent(RabbitData, {
+      jumpRadius: 30,
+      jumpVelocity: 7,
+    });
 
-  rabbit.setComponent(RabbitData, {
-    jumpRadius: 30,
-    jumpVelocity: 7,
-  });
-
-  engine.assetLoader.loadModel('/models/rabbit-glb/Rabbit.glb', (mesh) => {
-    mesh.userData.norotate = true;
-    rabbit.setComponent(MeshData, mesh);
-  });
-};
-
-/**
- * Script Interface
- */
-
-export const init = (engineData: Engine) => {
-  engine = engineData;
-  engine.gui.add({ createRabbit }, 'createRabbit').name('Spawn Rabbit');
-
-  for (let i = 0; i < 1; i++) {
-    createRabbit();
+    this.assetLoader.loadModel('/models/rabbit-glb/Rabbit.glb', (mesh) => {
+      mesh.userData.norotate = true;
+      rabbit.setComponent(MeshData, mesh);
+    });
   }
-};
 
-export const tasks = [rabbitTask];
+  update(dt: number, rabbit: Entity) {
+    const playerPos = Entity.getTag(this.eManager, 'player').getComponent(PhysicsData).interpolatedPosition;
+    const body = rabbit.getComponent(PhysicsData);
+    const distanceToPlayer = body.interpolatedPosition.distanceTo(playerPos);
+
+    if (distanceToPlayer < 30) {
+      body.wakeUp();
+      body.velocity.y = 4;
+    }
+  }
+}

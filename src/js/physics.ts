@@ -77,6 +77,10 @@ export class Physics {
     return result.hasHit;
   }
 
+  /**
+   * Utility methods for making RigidBodies
+   */
+
   static makeBall(mass: number, radius: number) {
     const shape = new Sphere(radius);
     const body = new Body({ mass });

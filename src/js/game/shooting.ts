@@ -4,9 +4,9 @@ import { Entity, EntityManager } from '../entities';
 import { Physics, PhysicsData } from '../physics';
 import { CameraData, MeshData } from '../graphics/graphics';
 import GraphicsUtils from '../graphics/utils';
-import { HealthData } from './health';
 import GameScript from '../script';
 
+// shoots a ball outwards from an entity in an indicated direction
 export const shoot = (eManager: EntityManager, origin: Entity, shootDir: Vector3) => {
   const ball = new Entity(eManager);
 
@@ -34,39 +34,24 @@ export const shoot = (eManager: EntityManager, origin: Entity, shootDir: Vector3
   body.addEventListener('collide', collideCb);
 };
 
+// get a ThreeJS vector pointing outwards from the camera
+export const getCameraDir = (eManager: EntityManager) => {
+  const camera = Entity.getTag(eManager, 'camera').getComponent(CameraData);
+  const targetVec = new Vector3(0, 0, 1);
+  targetVec.unproject(camera);
+  const playerid = Entity.getTag(eManager, 'player');
+  const { x, y, z } = playerid.getComponent(PhysicsData).position;
+  const position = new Vector3(x, y, z);
+  const ray = new Ray(position, targetVec.sub(position).normalize());
+  targetVec.copy(ray.direction);
+
+  return targetVec;
+};
+
 export default class ShootingScript extends GameScript {
   init() {
     $(document).on('mousedown', () => {
-      if (this.engine.running) shoot(this.eManager, Entity.getTag(this.eManager, 'player'), this.getShootDir());
+      if (this.engine.running) shoot(this.eManager, Entity.getTag(this.eManager, 'player'), getCameraDir(this.eManager));
     });
-
-    // update crosshair with information about what the player is looking at
-    $(document).on('mousemove', () => {
-      const lookingAt = this.graphics.raycast();
-      let text = '';
-
-      if (lookingAt.length && lookingAt[0].distance < 30) {
-        const entity = new Entity(this.eManager, lookingAt[0].object.userData.id);
-        if (entity.hasComponent(HealthData)) {
-          const health = entity.getComponent(HealthData);
-          text = `${health.hp.value}/${health.hp.max} hp`;
-        }
-      }
-
-      $('#crosshair-info').text(text);
-    });
-  }
-
-  private getShootDir() {
-    const camera = Entity.getTag(this.eManager, 'camera').getComponent(CameraData);
-    const targetVec = new Vector3(0, 0, 1);
-    targetVec.unproject(camera);
-    const playerid = Entity.getTag(this.eManager, 'player');
-    const { x, y, z } = playerid.getComponent(PhysicsData).position;
-    const position = new Vector3(x, y, z);
-    const ray = new Ray(position, targetVec.sub(position).normalize());
-    targetVec.copy(ray.direction);
-
-    return targetVec;
   }
 }

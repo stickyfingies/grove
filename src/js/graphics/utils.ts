@@ -7,10 +7,11 @@ import {
 
 export default class GraphicsUtils {
   static makeBall(radius: number, norotate?: boolean) {
-    const geometry = new SphereGeometry(radius, 32, 32);
+    const geometry = new SphereGeometry(1, 32, 32);
     const material = new MeshPhongMaterial({ color: 0x00CCFF });
     const mesh = new Mesh(geometry, material);
 
+    mesh.scale.set(radius, radius, radius);
     mesh.userData.norotate = norotate;
 
     return mesh;

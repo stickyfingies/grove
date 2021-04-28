@@ -26,6 +26,7 @@ import {
   Raycaster,
   Vector2,
   Scene,
+  Light,
 } from 'three';
 import Engine from '../engine';
 import { Entity } from '../entities';
@@ -38,7 +39,7 @@ import GraphicsUtils from './utils';
 export type CameraData = PerspectiveCamera;
 // eslint-disable-next-line no-redeclare
 export const CameraData = PerspectiveCamera;
-export type MeshData = Mesh | Sprite;
+export type MeshData = Mesh | Sprite | Light;
 // eslint-disable-next-line no-redeclare
 export const MeshData = Object3D;
 
@@ -47,6 +48,7 @@ export const MeshData = Object3D;
  */
 
 export class Graphics {
+  // a tree-like graph of the game scene, used for parent-child relationships between renderables
   #scene = new Scene();
 
   // a map between mesh ID's and mesh instances
@@ -74,6 +76,7 @@ export class Graphics {
   #array: Float32Array;
 
   // this camera acts as a proxy for the actual rendering camera in the backend
+  // todo: should cameras be treated specially (as they currently are)?
   #camera = new PerspectiveCamera();
 
   // number of bytes per each element in the shared array buffer
@@ -102,9 +105,9 @@ export class Graphics {
     this.assignIdToObject(this.#camera);
 
     // listen to component events
-    engine.eManager.events.on(`set${MeshData.name}Component`, (id, object: Mesh | Sprite) => {
+    engine.eManager.events.on(`set${MeshData.name}Component`, (id, object: Mesh | Sprite | Light) => {
       object.traverse((child) => {
-        if (child instanceof Mesh || child instanceof Sprite) {
+        if (child instanceof Mesh || child instanceof Sprite || child instanceof Light) {
           this.addObjectToScene(child);
         }
       });
@@ -137,6 +140,8 @@ export class Graphics {
     this.#idToObject.forEach((mesh) => this.writeTransformToArray(mesh));
   }
 
+  // changes to material properties made by game code are not automatically mirrored by the backend.
+  // thus, materials need to be manually flushed after updates
   updateMaterial(object: Mesh | Sprite) {
     this.extractMaterialTextures(object.material as Material);
 
@@ -163,10 +168,8 @@ export class Graphics {
       id,
     });
 
-    // delete all relationships to meshes/IDs
+    // recycle ID
     this.#idToObject.delete(id);
-
-    // recycle the mesh ID
     this.#availableObjectIds.push(id);
   };
 
@@ -232,30 +235,30 @@ export class Graphics {
   }
 
   /**
-   * Upload a renderable object and all its attributes/textures to the graphics backend.
+   * Upload a renderable object to the graphics backend.
    * Establishing a scene hierarchy is possible by specifying `object.parent`
    * Current supported objects: Mesh, Sprite
    */
-  private addObjectToScene(object: Mesh | Sprite) {
+  private addObjectToScene(object: Object3D) {
     // maintain a scene-graph-like structure
     if (object.parent) object.parent.add(object);
     else this.#scene.add(object);
 
     const id = this.assignIdToObject(object);
-    object.userData.id = id;
 
     // send object's texture data to backend
-    this.extractMaterialTextures(object.material as Material);
+    if (object instanceof Mesh || object instanceof Sprite) {
+      this.extractMaterialTextures(object.material as Material);
+    }
 
-    // @ts-ignore
-    if (object.geometry) delete object.geometry.parameters;
+    // some fix for serializing spheres. is this still necessary?
+    if (object instanceof Mesh) delete object.geometry.parameters;
 
     // send that bitch to the backend
     this.#worker.postMessage({
-      type: 'addMesh',
+      type: 'addObject',
       name: object.name,
-      geometry: object instanceof Mesh ? object.geometry.toJSON() : null,
-      material: (object.material as Material).toJSON(),
+      mesh: object.toJSON(),
       id,
     });
   }

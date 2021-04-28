@@ -50,7 +50,7 @@
 import EventEmitter from 'events';
 
 interface DataType<T = any> {
-  new(): T;
+  new(...args: any[]): T;
 }
 
 type ComponentSignature = Set<DataType>;

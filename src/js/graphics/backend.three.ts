@@ -26,9 +26,9 @@ import {
   LinearMipMapLinearFilter,
   Object3D,
   Matrix4,
-  BufferGeometryLoader,
   MaterialLoader,
   PCFSoftShadowMap,
+  ObjectLoader,
 } from 'three';
 
 /**
@@ -51,8 +51,7 @@ interface GraphicsBackendUploadTextureData {
 }
 
 interface GraphicsBackendAddObjectData {
-  geometry: object,
-  material: object,
+  mesh: any,
   colorMapId: number,
   id: number
 }
@@ -235,39 +234,23 @@ export default class GraphicsBackend {
     mesh.material = mat;
   }
 
-  addMesh({
-    geometry, material, id,
+  addObject({
+    id, mesh,
   }: GraphicsBackendAddObjectData) {
-    let object: Mesh | Sprite;
+    const mat = mesh.materials ? this.deserializeMaterial(mesh.materials[0]) : null;
 
-    const mat = this.deserializeMaterial(material);
+    mesh.images = [];
+    mesh.textures = [];
 
-    if (geometry) {
-      const geo = new BufferGeometryLoader().parse(geometry);
-      object = new Mesh(geo, mat);
-      object.castShadow = true;
-      object.receiveShadow = true;
-    } else {
-      object = new Sprite(mat as SpriteMaterial);
+    const object = new ObjectLoader().parse(mesh);
+
+    if (object instanceof Mesh || object instanceof Sprite) {
+      object.material = mat;
     }
-
     object.matrixAutoUpdate = false;
 
     this.#scene.add(object);
-
     this.#idToObject.set(id, object);
-  }
-
-  addSprite({
-    material, id,
-  }: any) {
-    const mat = this.deserializeMaterial(material) as SpriteMaterial;
-    const sprite = new Sprite(mat);
-    sprite.matrixAutoUpdate = false;
-
-    this.#scene.add(sprite);
-
-    this.#idToObject.set(id, sprite);
   }
 
   removeObject({ id }: GraphicsBackendRemoveObjectData) {

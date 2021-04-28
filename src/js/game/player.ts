@@ -1,6 +1,8 @@
 import { Body, Sphere } from 'cannon-es';
 import $ from 'jquery';
-import { CanvasTexture, Sprite, SpriteMaterial } from 'three';
+import {
+  CanvasTexture, PointLight, Sprite, SpriteMaterial, Vector3,
+} from 'three';
 import { Entity } from '../entities';
 import { CameraData, MeshData } from '../graphics/graphics';
 import GraphicsUtils from '../graphics/utils';
@@ -11,18 +13,16 @@ import { KeyboardControlData } from './keyboardControls';
 
 export default class PlayerScript extends GameScript {
   init() {
+    const player = new Entity(this.eManager)
+      .addTag('player');
+
     const health: HealthData = {
       hp: {
         value: 100,
         max: 100,
       },
     };
-
-    // initialize KB control options
-    const kbControl: KeyboardControlData = {
-      velocityFactor: 4,
-      jumpVelocity: 1.5,
-    };
+    player.setComponent(HealthData, health);
 
     // create physics body
     const mass = 100;
@@ -31,11 +31,27 @@ export default class PlayerScript extends GameScript {
     const playerBody = new Body({
       collisionFilterGroup: 2,
       allowSleep: false,
+      fixedRotation: true,
       mass,
     });
     playerBody.addShape(shape);
+    player.setComponent(PhysicsData, playerBody);
 
-    //
+    // initialize KB control options
+    const kbControl: KeyboardControlData = {
+      velocityFactor: 4,
+      jumpVelocity: 1.5,
+      hitNormal: new Vector3(),
+      angle: 0,
+    };
+    player.setComponent(KeyboardControlData, kbControl);
+
+    const light = new PointLight(0xff0000, 20, 10);
+    player.setComponent(MeshData, light);
+
+    /**
+     * HUD
+     */
 
     const hud = new Entity(this.eManager);
 
@@ -60,12 +76,15 @@ export default class PlayerScript extends GameScript {
       this.graphics.updateMaterial(hudSprite);
     };
 
-    //
+    /**
+     * Damage Handling
+     */
 
     // handle fall damage
-    playerBody.addEventListener('collide', ({ body }: any) => {
-      if (body.velocity.length() >= 15) {
-        health.hp.value -= Math.floor(Math.abs(body.velocity.length()) / 10);
+    playerBody.addEventListener('collide', ({ contact }: any) => {
+      const impact = contact.getImpactVelocityAlongNormal();
+      if (Math.abs(impact) >= 15) {
+        health.hp.value -= Math.floor(Math.abs(impact) / 10);
         refreshHud();
       }
     });
@@ -79,16 +98,8 @@ export default class PlayerScript extends GameScript {
     });
 
     // attach data to debug GUI
-    this.gui.add(health.hp, 'value').name('HP').listen();
     this.gui.add(playerBody.position, 'x').listen();
     this.gui.add(playerBody.position, 'y').listen();
     this.gui.add(playerBody.position, 'z').listen();
-
-    // register the entity
-    new Entity(this.eManager)
-      .addTag('player')
-      .setComponent(PhysicsData, playerBody)
-      .setComponent(HealthData, health)
-      .setComponent(KeyboardControlData, kbControl);
   }
 }

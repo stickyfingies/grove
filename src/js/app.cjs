@@ -3,6 +3,8 @@ const {
 } = require('electron');
 const path = require('path');
 
+app.commandLine.appendSwitch('enable-unsafe-webgpu');
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1280,
@@ -15,16 +17,13 @@ function createWindow() {
 
   win.removeMenu();
   win.loadFile('../../views/play.html');
+  // win.loadURL('https://wgpu.rs/examples');
 
   globalShortcut.register('f5', () => win.loadFile('../../views/play.html'));
   globalShortcut.register('CommandOrControl+R', () => win.loadFile('../../views/play.html'));
 
   globalShortcut.register('f12', () => win.webContents.toggleDevTools());
   globalShortcut.register('CommandOrControl+Shift+I', () => win.webContents.toggleDevTools());
-}
-
-app.whenReady().then(() => {
-  createWindow();
 
   protocol.interceptFileProtocol('file', (request, callback) => {
     let url = request.url.substr(8);
@@ -32,18 +31,13 @@ app.whenReady().then(() => {
 
     if (ext !== '.html') {
       url = path.join(__dirname, '../../static/', url.substr(3));
-      console.log(url);
     }
 
     callback({ path: url });
   });
+}
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
-  });
-});
+app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
