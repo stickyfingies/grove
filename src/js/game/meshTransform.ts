@@ -1,8 +1,9 @@
 import { Entity } from '../entities';
 import { MeshData } from '../graphics/graphics';
 import { PhysicsData } from '../physics';
+import GameScript from '../script';
 
-export default class MeshTransformScript {
+export default class MeshTransformScript extends GameScript {
   queries = new Set([MeshData, PhysicsData])
 
   // eslint-disable-next-line class-methods-use-this

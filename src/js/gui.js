@@ -1,3 +1,9 @@
+/**
+ * LEGACY CODE
+ *
+ * This file is not included in the active codebase, and it will not run.
+ */
+
 export const init = (globals, player) => {
   $('#gui').toggle();
   $('#underlay').toggle();

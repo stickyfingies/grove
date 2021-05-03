@@ -1,7 +1,7 @@
 import { Body, Sphere } from 'cannon-es';
 import $ from 'jquery';
 import {
-  CanvasTexture, PointLight, Sprite, SpriteMaterial, Vector3,
+  CanvasTexture, Sprite, SpriteMaterial, Vector3,
 } from 'three';
 import { Entity } from '../entities';
 import { CameraData, MeshData } from '../graphics/graphics';
@@ -10,19 +10,23 @@ import { PhysicsData } from '../physics';
 import GameScript from '../script';
 import { HealthData } from './health';
 import { KeyboardControlData } from './keyboardControls';
+import ScoreData from './score';
 
 export default class PlayerScript extends GameScript {
   init() {
-    const player = new Entity(this.eManager)
+    const player = new Entity()
       .addTag('player');
 
-    const health: HealthData = {
+    player.setComponent(HealthData, {
       hp: {
         value: 100,
         max: 100,
       },
-    };
-    player.setComponent(HealthData, health);
+    });
+
+    player.setComponent(ScoreData, {
+      score: 0,
+    });
 
     // create physics body
     const mass = 100;
@@ -38,43 +42,42 @@ export default class PlayerScript extends GameScript {
     player.setComponent(PhysicsData, playerBody);
 
     // initialize KB control options
-    const kbControl: KeyboardControlData = {
+    player.setComponent(KeyboardControlData, {
       velocityFactor: 4,
       jumpVelocity: 1.5,
       hitNormal: new Vector3(),
       angle: 0,
-    };
-    player.setComponent(KeyboardControlData, kbControl);
-
-    const light = new PointLight(0xff0000, 20, 10);
-    player.setComponent(MeshData, light);
+    });
 
     /**
      * HUD
+     * note: hud currently only updates when player takes damage (score may be off)
      */
 
-    const hud = new Entity(this.eManager);
+    const hud = new Entity();
+
+    const hudSprite = new Sprite();
+    hudSprite.material = new SpriteMaterial();
+    hudSprite.position.set(0, -0.5, -1.3);
+    hudSprite.scale.set(0.2, 0.2, 0.2);
+    hudSprite.parent = Entity.getTag('camera').getComponent(CameraData);
+    hud.setComponent(MeshData, hudSprite);
 
     const drawHUD = () => {
       const { canvas, ctx } = GraphicsUtils.scratchCanvasContext(256, 256);
+      const score = player.getComponent(ScoreData);
+      const health = player.getComponent(HealthData);
       ctx.font = '54px Arial';
       ctx.fillStyle = 'red';
       ctx.textAlign = 'center';
-      ctx.fillText(`${health.hp.value}/${health.hp.max}HP`, canvas.width / 2, canvas.height / 2);
-      return new CanvasTexture(canvas);
-    };
+      ctx.fillText(`${health.hp.value}/${health.hp.max}HP`, canvas.width / 2, 54);
+      ctx.fillText(`${score.score} points`, canvas.width / 2, 108);
 
-    const hudSprite = new Sprite();
-    hudSprite.material = new SpriteMaterial({ map: drawHUD(), color: 0x55ff55 });
-    hudSprite.position.set(0, -0.5, -1.3);
-    hudSprite.scale.set(0.2, 0.2, 0.2);
-    hudSprite.parent = Entity.getTag(this.eManager, 'camera').getComponent(CameraData);
-    hud.setComponent(MeshData, hudSprite);
-
-    const refreshHud = () => {
-      hudSprite.material.map = drawHUD();
+      hudSprite.material.map = new CanvasTexture(canvas);
       this.graphics.updateMaterial(hudSprite);
     };
+
+    drawHUD();
 
     /**
      * Damage Handling
@@ -82,18 +85,21 @@ export default class PlayerScript extends GameScript {
 
     // handle fall damage
     playerBody.addEventListener('collide', ({ contact }: any) => {
+      const health = player.getComponent(HealthData);
       const impact = contact.getImpactVelocityAlongNormal();
+
       if (Math.abs(impact) >= 15) {
         health.hp.value -= Math.floor(Math.abs(impact) / 10);
-        refreshHud();
+        drawHUD();
       }
     });
 
     // handle death
     this.eManager.events.on(`delete${HealthData.name}Component`, (id) => {
-      if (id === Entity.getTag(this.eManager, 'player').id) {
+      const score = player.getComponent(ScoreData);
+      if (id === player.id) {
         $('#blocker').show();
-        $('#load').hide().fadeIn(5000).html('<h1>You Have Perished. Game Over...</h1>');
+        $('#load').hide().fadeIn(5000).html(`<h1>You Have Perished. Score... ${score.score}</h1>`);
       }
     });
 

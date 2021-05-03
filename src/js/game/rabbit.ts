@@ -34,7 +34,7 @@ export default class RabbitScript extends GameScript {
   }
 
   createRabbit() {
-    const rabbit = new Entity(this.eManager);
+    const rabbit = new Entity();
 
     const radius = 100;
     const mass = 3;

@@ -2,16 +2,16 @@ import $ from 'jquery';
 import GameScript from '../script';
 
 export default class PauseMenuScript extends GameScript {
+  // eslint-disable-next-line class-methods-use-this
   init() {
-    const blocker = document.getElementById('blocker')!;
-
     const pointerlockchange = () => {
       const isLocked = (document.pointerLockElement === document.body);
       this.engine.running = isLocked;
 
       $('#pause').toggle(!isLocked);
+
       if (isLocked) {
-        blocker.style.display = 'none';
+        $('#blocker').css('display', 'none');
       }
     };
 

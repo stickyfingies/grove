@@ -8,8 +8,6 @@ import {
   WebGLRenderer,
   Scene,
   PerspectiveCamera,
-  DirectionalLight,
-  AmbientLight,
   Mesh,
   Sprite,
   SpriteMaterial,
@@ -123,29 +121,6 @@ export default class GraphicsBackend {
     }));
     cube.position.y = 30;
     this.#scene.add(cube);
-
-    // test sprite
-    // const sprite = new Sprite();
-    // sprite.position.y = 15;
-    // this.#scene.add(sprite);
-
-    // sun light
-    const light = new DirectionalLight(0xffffff, 1);
-    light.position.set(10, 30, 20);
-    light.castShadow = true;
-    const { shadow } = light;
-    shadow.bias = -0.008;
-    shadow.camera.near = 1;
-    shadow.camera.left = -1024;
-    shadow.camera.right = 1024;
-    shadow.camera.top = 1024;
-    shadow.camera.bottom = -1024;
-    shadow.mapSize.width = 1024;
-    shadow.mapSize.height = 1024;
-    this.#scene.add(light);
-
-    const ambient = new AmbientLight(0xffffff, 0.2);
-    this.#scene.add(ambient);
 
     // skybox state
     const imagePrefix = '/img/skybox/';

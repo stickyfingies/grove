@@ -1,12 +1,3 @@
-/**
- * System {
- *  constructor(engine) - defaulted, provides dependencies
- *  init() - called in appropriate order
- *  update() - fixed update, generic work
- *  ecs tasks...
- * }
- */
-
 import { DefaultLoadingManager } from 'three';
 import $ from 'jquery';
 // @ts-ignore
@@ -19,13 +10,28 @@ import { Entity, EntityManager, Task } from './entities';
 
 import maps from './json/maps.json';
 import gameScripts from './game/_scripts.json';
+import GameScript from './script';
+
+/**
+ * Engine state is kept as a component inside a tagged 'engine' entity.
+ * This signifies a shift in the scope of the entity system - by using it as a
+ * single source of truth for all game state.
+ *
+ * ? is this a good idea?
+ *
+ * pros: game subsystems are decoupled from the engine - just grab engine data from the ecs
+ * cons: that wasn't really the original purpose of the ecs, and it's not optimized for that usage
+ *
+ * original aim of ecs: unified means of dealing with GAME OBJECTS.
+ * how its being used now: single store for all game / engine state
+ */
 
 export default class Engine {
   running = false;
 
-  #then = 0;
+  #lastFrameTime = 0;
 
-  #gameScripts: any[] = [];
+  #gameScripts: GameScript[] = [];
 
   #stats = new Stats();
 
@@ -64,6 +70,8 @@ export default class Engine {
   }
 
   init() {
+    Entity.defaultManager = this.eManager;
+
     // initialize engine systems
     this.graphics.init(this);
     this.physics.init(this);
@@ -79,32 +87,34 @@ export default class Engine {
 
     // load game scripts
     gameScripts.scripts.forEach(async (scriptName) => {
-      const script = await import(`./game/${scriptName}`);
+      const scriptModule = await import(`./game/${scriptName}`);
 
       // eslint-disable-next-line new-cap
-      const foo: any = new script.default(this);
+      const script: GameScript = new scriptModule.default(this);
 
-      this.#gameScripts.push(foo);
+      this.#gameScripts.push(script);
 
-      if ('init' in foo) {
-        foo.init();
-      }
+      script.init();
     });
 
     // load the map
-    const map = maps['skjar-isles'];
+    const map = maps['test-arena'];
     map.objects.forEach((path) => {
       this.assetLoader.loadModel(path, (mesh) => {
         const body = AssetLoader.loadPhysicsModel(mesh, 0);
-        new Entity(this.eManager)
+        new Entity()
           .setComponent(MeshData, mesh)
           .setComponent(PhysicsData, body);
       });
     });
 
-    // </hack> this needs to be done in the player init script
+    // </hack> this needs to be done in the player init script / scene loading
     setTimeout(() => {
-      Entity.getTag(this.eManager, 'player').getComponent(PhysicsData).position.set(map.spawn[0], map.spawn[1], map.spawn[2]);
+      Entity
+        .getTag('player')
+        .getComponent(PhysicsData)
+        .position
+        .set(map.spawn[0], map.spawn[1], map.spawn[2]);
     }, 500);
 
     // show performance statistics
@@ -115,7 +125,7 @@ export default class Engine {
   }
 
   animate(now: number) {
-    const delta = now - this.#then;
+    const delta = now - this.#lastFrameTime;
 
     this.#stats.begin();
 
@@ -125,13 +135,13 @@ export default class Engine {
 
       // update game
       this.#gameScripts.forEach((script) => {
-        if ('queries' in script && 'update' in script) {
+        if ('queries' in script) {
           const task: Task = {
-            execute(a, b) { script.update(a, b); },
-            queries: script.queries,
+            execute: script.update.bind(script),
+            queries: script.queries!,
           };
           this.eManager.executeTask(task, delta);
-        } else if ('update' in script) {
+        } else {
           script.update();
         }
       });
@@ -142,7 +152,7 @@ export default class Engine {
 
     this.#stats.end();
 
-    this.#then = now;
+    this.#lastFrameTime = now;
 
     requestAnimationFrame((time) => this.animate(time));
   }

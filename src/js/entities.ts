@@ -31,7 +31,7 @@
  * Who would have knowledge about which entities have both components?
  * A middle man could keep track (this file)
  *
- * // runtime checking (we can do this for starters!)
+ * runtime checking (we can do this for starters!):
  *
  * for every single entity
  *  if entity has all components
@@ -53,7 +53,7 @@ interface DataType<T = any> {
   new(...args: any[]): T;
 }
 
-type ComponentSignature = Set<DataType>;
+export type ComponentSignature = Set<DataType>;
 
 class DataManager {
   components = new Map<number, object>();
@@ -76,7 +76,6 @@ class DataManager {
 }
 
 class Archetype {
-  // eslint-disable-next-line
   constructor(public signature: ComponentSignature, public entities: Set<number>) {}
 }
 
@@ -124,12 +123,13 @@ interface IEntityManager {
 }
 
 export class Entity {
+  static defaultManager: IEntityManager;
+
   #manager: IEntityManager;
 
   #id: number;
 
-  // eslint-disable-next-line
-  constructor(manager: IEntityManager, id: number = manager.createEntity()) {
+  constructor(manager = Entity.defaultManager, id = manager.createEntity()) {
     this.#manager = manager;
     this.#id = id;
   }
@@ -146,8 +146,8 @@ export class Entity {
     this.manager.deleteEntity(this.id);
   }
 
-  setComponent(type: DataType, data: object) {
-    this.manager.setComponent(this.id, type, data);
+  setComponent<T>(type: DataType<T>, data: T) {
+    this.manager.setComponent(this.id, type, data as any);
     return this;
   }
 
@@ -169,7 +169,7 @@ export class Entity {
     return this;
   }
 
-  static getTag(manager: IEntityManager, tag: string) {
+  static getTag(tag: string, manager = Entity.defaultManager) {
     const id = manager.getTag(tag);
     return new Entity(manager, id);
   }
@@ -217,7 +217,7 @@ export class EntityManager implements IEntityManager {
     this.#idToArchetype.delete(id);
   }
 
-  setComponent(id: number, type: DataType, data: object) {
+  setComponent<T>(id: number, type: DataType<T>, data: object) {
     // assign to new entity archetype
     const signature = new Set(this.#idToArchetype.get(id)?.signature);
     signature.add(type);
