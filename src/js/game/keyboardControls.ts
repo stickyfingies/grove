@@ -1,7 +1,7 @@
 import { ContactEquation, Vec3 } from 'cannon-es';
 import { Euler, MathUtils, Vector3 } from 'three';
 import { Entity } from '../entities';
-import { CameraData } from '../graphics/graphics';
+import { CameraData, CAMERA_TAG } from '../graphics/graphics';
 import { PhysicsData } from '../physics';
 import GameScript from '../script';
 
@@ -111,7 +111,7 @@ export default class KeyboardControlScript extends GameScript {
       inputVelocity.z += (1 - kb.hitNormal.y) * kb.hitNormal.z * (1 - angleFriction);
     }
 
-    const camera = Entity.getTag('camera').getComponent(CameraData);
+    const camera = Entity.getTag(CAMERA_TAG).getComponent(CameraData);
     inputVelocity.applyQuaternion(camera.quaternion);
 
     const { max, min } = Math;
@@ -130,7 +130,7 @@ export default class KeyboardControlScript extends GameScript {
     if (!this.engine.running) return;
 
     const euler = new Euler(0, 0, 0, 'YXZ');
-    const camera = Entity.getTag('camera').getComponent(CameraData);
+    const camera = Entity.getTag(CAMERA_TAG).getComponent(CameraData);
     euler.setFromQuaternion(camera.quaternion);
 
     euler.y -= movementX * 0.002;

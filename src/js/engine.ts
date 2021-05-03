@@ -108,15 +108,6 @@ export default class Engine {
       });
     });
 
-    // </hack> this needs to be done in the player init script / scene loading
-    setTimeout(() => {
-      Entity
-        .getTag('player')
-        .getComponent(PhysicsData)
-        .position
-        .set(map.spawn[0], map.spawn[1], map.spawn[2]);
-    }, 500);
-
     // show performance statistics
     this.#stats.showPanel(1);
     document.body.appendChild(this.#stats.dom);

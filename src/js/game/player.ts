@@ -4,7 +4,7 @@ import {
   CanvasTexture, Sprite, SpriteMaterial, Vector3,
 } from 'three';
 import { Entity } from '../entities';
-import { CameraData, MeshData } from '../graphics/graphics';
+import { CameraData, CAMERA_TAG, MeshData } from '../graphics/graphics';
 import GraphicsUtils from '../graphics/utils';
 import { PhysicsData } from '../physics';
 import GameScript from '../script';
@@ -12,10 +12,12 @@ import { HealthData } from './health';
 import { KeyboardControlData } from './keyboardControls';
 import ScoreData from './score';
 
+export const PLAYER_TAG = Symbol('player');
+
 export default class PlayerScript extends GameScript {
   init() {
     const player = new Entity()
-      .addTag('player');
+      .addTag(PLAYER_TAG);
 
     player.setComponent(HealthData, {
       hp: {
@@ -39,6 +41,7 @@ export default class PlayerScript extends GameScript {
       mass,
     });
     playerBody.addShape(shape);
+    playerBody.position.y = 15;
     player.setComponent(PhysicsData, playerBody);
 
     // initialize KB control options
@@ -60,7 +63,7 @@ export default class PlayerScript extends GameScript {
     hudSprite.material = new SpriteMaterial();
     hudSprite.position.set(0, -0.5, -1.3);
     hudSprite.scale.set(0.2, 0.2, 0.2);
-    hudSprite.parent = Entity.getTag('camera').getComponent(CameraData);
+    hudSprite.parent = Entity.getTag(CAMERA_TAG).getComponent(CameraData);
     hud.setComponent(MeshData, hudSprite);
 
     const drawHUD = () => {

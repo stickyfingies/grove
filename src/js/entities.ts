@@ -117,9 +117,9 @@ interface IEntityManager {
 
   hasComponent(id: number, type: DataType): boolean;
 
-  addTag(id: number, tag: string): void;
+  addTag(id: number, tag: Symbol): void;
 
-  getTag(tag: string): number;
+  getTag(tag: Symbol): number;
 }
 
 export class Entity {
@@ -164,12 +164,12 @@ export class Entity {
     return this.manager.hasComponent(this.id, type);
   }
 
-  addTag(tag: string) {
+  addTag(tag: Symbol) {
     this.manager.addTag(this.id, tag);
     return this;
   }
 
-  static getTag(tag: string, manager = Entity.defaultManager) {
+  static getTag(tag: Symbol, manager = Entity.defaultManager) {
     const id = manager.getTag(tag);
     return new Entity(manager, id);
   }
@@ -183,7 +183,7 @@ export interface Task {
 export class EntityManager implements IEntityManager {
   #events = new EventEmitter();
 
-  #tagList = new Map<string, number>();
+  #tagList = new Map<Symbol, number>();
 
   #dataManagers = new Map<DataType, DataManager>();
 
@@ -272,11 +272,11 @@ export class EntityManager implements IEntityManager {
     return this.#dataManagers.get(type)?.hasComponent(id)!;
   }
 
-  addTag(id: number, tag: string) {
+  addTag(id: number, tag: Symbol) {
     this.#tagList.set(tag, id);
   }
 
-  getTag(tag: string) {
+  getTag(tag: Symbol) {
     if (!this.#tagList.has(tag)) {
       console.error(`no entity found with tag:${tag}`);
     }

@@ -10,6 +10,7 @@ import { HealthData } from './health';
 import GameScript from '../script';
 import { shoot } from './shooting';
 import ScoreData from './score';
+import { PLAYER_TAG } from './player';
 
 class HominidData {
   // walking speed
@@ -36,7 +37,7 @@ export default class HominidScript extends GameScript {
 
   // eslint-disable-next-line class-methods-use-this
   update(dt: number, hominid: Entity) {
-    const player = Entity.getTag('player');
+    const player = Entity.getTag(PLAYER_TAG);
     const { speed, bubble } = hominid.getComponent(HominidData);
 
     const playerPhysics = player.getComponent(PhysicsData);
@@ -155,7 +156,7 @@ export default class HominidScript extends GameScript {
       if (id !== torso.id) return;
 
       // increment player score
-      const player = Entity.getTag('player');
+      const player = Entity.getTag(PLAYER_TAG);
       const playerScore = player.getComponent(ScoreData);
       playerScore.score += 1;
 

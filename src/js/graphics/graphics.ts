@@ -32,16 +32,14 @@ import Engine from '../engine';
 import { Entity } from '../entities';
 import GraphicsUtils from './utils';
 
-/**
- * Component Types
- */
-
 export type CameraData = PerspectiveCamera;
 // eslint-disable-next-line no-redeclare
 export const CameraData = PerspectiveCamera;
 export type MeshData = Mesh | Sprite | Light;
 // eslint-disable-next-line no-redeclare
 export const MeshData = Object3D;
+
+export const CAMERA_TAG = Symbol('camera');
 
 /**
  * Graphics Frontend
@@ -100,7 +98,7 @@ export class Graphics {
 
     // create the camera as a game entity
     new Entity(engine.eManager)
-      .addTag('camera')
+      .addTag(CAMERA_TAG)
       .setComponent(CameraData, this.#camera);
     this.assignIdToObject(this.#camera);
 
