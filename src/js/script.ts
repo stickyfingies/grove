@@ -8,10 +8,15 @@ import { Physics } from './physics';
 /**
  * Helper class for making core engine systems available to derived classes
  *
- * @example old code:
- * this.engine.graphics.doStuff();
+ * If `queries` is set, `update()` gets called once per each game entity which contains all
+ * components specified in `queries`, and recieves that entity as a paramenter.
  *
- * @example with GameScript:
+ * If `queries` is NOT set, `update()` is only called once, and is not passed any entities.
+ *
+ * @example
+ * // old code:
+ * this.engine.graphics.doStuff();
+ * // with GameScript:
  * this.graphics.doStuff();
  */
 export default class GameScript {
@@ -19,7 +24,7 @@ export default class GameScript {
 
   physics: Physics;
 
-  eManager: EntityManager;
+  ecs: EntityManager;
 
   gui: GUI;
 
@@ -30,7 +35,7 @@ export default class GameScript {
   constructor(protected engine: Engine) {
     this.graphics = engine.graphics;
     this.physics = engine.physics;
-    this.eManager = engine.ecs;
+    this.ecs = engine.ecs;
     this.gui = engine.gui;
     this.assetLoader = engine.assetLoader;
   }
@@ -39,5 +44,5 @@ export default class GameScript {
   init() {}
 
   // eslint-disable-next-line class-methods-use-this, no-empty-function
-  update(dt?: number, entity?: Entity) {}
+  update(dt: number, entity?: Entity) {}
 }

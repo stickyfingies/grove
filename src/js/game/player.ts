@@ -1,7 +1,7 @@
 import { Body, Sphere } from 'cannon-es';
 import $ from 'jquery';
 import {
-  CanvasTexture, Sprite, SpriteMaterial, Vector3,
+  CanvasTexture, Sprite, SpriteMaterial,
 } from 'three';
 import { Entity } from '../entities';
 import { CameraData, CAMERA_TAG, GraphicsData } from '../graphics/graphics';
@@ -10,8 +10,13 @@ import { PhysicsData } from '../physics';
 import GameScript from '../script';
 import { HealthData } from './health';
 import { KeyboardControlData } from './keyboardControls';
+import { MovementData } from './movement';
 import ScoreData from './score';
 
+/**
+ * Entity tag used to retrieve the player
+ * @example Entity.getTag(PLAYER_TAG);
+ */
 export const PLAYER_TAG = Symbol('player');
 
 export default class PlayerScript extends GameScript {
@@ -42,17 +47,14 @@ export default class PlayerScript extends GameScript {
     playerBody.position.y = 15;
     player.setComponent(PhysicsData, playerBody);
 
+    player.setComponent(MovementData, new MovementData(6, 1.5));
+
     // initialize KB control options
-    player.setComponent(KeyboardControlData, {
-      velocityFactor: 4,
-      jumpVelocity: 1.5,
-      hitNormal: new Vector3(),
-      angle: 0,
-    });
+    player.setComponent(KeyboardControlData, {});
 
     /**
      * HUD
-     * note: hud currently only updates when player takes damage (score may be off)
+     * @note hud currently only updates when player takes damage (score may be off)
      */
 
     const hud = new Entity();
@@ -80,10 +82,6 @@ export default class PlayerScript extends GameScript {
 
     drawHUD();
 
-    /**
-     * Damage Handling
-     */
-
     // handle fall damage
     playerBody.addEventListener('collide', ({ contact }: any) => {
       const health = player.getComponent(HealthData);
@@ -96,7 +94,7 @@ export default class PlayerScript extends GameScript {
     });
 
     // handle death
-    this.eManager.events.on(`delete${HealthData.name}Component`, (id) => {
+    this.ecs.events.on(`delete${HealthData.name}Component`, (id) => {
       const score = player.getComponent(ScoreData);
       if (id === player.id) {
         $('#blocker').show();
@@ -105,8 +103,8 @@ export default class PlayerScript extends GameScript {
     });
 
     // attach data to debug GUI
-    this.gui.add(playerBody.position, 'x').listen();
-    this.gui.add(playerBody.position, 'y').listen();
-    this.gui.add(playerBody.position, 'z').listen();
+    this.gui.add(playerBody.interpolatedPosition, 'x').listen();
+    this.gui.add(playerBody.interpolatedPosition, 'y').listen();
+    this.gui.add(playerBody.interpolatedPosition, 'z').listen();
   }
 }

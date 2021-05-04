@@ -31,26 +31,27 @@ export default class Engine {
 
   #ecs = new EntityManager();
 
-  /**
-   * Getters for game scripts
-   */
-
+  /** Convenience method */
   get gui() {
     return this.#gui;
   }
 
+  /** Convenience method */
   get graphics() {
     return this.#graphics;
   }
 
+  /** Convenience method */
   get physics() {
     return this.#physics;
   }
 
+  /** Convenience method */
   get assetLoader() {
     return this.#assetLoader;
   }
 
+  /** Convenience method */
   get ecs() {
     return this.#ecs;
   }
@@ -119,7 +120,7 @@ export default class Engine {
             queries: script.queries!,
           }, delta);
         } else {
-          script.update();
+          script.update(delta);
         }
       });
 

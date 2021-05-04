@@ -1,52 +1,3 @@
-/* eslint-disable max-classes-per-file */
-/**
- *
- * Goals: integrate graphics with the entity system
- *
- * There needs to be a way to say, "hey - when this component gets removed, do X"
- *
- * ```
- * == demo test ==
- *
- * const e = createEntity();
- *
- * graphics.addComponent(e);
- * graphics.getComponent(e);
- * graphics.deleteComponent(e);
- *
- * == in graphics ==
- *
- * registerComponentManager('graphics', GraphicsData, graphicsComponentManager);
- *
- * == in game ==
- *
- * import {GraphicsData, addGraphicsComponent} from 'graphics'
- * import {addComponent} from 'entities'
- * const c: GraphicsData = addComponent(e, 'graphics'); // dependencies: (graphics, entities)
- * const c: GraphicsData = addGrahpicsComponent(e);     // dependencies: (graphics)
- *
- * == in some system ==
- *
- * Hey, here's a system that needs all grpahics + physics components
- * Who would have knowledge about which entities have both components?
- * A middle man could keep track (this file)
- *
- * runtime checking (we can do this for starters!):
- *
- * for every single entity
- *  if entity has all components
- *    callback
- *
- * == thoughts ==
- *
- * addToScene, addToWorld can be automated when graphics/physics data is added
- * ^^^ and same with when data is removed (decoupling!!!)
- *
- * As a coder using my own API, i'd feel more comfortable calling them Data than Components
- * a Component carries a certain expectation for usage, data is just.... data. and they're just data
- * ```
- */
-
 import EventEmitter from 'events';
 
 interface DataType<T = any> {
@@ -55,6 +6,9 @@ interface DataType<T = any> {
 
 export type ComponentSignature = Set<DataType>;
 
+/**
+ * Component storage
+ */
 class DataManager {
   components = new Map<number, object>();
 
@@ -89,7 +43,7 @@ const areSetsEqual = <T>(setA: Set<T>, setB: Set<T>) => {
   return equal;
 };
 
-// checks if `signature` contains AT LEAST all the components specified in `queries`
+/** Checks if `signature` contains AT LEAST all the components specified in `queries` */
 const queryComponents = (queries: ComponentSignature, signature: ComponentSignature) => {
   let matches = true;
   queries.forEach((type) => {
@@ -122,6 +76,10 @@ interface IEntityManager {
   getTag(tag: Symbol): number;
 }
 
+/**
+ * Object-oriented wrapper around an `IEntityManager` entity
+ * @see IEntityManager
+ */
 export class Entity {
   static defaultManager: IEntityManager;
 
@@ -181,17 +139,25 @@ export interface Task {
 }
 
 export class EntityManager implements IEntityManager {
+  /** Event bus for signalling when components are set / deleted */
   #events = new EventEmitter();
 
+  /** Map from tags to entities */
   #tagList = new Map<Symbol, number>();
 
+  /** Map between component type and component storage */
   #dataManagers = new Map<DataType, DataManager>();
 
-  // maps an entity ID to its component signature
+  /** Next available entity ID */
   #entityId = 0;
 
-  #idToArchetype: Map<number, Archetype> = new Map();
+  /** Map between entity ID and its corresponding archetype */
+  #idToArchetype = new Map<number, Archetype>();
 
+  /**
+   * List of entity archetypes
+   * TODO document archetypes
+   */
   #archetypes: Archetype[] = [];
 
   get events() {

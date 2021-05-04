@@ -61,29 +61,31 @@ interface GraphicsBackendResizeData {
 }
 
 /**
- * Graphics Backend
+ * Graphics backend designed to be ran on a WebWorker
  */
-
 export default class GraphicsBackend {
   // eslint-disable-next-line no-undef
   [idx: string]: Function;
 
-  // main camera used to render the scene
+  /**
+   * main camera used to render the scene
+   * @note camera has Id#0
+   */
   #camera = new PerspectiveCamera(45, 2, 0.1, 2000);
 
-  // a scene graph object which holds all renderable meshes
+  /** a scene graph object which holds all renderable meshes */
   #scene = new Scene();
 
-  // ThreeJS WebGL renderer instance
+  /** ThreeJS WebGL renderer instance */
   #renderer: WebGLRenderer;
 
-  // map of mesh IDs to mesh instances
+  /** map of mesh IDs to mesh instances */
   #idToObject = new Map<number, Object3D>();
 
-  // map of texture identifiers to raw image data
+  /** map of texture identifiers to raw image data */
   #textureCache = new Map<number, DataTexture>();
 
-  // the number of elements per each transform matrix in the shared array buffer
+  /** number of elements per each transform matrix in the shared array buffer */
   readonly #elementsPerTransform = 16;
 
   init({
@@ -110,7 +112,7 @@ export default class GraphicsBackend {
     this.#camera.updateProjectionMatrix();
     this.#camera.matrixAutoUpdate = false;
     this.#scene.add(this.#camera);
-    this.#idToObject.set(0, this.#camera); // see assumptions at top of this file
+    this.#idToObject.set(0, this.#camera);
 
     // test cube
     const cube = new Mesh(new BoxGeometry(6, 6, 6), new MeshPhongMaterial({

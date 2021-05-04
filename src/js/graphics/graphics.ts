@@ -37,54 +37,64 @@ export type GraphicsData = Mesh | Sprite | Light;
 // eslint-disable-next-line no-redeclare
 export const GraphicsData = Object3D;
 
+/**
+ * Entity tag used to retrieve the main camera
+ * @example Entity.getTag(CAMERA_TAG)
+ */
 export const CAMERA_TAG = Symbol('camera');
 
-/**
- * Graphics Frontend
- */
-
 export class Graphics {
-  // a tree-like graph of the game scene, used for parent-child relationships between renderables
+  /** Tree-like graph of the game scene, maintains parent-child relationships between renderables */
   #scene = new Scene();
 
-  // a map between mesh ID's and mesh instances
-  // mesh ID's are not the same as entity ID's, as we need a compact list of meshes, but not all
-  // entities will have mesh components.
+  /**
+   * Map between mesh IDs and mesh instances
+   *
+   * @note mesh ID's are not the same as entity ID's, as we need a compact list of meshes,
+   * but not all entities will have mesh components.
+   */
   #idToObject = new Map<number, Object3D>();
 
-  // every time a mesh gets removed from the scene, we recycle its ID so that the list of meshes
-  // stays compact.  recycled, unused IDs go into this list.
+  /**
+   * Every time a mesh gets removed from the scene, we recycle its ID so that the list of meshes
+   * stays compact.  Recycled, unused IDs go into this list.
+   */
   #availableObjectIds: number[] = [];
 
-  // the current next available entity ID
+  /**
+   * Next available mesh ID
+   * @note when assigning ID's, recycle any ID's from `#availableObjectIds` first
+   */
   #objectId = 0;
 
-  // a set of all texture UUID's that have already been uploaded to the backend
+  /** Set of all texture UUID's that have already been uploaded to the backend */
   #textureCache = new Set<string>();
 
-  // the worker thread handle on which the graphics backend is ran
+  /** Worker thread handle on which the graphics backend is ran */
   #worker = new Worker(new URL('./worker.ts', import.meta.url));
 
-  // a cross-thread buffer of mesh transforms
+  /** Cross-thread buffer of mesh transforms */
   #buffer: SharedArrayBuffer;
 
-  // an f32 array view over #buffer, used for raw access
+  /** f32 array view over #buffer, used for raw access */
   #array: Float32Array;
 
-  // this camera acts as a proxy for the actual rendering camera in the backend
-  // todo: should cameras be treated specially (as they currently are)?
+  /**
+   * this camera acts as a proxy for the actual rendering camera in the backend
+   * @note camera has id #0
+   */
   #camera = new PerspectiveCamera();
 
-  // number of bytes per each element in the shared array buffer
+  /** Number of bytes per each element in the shared array buffer */
   readonly #bytesPerElement = Float32Array.BYTES_PER_ELEMENT;
 
-  // the number of elements per each matrix in the transform buffer (4x4 matrix = 16)
+  /** Number of elements per each matrix in the transform buffer (4x4 matrix = 16) */
   readonly #elementsPerTransform = 16;
 
-  // the maximum number of meshes whcih may exist concurrently
+  /** Maximum number of meshes whcih may exist concurrently */
   readonly #maxEntityCount = 1024;
 
-  // calculate the size of the transform buffer, given the above three numbers
+  /** Calculates the size of the transform buffer */
   get bufferSize() {
     return this.#bytesPerElement * this.#elementsPerTransform * this.#maxEntityCount;
   }
@@ -140,8 +150,10 @@ export class Graphics {
     this.#idToObject.forEach(this.writeTransformToArray.bind(this));
   }
 
-  // changes to material properties made by game code are not automatically mirrored by the backend.
-  // thus, materials need to be manually flushed after updates
+  /**
+   * Changes to material properties made by game code are not automatically mirrored by the backend.
+   * Thus, materials need to be manually flushed after updates
+   */
   updateMaterial(object: Mesh | Sprite) {
     this.extractMaterialTextures(object.material as Material);
 
@@ -203,7 +215,6 @@ export class Graphics {
 
   /**
    * Ship a texture to the graphics backend, but only if the texture has not already been uploaded.
-   * Responsible for both graphics and asset loading; being on the backend is where it 'matters'
    */
   private uploadTexture(map: Texture) {
     // if we've already loaded this texture and cached it, there's no work to be done.
@@ -251,7 +262,8 @@ export class Graphics {
       this.extractMaterialTextures(object.material as Material);
     }
 
-    // some fix for serializing spheres. is this still necessary?
+    // stackoverflow fix for serializing spheres
+    // ? is this still necessary?
     if (object instanceof Mesh) delete object.geometry.parameters;
 
     // send that bitch to the backend

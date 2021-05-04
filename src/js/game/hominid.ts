@@ -11,12 +11,15 @@ import GameScript from '../script';
 import { shoot } from './shooting';
 import ScoreData from './score';
 import { PLAYER_TAG } from './player';
+import { MovementData } from './movement';
 
+/**
+ * This component should be added to the torso of the hominid.
+ * Its primary function is to represent the heirarchy of body parts.
+ */
 class HominidData {
-  // walking speed
-  speed: number;
-
   // personal space bubble around the player at which hominids will stop approaching
+  // ? follow component?
   bubble: number;
 
   // the torso entity (which this component should be attached to)
@@ -35,6 +38,7 @@ export default class HominidScript extends GameScript {
   init() {
     this.gui.add(this, 'createHominid').name('Spawn Hominid');
 
+    // put a few hominids somewhere random on the map
     const spawn = () => {
       const spawnCount = Math.floor(Math.random() * 3) + 3;
       for (let i = 0; i < spawnCount; i++) {
@@ -42,17 +46,19 @@ export default class HominidScript extends GameScript {
       }
     };
 
+    // spawn some at the beginning
     spawn();
 
-    setInterval(spawn.bind(this), 12000);
+    // and spawn more every 12 seconds
+    setInterval(spawn.bind(this), 12_000);
 
     // when a hominid dies...
-    this.eManager.events.on(`delete${HealthData.name}Component`, (id: number) => {
+    this.ecs.events.on(`delete${HealthData.name}Component`, (id: number) => {
       // make sure it's really a hominid (this is a generic death event)
       const entity = new Entity(Entity.defaultManager, id);
       if (!entity.hasComponent(HominidData)) return;
 
-      // extract relevent component data
+      // extract relevant component data
       const { torso, head, halo } = entity.getComponent(HominidData);
       const torsoBody = torso.getComponent(PhysicsData);
       const headBody = head.getComponent(PhysicsData);
@@ -85,31 +91,35 @@ export default class HominidScript extends GameScript {
       setTimeout(() => {
         head.delete();
         torso.delete();
-      }, 10000);
+      }, 10_000);
     });
   }
 
+  // `hominid` is the torso
   // eslint-disable-next-line class-methods-use-this
   update(dt: number, hominid: Entity) {
     const player = Entity.getTag(PLAYER_TAG);
-    const { speed, bubble } = hominid.getComponent(HominidData);
+    const { bubble } = hominid.getComponent(HominidData);
 
     const playerPhysics = player.getComponent(PhysicsData);
     const hominidPhysics = hominid.getComponent(PhysicsData);
+    const mvmt = hominid.getComponent(MovementData);
 
-    const playerPos = playerPhysics.interpolatedPosition;
-    const hominidPos = hominidPhysics.interpolatedPosition;
+    const playerPosC = playerPhysics.interpolatedPosition;
+    const hominidPosC = hominidPhysics.interpolatedPosition;
+    const playerPos = new Vector3(playerPosC.x, playerPosC.y, playerPosC.z);
+    const hominidPos = new Vector3(hominidPosC.x, hominidPosC.y, hominidPosC.z);
 
-    // crude movement - follow player
-    if (hominidPos.x < playerPos.x - bubble) hominidPhysics.velocity.x = speed;
-    else if (hominidPos.x > playerPos.x + bubble) hominidPhysics.velocity.x = -speed;
-    if (hominidPos.z < playerPos.z - bubble) hominidPhysics.velocity.z = speed;
-    else if (hominidPos.z > playerPos.z + bubble) hominidPhysics.velocity.z = -speed;
+    const outsideBubble = (playerPos.distanceTo(hominidPos) >= bubble);
+    mvmt.direction = outsideBubble
+      ? new Vector3().subVectors(playerPos, hominidPos)
+      : new Vector3(0, 0, 0);
 
     const hp = new Vector3(hominidPos.x, hominidPos.y, hominidPos.z); // hominid pos
     const pp = new Vector3(playerPos.x, playerPos.y, playerPos.z); // player pos
 
-    if (hp.distanceTo(pp) <= bubble && Math.random() < 0.01) {
+    // shoot at player
+    if (hp.distanceTo(pp) <= bubble + 3 && Math.random() < 0.01) {
       shoot(hominid, hp.subVectors(pp, hp).normalize());
     }
   }
@@ -138,6 +148,8 @@ export default class HominidScript extends GameScript {
     const torsoMesh = GraphicsUtils.makeCylinder(1, height + radius * 2);
     torsoMesh.scale.set(radius, height + radius * 2, radius);
     torso.setComponent(GraphicsData, torsoMesh);
+
+    torso.setComponent(MovementData, new MovementData(3, 1.5));
 
     torso.setComponent(HealthData, {
       hp: 5, max: 5,
@@ -198,7 +210,6 @@ export default class HominidScript extends GameScript {
     halo.setComponent(GraphicsData, haloSprite);
 
     torso.setComponent(HominidData, {
-      speed: 4,
       bubble: 15,
       torso,
       head,

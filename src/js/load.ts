@@ -11,23 +11,19 @@ import {
   Material,
 } from 'cannon-es';
 
-/**
- * Asset Loader
- */
-
 type LoadCallback = (m: Mesh) => void;
 
 export default class AssetLoader {
-  // map between model name and model data
+  /** Map between model name and model data */
   #models: Record<string, Object3D> = {};
 
-  // map between model name and number of cumulative requests for model
+  /** Map between model name and number of cumulative requests for model */
   #accessCount: Record<string, number> = {};
 
-  // list of functions to be executed once a model has loaded
+  /** List of functions to be executed once a model has loaded */
   #callbacks: Record<string, LoadCallback[]> = {};
 
-  // creates one or more renderable meshes from a model file
+  /** Creates one or more renderable meshes from a model file */
   loadModel(uri: string, callback: LoadCallback) {
     // increase access count for this model
     this.#accessCount[uri] = this.#accessCount[uri] ?? 0;
@@ -75,7 +71,7 @@ export default class AssetLoader {
     }
   }
 
-  // creates a physics body from a renderable mesh's geometry
+  /** Creates a physics body from a renderable mesh's geometry */
   static loadPhysicsModel({ geometry, position, quaternion }: Mesh, mass: number) {
     // extract vertex positions
     const verts = geometry.getAttribute('position').array as number[];

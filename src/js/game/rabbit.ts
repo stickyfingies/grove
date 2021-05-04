@@ -56,7 +56,7 @@ export default class RabbitScript extends GameScript {
   }
 
   update(dt: number, rabbit: Entity) {
-    const playerPos = Entity.getTag(this.eManager, 'player').getComponent(PhysicsData).interpolatedPosition;
+    const playerPos = Entity.getTag(this.ecs, 'player').getComponent(PhysicsData).interpolatedPosition;
     const body = rabbit.getComponent(PhysicsData);
     const distanceToPlayer = body.interpolatedPosition.distanceTo(playerPos);
 

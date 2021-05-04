@@ -3,6 +3,7 @@
         "lighting",
         "meshTransform",
         "keyboardControls",
+        "movement",
         "player",
         "hominid",
         "upgrade",
