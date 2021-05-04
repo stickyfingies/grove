@@ -13,6 +13,7 @@ import {
   PointToPointConstraint,
 } from 'cannon-es';
 import Engine from './engine';
+import { Entity } from './entities';
 
 export const PhysicsData = Body;
 // eslint-disable-next-line no-redeclare
@@ -25,6 +26,8 @@ export type ConstraintData = PointToPointConstraint;
 export class Physics {
   // world container which holds all physical bodies
   #world = new World();
+
+  #bodyToEntity = new Map<Body, Entity>();
 
   init(engine: Engine) {
     // general world options
@@ -48,22 +51,28 @@ export class Physics {
     this.#world.solver = split ? new SplitSolver(solver) : solver;
 
     // listen for entity events
-    engine.eManager.events.on(`set${PhysicsData.name}Component`, (_, data: PhysicsData) => {
+    engine.ecs.events.on(`set${PhysicsData.name}Component`, (id: number, data: PhysicsData) => {
       this.#world.addBody(data);
+      this.#bodyToEntity.set(data, new Entity(Entity.defaultManager, id));
     });
-    engine.eManager.events.on(`set${ConstraintData.name}Component`, (_, data: ConstraintData) => {
+    engine.ecs.events.on(`set${ConstraintData.name}Component`, (_, data: ConstraintData) => {
       this.#world.addConstraint(data);
     });
-    engine.eManager.events.on(`delete${PhysicsData.name}Component`, (_, data: PhysicsData) => {
+    engine.ecs.events.on(`delete${PhysicsData.name}Component`, (_, data: PhysicsData) => {
       this.#world.removeBody(data);
+      this.#bodyToEntity.delete(data);
     });
-    engine.eManager.events.on(`delete${ConstraintData.name}Component`, (_, data: ConstraintData) => {
+    engine.ecs.events.on(`delete${ConstraintData.name}Component`, (_, data: ConstraintData) => {
       this.#world.removeConstraint(data);
     });
   }
 
   update(delta: number) {
     this.#world.step(1 / 60, Math.min(delta, 1 / 30), 10);
+  }
+
+  getEntityFromBody(body: Body) {
+    return this.#bodyToEntity.get(body);
   }
 
   // returns true if a body exists on the provided line

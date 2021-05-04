@@ -9,7 +9,7 @@
 
 import GameScript from '../script';
 import { Entity } from '../entities';
-import { MeshData } from '../graphics/graphics';
+import { GraphicsData } from '../graphics/graphics';
 import { Physics, PhysicsData } from '../physics';
 
 /**
@@ -51,7 +51,7 @@ export default class RabbitScript extends GameScript {
 
     this.assetLoader.loadModel('/models/rabbit-glb/Rabbit.glb', (mesh) => {
       mesh.userData.norotate = true;
-      rabbit.setComponent(MeshData, mesh);
+      rabbit.setComponent(GraphicsData, mesh);
     });
   }
 

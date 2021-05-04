@@ -4,27 +4,13 @@ import $ from 'jquery';
 import Stats from 'stats-js';
 import { GUI } from 'dat.gui';
 import AssetLoader from './load';
-import { Graphics, MeshData } from './graphics/graphics';
+import { Graphics, GraphicsData } from './graphics/graphics';
 import { Physics, PhysicsData } from './physics';
-import { Entity, EntityManager, Task } from './entities';
+import { Entity, EntityManager } from './entities';
 
 import maps from './json/maps.json';
 import gameScripts from './game/_scripts.json';
 import GameScript from './script';
-
-/**
- * Engine state is kept as a component inside a tagged 'engine' entity.
- * This signifies a shift in the scope of the entity system - by using it as a
- * single source of truth for all game state.
- *
- * ? is this a good idea?
- *
- * pros: game subsystems are decoupled from the engine - just grab engine data from the ecs
- * cons: that wasn't really the original purpose of the ecs, and it's not optimized for that usage
- *
- * original aim of ecs: unified means of dealing with GAME OBJECTS.
- * how its being used now: single store for all game / engine state
- */
 
 export default class Engine {
   running = false;
@@ -43,7 +29,7 @@ export default class Engine {
 
   #assetLoader = new AssetLoader();
 
-  #eManager = new EntityManager();
+  #ecs = new EntityManager();
 
   /**
    * Getters for game scripts
@@ -65,17 +51,18 @@ export default class Engine {
     return this.#assetLoader;
   }
 
-  get eManager() {
-    return this.#eManager;
+  get ecs() {
+    return this.#ecs;
   }
 
   init() {
-    Entity.defaultManager = this.eManager;
+    Entity.defaultManager = this.ecs;
 
     // initialize engine systems
     this.graphics.init(this);
     this.physics.init(this);
 
+    // TODO move `onProgress` into AssetLoader, and UI into a game script
     // show asset loading progress
     DefaultLoadingManager.onProgress = (url, loaded, total) => {
       console.log(`${url} (${loaded}/${total})`);
@@ -103,7 +90,7 @@ export default class Engine {
       this.assetLoader.loadModel(path, (mesh) => {
         const body = AssetLoader.loadPhysicsModel(mesh, 0);
         new Entity()
-          .setComponent(MeshData, mesh)
+          .setComponent(GraphicsData, mesh)
           .setComponent(PhysicsData, body);
       });
     });
@@ -112,7 +99,7 @@ export default class Engine {
     this.#stats.showPanel(1);
     document.body.appendChild(this.#stats.dom);
 
-    requestAnimationFrame((time) => this.animate(time));
+    requestAnimationFrame(this.animate.bind(this));
   }
 
   animate(now: number) {
@@ -127,11 +114,10 @@ export default class Engine {
       // update game
       this.#gameScripts.forEach((script) => {
         if ('queries' in script) {
-          const task: Task = {
+          this.ecs.executeTask({
             execute: script.update.bind(script),
             queries: script.queries!,
-          };
-          this.eManager.executeTask(task, delta);
+          }, delta);
         } else {
           script.update();
         }
@@ -145,6 +131,6 @@ export default class Engine {
 
     this.#lastFrameTime = now;
 
-    requestAnimationFrame((time) => this.animate(time));
+    requestAnimationFrame(this.animate.bind(this));
   }
 }

@@ -12,8 +12,6 @@
  * first check that list to see if we can recycle any old, unused entity IDs.  If we cannot do that,
  * we increment a global counter and use that as the entity's ID - effectively, putting it at the
  * end of the shared array buffer.
- *
- * Assumptions: Camera has ID #0
  */
 
 import {
@@ -35,9 +33,9 @@ import GraphicsUtils from './utils';
 export type CameraData = PerspectiveCamera;
 // eslint-disable-next-line no-redeclare
 export const CameraData = PerspectiveCamera;
-export type MeshData = Mesh | Sprite | Light;
+export type GraphicsData = Mesh | Sprite | Light;
 // eslint-disable-next-line no-redeclare
-export const MeshData = Object3D;
+export const GraphicsData = Object3D;
 
 export const CAMERA_TAG = Symbol('camera');
 
@@ -86,9 +84,13 @@ export class Graphics {
   // the maximum number of meshes whcih may exist concurrently
   readonly #maxEntityCount = 1024;
 
+  // calculate the size of the transform buffer, given the above three numbers
+  get bufferSize() {
+    return this.#bytesPerElement * this.#elementsPerTransform * this.#maxEntityCount;
+  }
+
   constructor() {
-    const bufferSize = this.#bytesPerElement * this.#elementsPerTransform * this.#maxEntityCount;
-    this.#buffer = new SharedArrayBuffer(bufferSize);
+    this.#buffer = new SharedArrayBuffer(this.bufferSize);
     this.#array = new Float32Array(this.#buffer);
   }
 
@@ -97,20 +99,20 @@ export class Graphics {
     const offscreen = offscreenCanvas.transferControlToOffscreen();
 
     // create the camera as a game entity
-    new Entity(engine.eManager)
+    new Entity(engine.ecs)
       .addTag(CAMERA_TAG)
       .setComponent(CameraData, this.#camera);
     this.assignIdToObject(this.#camera);
 
     // listen to component events
-    engine.eManager.events.on(`set${MeshData.name}Component`, (id, object: Mesh | Sprite | Light) => {
+    engine.ecs.events.on(`set${GraphicsData.name}Component`, (id, object: GraphicsData) => {
       object.traverse((child) => {
         if (child instanceof Mesh || child instanceof Sprite || child instanceof Light) {
           this.addObjectToScene(child);
         }
       });
     });
-    engine.eManager.events.on(`delete${MeshData.name}Component`, (id, mesh: Mesh) => {
+    engine.ecs.events.on(`delete${GraphicsData.name}Component`, (id, mesh: Mesh) => {
       this.removeFromScene(mesh);
     });
 
@@ -135,7 +137,7 @@ export class Graphics {
   }
 
   update() {
-    this.#idToObject.forEach((mesh) => this.writeTransformToArray(mesh));
+    this.#idToObject.forEach(this.writeTransformToArray.bind(this));
   }
 
   // changes to material properties made by game code are not automatically mirrored by the backend.

@@ -1,9 +1,9 @@
-import { Vec3 } from 'cannon-es';
+import { ContactEquation, Vec3 } from 'cannon-es';
 import {
-  Color, SpriteMaterial, Sprite, CanvasTexture, Vector3,
+  Color, Mesh, SpriteMaterial, Sprite, CanvasTexture, Vector3, MeshPhongMaterial,
 } from 'three';
 import { Entity } from '../entities';
-import { MeshData } from '../graphics/graphics';
+import { GraphicsData } from '../graphics/graphics';
 import GraphicsUtils from '../graphics/utils';
 import { ConstraintData, Physics, PhysicsData } from '../physics';
 import { HealthData } from './health';
@@ -18,6 +18,15 @@ class HominidData {
 
   // personal space bubble around the player at which hominids will stop approaching
   bubble: number;
+
+  // the torso entity (which this component should be attached to)
+  torso: Entity;
+
+  // the head entity
+  head: Entity;
+
+  // ui element floating above the hominid's head
+  halo: Entity;
 }
 
 export default class HominidScript extends GameScript {
@@ -27,12 +36,57 @@ export default class HominidScript extends GameScript {
     this.gui.add(this, 'createHominid').name('Spawn Hominid');
 
     const spawn = () => {
-      for (let i = 0; i < Math.floor(Math.random() * 3) + 3; i++) this.createHominid();
+      const spawnCount = Math.floor(Math.random() * 3) + 3;
+      for (let i = 0; i < spawnCount; i++) {
+        this.createHominid();
+      }
     };
 
     spawn();
 
-    setInterval(() => spawn(), 12000);
+    setInterval(spawn.bind(this), 12000);
+
+    // when a hominid dies...
+    this.eManager.events.on(`delete${HealthData.name}Component`, (id: number) => {
+      // make sure it's really a hominid (this is a generic death event)
+      const entity = new Entity(Entity.defaultManager, id);
+      if (!entity.hasComponent(HominidData)) return;
+
+      // extract relevent component data
+      const { torso, head, halo } = entity.getComponent(HominidData);
+      const torsoBody = torso.getComponent(PhysicsData);
+      const headBody = head.getComponent(PhysicsData);
+      const torsoMesh = torso.getComponent(GraphicsData) as Mesh;
+      const headMesh = head.getComponent(GraphicsData) as Mesh;
+
+      // increment player score
+      const player = Entity.getTag(PLAYER_TAG);
+      const playerScore = player.getComponent(ScoreData);
+      playerScore.score += 1;
+
+      // change body part physics properties
+      torsoBody.angularDamping = 0.8;
+      torsoBody.fixedRotation = false;
+      torsoBody.updateMassProperties();
+      torsoBody.allowSleep = true;
+      headBody.allowSleep = true;
+
+      // change body part graphics properties
+      (torsoMesh.material as MeshPhongMaterial).color = new Color(0x222222);
+      this.graphics.updateMaterial(torsoMesh);
+      (headMesh.material as MeshPhongMaterial).color = new Color(0x222222);
+      this.graphics.updateMaterial(headMesh);
+
+      // decapitate >:)
+      setTimeout(() => head.deleteComponent(ConstraintData), 50);
+      halo.delete();
+
+      // delete corpse after 10 seconds
+      setTimeout(() => {
+        head.delete();
+        torso.delete();
+      }, 10000);
+    });
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -83,15 +137,10 @@ export default class HominidScript extends GameScript {
 
     const torsoMesh = GraphicsUtils.makeCylinder(1, height + radius * 2);
     torsoMesh.scale.set(radius, height + radius * 2, radius);
-    torso.setComponent(MeshData, torsoMesh);
+    torso.setComponent(GraphicsData, torsoMesh);
 
     torso.setComponent(HealthData, {
       hp: { value: 5, max: 5 },
-    });
-
-    torso.setComponent(HominidData, {
-      speed: 4,
-      bubble: 15,
     });
 
     /**
@@ -109,7 +158,7 @@ export default class HominidScript extends GameScript {
 
     const headMesh = GraphicsUtils.makeBall(radius);
     headMesh.userData.norotate = true;
-    head.setComponent(MeshData, headMesh);
+    head.setComponent(GraphicsData, headMesh);
 
     /**
      * Neck
@@ -146,48 +195,20 @@ export default class HominidScript extends GameScript {
     haloSprite.scale.set(2, 2, 2);
     haloSprite.position.y += radius * 4;
     haloSprite.parent = headMesh;
-    halo.setComponent(MeshData, haloSprite);
+    halo.setComponent(GraphicsData, haloSprite);
 
-    /**
-     * Events
-     */
-
-    this.eManager.events.on(`delete${HealthData.name}Component`, (id: number) => {
-      if (id !== torso.id) return;
-
-      // increment player score
-      const player = Entity.getTag(PLAYER_TAG);
-      const playerScore = player.getComponent(ScoreData);
-      playerScore.score += 1;
-
-      // change body part physics properties
-      torsoBody.angularDamping = 0.8;
-      torsoBody.fixedRotation = false;
-      torsoBody.updateMassProperties();
-      torsoBody.allowSleep = true;
-      headBody.allowSleep = true;
-
-      // change body part graphics properties
-      torsoMesh.material.color = new Color(0x222222);
-      this.graphics.updateMaterial(torsoMesh);
-      headMesh.material.color = new Color(0x222222);
-      this.graphics.updateMaterial(headMesh);
-
-      // decapitate >:)
-      setTimeout(() => head.deleteComponent(ConstraintData), 50);
-      halo.delete();
-
-      // delete corpse after 10 seconds
-      setTimeout(() => {
-        head.delete();
-        torso.delete();
-      }, 10000);
+    torso.setComponent(HominidData, {
+      speed: 4,
+      bubble: 15,
+      torso,
+      head,
+      halo,
     });
 
     // headshots deal damage
-    headBody.addEventListener('collide', (event: any) => {
+    headBody.addEventListener('collide', ({ contact }: {contact: ContactEquation}) => {
       const health = torso.getComponent(HealthData);
-      const impact = event.contact.getImpactVelocityAlongNormal();
+      const impact = contact.getImpactVelocityAlongNormal();
 
       if (Math.abs(impact) >= 15 && torso.hasComponent(HealthData)) {
         health.hp.value -= Math.floor(Math.abs(impact) / 10);

@@ -3,9 +3,15 @@ import {
   MeshPhongMaterial,
   SphereGeometry,
   CylinderGeometry,
+  Object3D,
 } from 'three';
+import { Entity } from '../entities';
 
 export default class GraphicsUtils {
+  static getEntityFromRenderable(object: Object3D) {
+    return new Entity(Entity.defaultManager, object.userData.meshId);
+  }
+
   static makeBall(radius: number, norotate?: boolean) {
     const geometry = new SphereGeometry(1, 32, 32);
     const material = new MeshPhongMaterial({ color: 0x00CCFF });

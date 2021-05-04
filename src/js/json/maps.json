@@ -1,20 +1,10 @@
 {
     "skjar-isles": {
-        "spawn": [
-            0,
-            30,
-            0
-        ],
         "objects": [
             "/models/skjar-isles-glb/skjarisles.glb"
         ]
     },
     "test-arena": {
-        "spawn": [
-            0,
-            7,
-            0
-        ],
         "objects": [
             "/models/arena/arena.glb"
         ]

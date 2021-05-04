@@ -5,6 +5,7 @@
         "keyboardControls",
         "player",
         "hominid",
+        "upgrade",
         "health",
         "shooting",
         "pauseMenu"

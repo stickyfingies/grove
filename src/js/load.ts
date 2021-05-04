@@ -1,7 +1,5 @@
 import {
   Mesh,
-  Vector3,
-  Quaternion as TQuaternion,
   Object3D,
 } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
@@ -57,14 +55,7 @@ export default class AssetLoader {
           if (child instanceof Mesh) {
             this.#callbacks[uri].forEach((cb: Function) => {
               child.updateMatrixWorld();
-              const p = new Vector3();
-              const q = new TQuaternion();
-              const s = new Vector3();
-              child.matrixWorld.decompose(p, q, s);
               const inst = child.clone();
-              inst.position.copy(p);
-              inst.quaternion.copy(q);
-              inst.scale.copy(s);
               cb(inst);
             });
           }
@@ -77,14 +68,7 @@ export default class AssetLoader {
       this.#models[uri].traverse((child: Object3D) => {
         if (child instanceof Mesh) {
           child.updateMatrixWorld();
-          const p = new Vector3();
-          const q = new TQuaternion();
-          const s = new Vector3();
-          child.matrixWorld.decompose(p, q, s);
           const inst = child.clone() as Mesh;
-          inst.position.copy(p);
-          inst.quaternion.copy(q);
-          inst.scale.copy(s);
           callback(inst);
         }
       });
@@ -93,18 +77,11 @@ export default class AssetLoader {
 
   // creates a physics body from a renderable mesh's geometry
   static loadPhysicsModel({ geometry, position, quaternion }: Mesh, mass: number) {
-    const verts = [];
-    const faces = [];
-
     // extract vertex positions
-    for (let i = 0; i < geometry.getAttribute('position').array.length; i++) {
-      verts.push(geometry.getAttribute('position').array[i]);
-    }
+    const verts = geometry.getAttribute('position').array as number[];
 
     // extract triangle indices
-    for (let i = 0; i < geometry.index!.array.length; i++) {
-      faces.push(geometry.index!.array[i]);
-    }
+    const faces = geometry.index?.array as number[];
 
     // create new physics body
     const shape = new Trimesh(verts, faces);

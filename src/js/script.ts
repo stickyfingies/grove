@@ -30,7 +30,7 @@ export default class GameScript {
   constructor(protected engine: Engine) {
     this.graphics = engine.graphics;
     this.physics = engine.physics;
-    this.eManager = engine.eManager;
+    this.eManager = engine.ecs;
     this.gui = engine.gui;
     this.assetLoader = engine.assetLoader;
   }

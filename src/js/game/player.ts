@@ -4,7 +4,7 @@ import {
   CanvasTexture, Sprite, SpriteMaterial, Vector3,
 } from 'three';
 import { Entity } from '../entities';
-import { CameraData, CAMERA_TAG, MeshData } from '../graphics/graphics';
+import { CameraData, CAMERA_TAG, GraphicsData } from '../graphics/graphics';
 import GraphicsUtils from '../graphics/utils';
 import { PhysicsData } from '../physics';
 import GameScript from '../script';
@@ -64,7 +64,7 @@ export default class PlayerScript extends GameScript {
     hudSprite.position.set(0, -0.5, -1.3);
     hudSprite.scale.set(0.2, 0.2, 0.2);
     hudSprite.parent = Entity.getTag(CAMERA_TAG).getComponent(CameraData);
-    hud.setComponent(MeshData, hudSprite);
+    hud.setComponent(GraphicsData, hudSprite);
 
     const drawHUD = () => {
       const { canvas, ctx } = GraphicsUtils.scratchCanvasContext(256, 256);

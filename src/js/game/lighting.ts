@@ -1,6 +1,6 @@
 import { AmbientLight, DirectionalLight } from 'three';
 import { Entity } from '../entities';
-import { MeshData } from '../graphics/graphics';
+import { GraphicsData } from '../graphics/graphics';
 import GameScript from '../script';
 
 export default class LightingScript extends GameScript {
@@ -20,13 +20,13 @@ export default class LightingScript extends GameScript {
       shadow.camera.bottom = -1024;
       shadow.mapSize.width = 1024;
       shadow.mapSize.height = 1024;
-      sunlight.setComponent(MeshData, light);
+      sunlight.setComponent(GraphicsData, light);
     }
 
     const ambient = new Entity();
     {
       const light = new AmbientLight(0xffffff, 0.16);
-      ambient.setComponent(MeshData, light);
+      ambient.setComponent(GraphicsData, light);
     }
   }
 }

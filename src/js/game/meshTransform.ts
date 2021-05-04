@@ -1,15 +1,15 @@
 import { Entity } from '../entities';
-import { MeshData } from '../graphics/graphics';
+import { GraphicsData } from '../graphics/graphics';
 import { PhysicsData } from '../physics';
 import GameScript from '../script';
 
 export default class MeshTransformScript extends GameScript {
-  queries = new Set([MeshData, PhysicsData])
+  queries = new Set([GraphicsData, PhysicsData])
 
   // eslint-disable-next-line class-methods-use-this
   update(dt: number, entity: Entity) {
     const body = entity.getComponent(PhysicsData);
-    const mesh = entity.getComponent(MeshData);
+    const mesh = entity.getComponent(GraphicsData);
 
     const { x: px, y: py, z: pz } = body.interpolatedPosition;
     const {

@@ -2,7 +2,7 @@ import { Ray, Vector3 } from 'three';
 import $ from 'jquery';
 import { Entity } from '../entities';
 import { Physics, PhysicsData } from '../physics';
-import { CameraData, CAMERA_TAG, MeshData } from '../graphics/graphics';
+import { CameraData, CAMERA_TAG, GraphicsData } from '../graphics/graphics';
 import GraphicsUtils from '../graphics/utils';
 import GameScript from '../script';
 import { PLAYER_TAG } from './player';
@@ -25,7 +25,7 @@ export const shoot = (origin: Entity, shootDir: Vector3) => {
   ball.setComponent(PhysicsData, body);
 
   const mesh = GraphicsUtils.makeBall(radius);
-  ball.setComponent(MeshData, mesh);
+  ball.setComponent(GraphicsData, mesh);
 
   const collideCb = () => {
     body.removeEventListener('collide', collideCb);

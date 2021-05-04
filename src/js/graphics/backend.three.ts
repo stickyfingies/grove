@@ -1,7 +1,5 @@
 /**
- * See `graphics.ts` for information on how object transforms are communicated
- *
- * Assumptions: Camera has ID #0
+ * @see graphics.ts for information on how object transforms are communicated
  */
 
 import {
@@ -10,7 +8,6 @@ import {
   PerspectiveCamera,
   Mesh,
   Sprite,
-  SpriteMaterial,
   MeshPhongMaterial,
   DataTexture,
   RGBAFormat,
@@ -163,7 +160,7 @@ export default class GraphicsBackend {
 
         const matrix = new Matrix4().fromArray(tArr, offset);
 
-        // <hack/>
+        // ! <hack/>
         // before the main thread starts pushing object matrices to the transform buffer, there will
         // be a period of time where `matrix` consists of entirely zeroes.  ThreeJS doesn't
         // particularly like when scale elements are zero, so set them to something else as a fix.
@@ -242,27 +239,31 @@ export default class GraphicsBackend {
   }
 
   private deserializeMaterial(json: any) {
-    const { map, alphaMap } = json;
+    const {
+      map, alphaMap, normalMap, specularMap,
+    } = json;
 
     delete json.map; //
     delete json.matcap;
     delete json.alphaMap; //
     delete json.bumpMap;
-    delete json.normalMap;
+    delete json.normalMap; //
     delete json.displacementMap;
     delete json.roughnessMap;
     delete json.metalnessMap;
     delete json.emissiveMap;
-    delete json.specularMap;
+    delete json.specularMap; //
     delete json.envMap;
     delete json.lightMap;
     delete json.aoMap;
 
-    const mat = new MaterialLoader().parse(json) as MeshPhongMaterial | SpriteMaterial;
+    const mat = new MaterialLoader().parse(json) as MeshPhongMaterial;
 
     // assign textures
     if (map) mat.map = this.#textureCache.get(map)!;
     if (alphaMap) mat.alphaMap = this.#textureCache.get(alphaMap)!;
+    if (normalMap) mat.normalMap = this.#textureCache.get(normalMap)!;
+    if (specularMap) mat.specularMap = this.#textureCache.get(specularMap)!;
 
     return mat;
   }
