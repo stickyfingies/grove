@@ -3,7 +3,6 @@ import {
   World,
   GSSolver,
   SplitSolver,
-  NaiveBroadphase,
   Body,
   Vec3,
   Ray,
@@ -11,6 +10,7 @@ import {
   Sphere,
   Cylinder,
   PointToPointConstraint,
+  SAPBroadphase,
 } from 'cannon-es';
 import Engine from './engine';
 import { Entity } from './entities';
@@ -40,7 +40,7 @@ export class Physics {
     this.#world.defaultContactMaterial.friction = 0.0;
 
     // provide broadphase
-    this.#world.broadphase = new NaiveBroadphase();
+    this.#world.broadphase = new SAPBroadphase(this.#world);
     this.#world.broadphase.useBoundingBoxes = true;
 
     // collision solver

@@ -20,10 +20,8 @@ export default class PlayerScript extends GameScript {
       .addTag(PLAYER_TAG);
 
     player.setComponent(HealthData, {
-      hp: {
-        value: 100,
-        max: 100,
-      },
+      hp: 100,
+      max: 100,
     });
 
     player.setComponent(ScoreData, {
@@ -73,7 +71,7 @@ export default class PlayerScript extends GameScript {
       ctx.font = '54px Arial';
       ctx.fillStyle = 'red';
       ctx.textAlign = 'center';
-      ctx.fillText(`${health.hp.value}/${health.hp.max}HP`, canvas.width / 2, 54);
+      ctx.fillText(`${health.hp}/${health.max}HP`, canvas.width / 2, 54);
       ctx.fillText(`${score.score} points`, canvas.width / 2, 108);
 
       hudSprite.material.map = new CanvasTexture(canvas);
@@ -92,7 +90,7 @@ export default class PlayerScript extends GameScript {
       const impact = contact.getImpactVelocityAlongNormal();
 
       if (Math.abs(impact) >= 15) {
-        health.hp.value -= Math.floor(Math.abs(impact) / 10);
+        health.hp -= Math.floor(Math.abs(impact) / 10);
         drawHUD();
       }
     });

@@ -140,7 +140,7 @@ export default class HominidScript extends GameScript {
     torso.setComponent(GraphicsData, torsoMesh);
 
     torso.setComponent(HealthData, {
-      hp: { value: 5, max: 5 },
+      hp: 5, max: 5,
     });
 
     /**
@@ -186,7 +186,7 @@ export default class HominidScript extends GameScript {
       ctx.font = '60px Arial';
       ctx.fillStyle = 'red';
       ctx.textAlign = 'center';
-      ctx.fillText(`${health.hp.value}/${health.hp.max}`, 128, 128);
+      ctx.fillText(`${health.hp}/${health.max}`, 128, 128);
       return new CanvasTexture(canvas);
     };
 
@@ -211,9 +211,9 @@ export default class HominidScript extends GameScript {
       const impact = contact.getImpactVelocityAlongNormal();
 
       if (Math.abs(impact) >= 15 && torso.hasComponent(HealthData)) {
-        health.hp.value -= Math.floor(Math.abs(impact) / 10);
+        health.hp -= Math.floor(Math.abs(impact) / 10);
         haloSprite.material.map = drawHaloTexture();
-        haloSprite.material.opacity = health.hp.value / health.hp.max;
+        haloSprite.material.opacity = health.hp / health.max;
         this.graphics.updateMaterial(haloSprite);
       }
     });

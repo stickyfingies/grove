@@ -6,10 +6,9 @@ import { Entity } from '../entities';
 import GameScript from '../script';
 
 export class HealthData {
-  hp: {
-      value: number,
-      max: number
-  }
+  hp: number;
+
+  max: number;
 }
 
 export default class HealthScript extends GameScript {
@@ -19,9 +18,9 @@ export default class HealthScript extends GameScript {
   update(dt: number, entity: Entity) {
     const health = entity.getComponent(HealthData);
 
-    health.hp.value = Math.min(health.hp.value, health.hp.max);
+    health.hp = Math.min(health.hp, health.max);
 
-    if (health.hp.value <= 0) {
+    if (health.hp <= 0) {
       entity.deleteComponent(HealthData);
     }
   }

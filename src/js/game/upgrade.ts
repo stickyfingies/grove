@@ -29,7 +29,7 @@ export default class UpgradeScript extends GameScript {
       const collideCb = ({ body, contact, target }: any) => {
         const player = Entity.getTag(PLAYER_TAG);
         if (body === player.getComponent(PhysicsData)) {
-          player.getComponent(HealthData).hp.value += 15;
+          player.getComponent(HealthData).hp += 15;
           upgradeBody.removeEventListener('collide', collideCb);
 
           // ! <hack/> physics breaks when deleting upgrade immediately
