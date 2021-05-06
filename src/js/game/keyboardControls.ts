@@ -1,5 +1,6 @@
 import { Euler, Vector3 } from 'three';
-import { Entity } from '../entities';
+import EcsView from '../ecs/view';
+import Entity from '../ecs/entity';
 import { CameraData, CAMERA_TAG } from '../graphics/graphics';
 import { PhysicsData } from '../physics';
 import GameScript from '../script';
@@ -46,7 +47,7 @@ export default class KeyboardControlScript extends GameScript {
   /** Maximum look angle, in radians */
   readonly maxPolarAngle = Math.PI;
 
-  queries = new Set([PhysicsData, MovementData, KeyboardControlData]);
+  kbControlView = new EcsView(this.ecs, new Set([PhysicsData, MovementData, KeyboardControlData]));
 
   init() {
     document.addEventListener('mousemove', this.onMouseMove.bind(this));
@@ -54,38 +55,38 @@ export default class KeyboardControlScript extends GameScript {
     document.addEventListener('keyup', this.onKeyUp.bind(this));
   }
 
-  update(dt: number, entity: Entity) {
-    const body = entity.getComponent(PhysicsData);
-    const mvmt = entity.getComponent(MovementData);
+  update(dt: number) {
+    this.kbControlView.iterateView((entity) => {
+      const body = entity.getComponent(PhysicsData);
+      const mvmt = entity.getComponent(MovementData);
 
-    mvmt.direction = new Vector3(0, 0, 0);
+      mvmt.direction = new Vector3(0, 0, 0);
 
-    // apply keyboard input
-    // ? should this go into its own `movement` component (would allow AI movement)?
-    if (this.moveForward) {
-      mvmt.direction.z = -1;
-    }
-    if (this.moveBackward) {
-      mvmt.direction.z = 1;
-    }
-    if (this.moveLeft) {
-      mvmt.direction.x = -1;
-    }
-    if (this.moveRight) {
-      mvmt.direction.x = 1;
-    }
+      // apply keyboard input
+      if (this.moveForward) {
+        mvmt.direction.z = -1;
+      }
+      if (this.moveBackward) {
+        mvmt.direction.z = 1;
+      }
+      if (this.moveLeft) {
+        mvmt.direction.x = -1;
+      }
+      if (this.moveRight) {
+        mvmt.direction.x = 1;
+      }
 
-    mvmt.wantsToJump = this.wantsToJump;
+      mvmt.wantsToJump = this.wantsToJump;
 
-    const camera = Entity.getTag(CAMERA_TAG).getComponent(CameraData);
-    mvmt.direction.applyQuaternion(camera.quaternion);
+      const camera = Entity.getTag(CAMERA_TAG).getComponent(CameraData);
+      mvmt.direction.applyQuaternion(camera.quaternion);
 
-    // todo this needs to be done AFTER MovementScript updates
-    const { x: px, y: py, z: pz } = body.position;
-    camera.position.copy(new Vector3(px, py, pz));
+      // todo this needs to be done AFTER MovementScript updates
+      const { x: px, y: py, z: pz } = body.position;
+      camera.position.copy(new Vector3(px, py, pz));
+    });
   }
 
-  // ? should this go into a separate input system?
   private onMouseMove({ movementX, movementY }: MouseEvent) {
     if (!this.engine.running) return;
 
@@ -102,7 +103,6 @@ export default class KeyboardControlScript extends GameScript {
     camera.quaternion.setFromEuler(euler);
   }
 
-  // ? should this go into a separate input system?
   private onKeyDown({ key }: KeyboardEvent) {
     switch (key) {
       case 'ArrowUp':
@@ -128,7 +128,6 @@ export default class KeyboardControlScript extends GameScript {
     }
   }
 
-  // ? should this go into a separate input system?
   private onKeyUp({ key }: KeyboardEvent) {
     switch (key) {
       case 'ArrowUp':

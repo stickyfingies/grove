@@ -1,6 +1,7 @@
 import { ContactEquation, Vec3 } from 'cannon-es';
 import { MathUtils, Vector3 } from 'three';
-import { Entity } from '../entities';
+import Entity from '../ecs/entity';
+import EcsView from '../ecs/view';
 import { PhysicsData } from '../physics';
 import GameScript from '../script';
 
@@ -30,10 +31,10 @@ export class MovementData {
 }
 
 export default class MovementScript extends GameScript {
-  queries = new Set([MovementData, PhysicsData]);
+  movementView = new EcsView(this.ecs, new Set([MovementData, PhysicsData]));
 
   init() {
-    this.ecs.events.on(`set${MovementData.name}Component`, (id, mvmt: MovementData) => {
+    this.ecs.events.on(`set${MovementData.name}Component`, (id: number, mvmt: MovementData) => {
       const entity = new Entity(Entity.defaultManager, id);
       const body = entity.getComponent(PhysicsData);
 
@@ -56,41 +57,42 @@ export default class MovementScript extends GameScript {
     });
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  update(dt: number, entity: Entity) {
-    const body = entity.getComponent(PhysicsData);
-    const mvmt = entity.getComponent(MovementData);
+  update(dt: number) {
+    this.movementView.iterateView((entity) => {
+      const body = entity.getComponent(PhysicsData);
+      const mvmt = entity.getComponent(MovementData);
 
-    // walkVector = direction * speed
-    const walkVector = mvmt.direction.normalize();
-    walkVector.multiplyScalar(mvmt.walkVelocity);
+      // walkVector = direction * speed
+      const walkVector = mvmt.direction.normalize();
+      walkVector.multiplyScalar(mvmt.walkVelocity);
 
-    // slide down slopes
-    const angleFriction = 0.0;
-    const maxAngle = 20;
-    const groundAngle = MathUtils.radToDeg(new Vector3(0, 1, 0).angleTo(mvmt.groundNormal));
-    if (groundAngle > maxAngle) {
-      walkVector.x += (1 - mvmt.groundNormal.y) * mvmt.groundNormal.x * (1 - angleFriction);
-      walkVector.z += (1 - mvmt.groundNormal.y) * mvmt.groundNormal.z * (1 - angleFriction);
-    }
+      // slide down slopes
+      const angleFriction = 0.0;
+      const maxAngle = 20;
+      const groundAngle = MathUtils.radToDeg(new Vector3(0, 1, 0).angleTo(mvmt.groundNormal));
+      if (groundAngle > maxAngle) {
+        walkVector.x += (1 - mvmt.groundNormal.y) * mvmt.groundNormal.x * (1 - angleFriction);
+        walkVector.z += (1 - mvmt.groundNormal.y) * mvmt.groundNormal.z * (1 - angleFriction);
+      }
 
-    // walk
-    body.velocity.x += walkVector.x;
-    body.velocity.z += walkVector.z;
+      // walk
+      body.velocity.x += walkVector.x;
+      body.velocity.z += walkVector.z;
 
-    const { max, min } = Math;
-    const clamp = (num: number, a: number, b: number) => max(min(num, max(a, b)), min(a, b));
+      const { max, min } = Math;
+      const clamp = (num: number, a: number, b: number) => max(min(num, max(a, b)), min(a, b));
 
-    // restrict speed
-    body.velocity.x = clamp(body.velocity.x, -walkVector.x, walkVector.x);
-    body.velocity.z = clamp(body.velocity.z, -walkVector.z, walkVector.z);
+      // restrict speed
+      body.velocity.x = clamp(body.velocity.x, -walkVector.x, walkVector.x);
+      body.velocity.z = clamp(body.velocity.z, -walkVector.z, walkVector.z);
 
-    // try to jump
-    if (mvmt.wantsToJump) {
-      const raycastDst = new Vec3(body.position.x, body.position.y - 2, body.position.z);
-      const canJump = this.physics.raycast(body.position, raycastDst);
+      // try to jump
+      if (mvmt.wantsToJump) {
+        const raycastDst = new Vec3(body.position.x, body.position.y - 2, body.position.z);
+        const canJump = this.physics.raycast(body.position, raycastDst);
 
-      if (canJump) body.velocity.y += mvmt.jumpVelocity;
-    }
+        if (canJump) body.velocity.y += mvmt.jumpVelocity;
+      }
+    });
   }
 }

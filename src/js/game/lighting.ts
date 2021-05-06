@@ -1,5 +1,5 @@
 import { AmbientLight, DirectionalLight } from 'three';
-import { Entity } from '../entities';
+import Entity from '../ecs/entity';
 import { GraphicsData } from '../graphics/graphics';
 import GameScript from '../script';
 

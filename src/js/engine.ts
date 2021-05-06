@@ -6,7 +6,8 @@ import { GUI } from 'dat.gui';
 import AssetLoader from './load';
 import { Graphics, GraphicsData } from './graphics/graphics';
 import { Physics, PhysicsData } from './physics';
-import { Entity, EntityManager } from './entities';
+import Entity from './ecs/entity';
+import EntityManager from './ecs/entity-manager';
 
 import maps from './json/maps.json';
 import gameScripts from './game/_scripts.json';
@@ -29,6 +30,7 @@ export default class Engine {
 
   #assetLoader = new AssetLoader();
 
+  /** ECS Space where actual game objects go */
   #ecs = new EntityManager();
 
   /** Convenience method */
@@ -113,16 +115,7 @@ export default class Engine {
       this.physics.update(delta);
 
       // update game
-      this.#gameScripts.forEach((script) => {
-        if ('queries' in script) {
-          this.ecs.executeTask({
-            execute: script.update.bind(script),
-            queries: script.queries!,
-          }, delta);
-        } else {
-          script.update(delta);
-        }
-      });
+      this.#gameScripts.forEach((script) => script.update(delta));
 
       // update graphics
       this.graphics.update();

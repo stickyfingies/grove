@@ -1,4 +1,4 @@
-import { Entity } from '../entities';
+import EcsView from '../ecs/view';
 import GameScript from '../script';
 
 /**
@@ -13,18 +13,19 @@ export class HealthData {
 }
 
 export default class HealthScript extends GameScript {
-  queries = new Set([HealthData])
+  healthView = new EcsView(this.ecs, new Set([HealthData]));
 
-  // eslint-disable-next-line class-methods-use-this
-  update(dt: number, entity: Entity) {
-    const health = entity.getComponent(HealthData);
+  update(dt: number) {
+    this.healthView.iterateView((entity) => {
+      const health = entity.getComponent(HealthData);
 
-    // cap hp value at max hp value
-    health.hp = Math.min(health.hp, health.max);
+      // cap hp value at max hp value
+      health.hp = Math.min(health.hp, health.max);
 
-    // this hoe dead
-    if (health.hp <= 0) {
-      entity.deleteComponent(HealthData);
-    }
+      // this hoe dead
+      if (health.hp <= 0) {
+        entity.deleteComponent(HealthData);
+      }
+    });
   }
 }

@@ -3,7 +3,7 @@ import $ from 'jquery';
 import {
   CanvasTexture, Sprite, SpriteMaterial,
 } from 'three';
-import { Entity } from '../entities';
+import Entity from '../ecs/entity';
 import { CameraData, CAMERA_TAG, GraphicsData } from '../graphics/graphics';
 import GraphicsUtils from '../graphics/utils';
 import { PhysicsData } from '../physics';

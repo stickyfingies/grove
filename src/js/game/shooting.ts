@@ -1,6 +1,6 @@
 import { Ray, Vector3 } from 'three';
 import $ from 'jquery';
-import { Entity } from '../entities';
+import Entity from '../ecs/entity';
 import { Physics, PhysicsData } from '../physics';
 import { CameraData, CAMERA_TAG, GraphicsData } from '../graphics/graphics';
 import GraphicsUtils from '../graphics/utils';

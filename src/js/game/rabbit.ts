@@ -8,7 +8,7 @@
 // @ts-nocheck
 
 import GameScript from '../script';
-import { Entity } from '../entities';
+import Entity from '../ecs/entity';
 import { GraphicsData } from '../graphics/graphics';
 import { Physics, PhysicsData } from '../physics';
 

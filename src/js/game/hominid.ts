@@ -2,7 +2,8 @@ import { ContactEquation, Vec3 } from 'cannon-es';
 import {
   Color, Mesh, SpriteMaterial, Sprite, CanvasTexture, Vector3, MeshPhongMaterial,
 } from 'three';
-import { Entity } from '../entities';
+import EcsView from '../ecs/view';
+import Entity from '../ecs/entity';
 import { GraphicsData } from '../graphics/graphics';
 import GraphicsUtils from '../graphics/utils';
 import { ConstraintData, Physics, PhysicsData } from '../physics';
@@ -19,7 +20,6 @@ import { MovementData } from './movement';
  */
 class HominidData {
   // personal space bubble around the player at which hominids will stop approaching
-  // ? follow component?
   bubble: number;
 
   // the torso entity (which this component should be attached to)
@@ -33,7 +33,7 @@ class HominidData {
 }
 
 export default class HominidScript extends GameScript {
-  queries = new Set([HominidData, HealthData]);
+  hominidView = new EcsView(this.ecs, new Set([HominidData, HealthData]));
 
   init() {
     this.gui.add(this, 'createHominid').name('Spawn Hominid');
@@ -97,31 +97,35 @@ export default class HominidScript extends GameScript {
 
   // `hominid` is the torso
   // eslint-disable-next-line class-methods-use-this
-  update(dt: number, hominid: Entity) {
-    const player = Entity.getTag(PLAYER_TAG);
-    const { bubble } = hominid.getComponent(HominidData);
+  update(dt: number) {
+    this.hominidView.iterateView((hominid) => {
+      const player = Entity.getTag(PLAYER_TAG);
+      const { bubble } = hominid.getComponent(HominidData);
 
-    const playerPhysics = player.getComponent(PhysicsData);
-    const hominidPhysics = hominid.getComponent(PhysicsData);
-    const mvmt = hominid.getComponent(MovementData);
+      const playerPhysics = player.getComponent(PhysicsData);
+      const hominidPhysics = hominid.getComponent(PhysicsData);
+      const mvmt = hominid.getComponent(MovementData);
 
-    const playerPosC = playerPhysics.interpolatedPosition;
-    const hominidPosC = hominidPhysics.interpolatedPosition;
-    const playerPos = new Vector3(playerPosC.x, playerPosC.y, playerPosC.z);
-    const hominidPos = new Vector3(hominidPosC.x, hominidPosC.y, hominidPosC.z);
+      // * vector utils could simplify this
+      const playerPosC = playerPhysics.interpolatedPosition;
+      const hominidPosC = hominidPhysics.interpolatedPosition;
+      const playerPos = new Vector3(playerPosC.x, playerPosC.y, playerPosC.z);
+      const hominidPos = new Vector3(hominidPosC.x, hominidPosC.y, hominidPosC.z);
 
-    const outsideBubble = (playerPos.distanceTo(hominidPos) >= bubble);
-    mvmt.direction = outsideBubble
-      ? new Vector3().subVectors(playerPos, hominidPos)
-      : new Vector3(0, 0, 0);
+      // walk towards player if not too close
+      const isOutsideBubble = (playerPos.distanceTo(hominidPos) >= bubble);
+      mvmt.direction = isOutsideBubble
+        ? new Vector3().subVectors(playerPos, hominidPos)
+        : new Vector3(0, 0, 0);
 
-    const hp = new Vector3(hominidPos.x, hominidPos.y, hominidPos.z); // hominid pos
-    const pp = new Vector3(playerPos.x, playerPos.y, playerPos.z); // player pos
+      const hp = new Vector3(hominidPos.x, hominidPos.y, hominidPos.z); // hominid pos
+      const pp = new Vector3(playerPos.x, playerPos.y, playerPos.z); // player pos
 
-    // shoot at player
-    if (hp.distanceTo(pp) <= bubble + 3 && Math.random() < 0.01) {
-      shoot(hominid, hp.subVectors(pp, hp).normalize());
-    }
+      // shoot at player
+      if (hp.distanceTo(pp) <= bubble + 3 && Math.random() < 0.01) {
+        shoot(hominid, hp.subVectors(pp, hp).normalize());
+      }
+    });
   }
 
   createHominid() {
@@ -145,8 +149,7 @@ export default class HominidScript extends GameScript {
     torsoBody.updateMassProperties();
     torso.setComponent(PhysicsData, torsoBody);
 
-    const torsoMesh = GraphicsUtils.makeCylinder(1, height + radius * 2);
-    torsoMesh.scale.set(radius, height + radius * 2, radius);
+    const torsoMesh = GraphicsUtils.makeCylinder(radius, height + radius * 2);
     torso.setComponent(GraphicsData, torsoMesh);
 
     torso.setComponent(MovementData, new MovementData(3, 1.5));
@@ -205,7 +208,7 @@ export default class HominidScript extends GameScript {
     const haloSprite = new Sprite();
     haloSprite.material = new SpriteMaterial({ map: drawHaloTexture(), color: 0x55ff55 });
     haloSprite.scale.set(2, 2, 2);
-    haloSprite.position.y += radius * 4;
+    haloSprite.position.y += radius * 2;
     haloSprite.parent = headMesh;
     halo.setComponent(GraphicsData, haloSprite);
 

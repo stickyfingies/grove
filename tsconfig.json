@@ -8,7 +8,7 @@
         "allowSyntheticDefaultImports": true,
         "resolveJsonModule": true,
         "module": "esnext",
-        "target": "es6",
+        "target": "es2019",
         "allowJs": false
     }
 }

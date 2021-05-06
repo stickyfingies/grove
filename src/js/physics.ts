@@ -13,7 +13,7 @@ import {
   SAPBroadphase,
 } from 'cannon-es';
 import Engine from './engine';
-import { Entity } from './entities';
+import Entity from './ecs/entity';
 
 export const PhysicsData = Body;
 // eslint-disable-next-line no-redeclare
@@ -55,14 +55,14 @@ export class Physics {
       this.#world.addBody(data);
       this.#bodyToEntity.set(data, new Entity(Entity.defaultManager, id));
     });
-    engine.ecs.events.on(`set${ConstraintData.name}Component`, (_, data: ConstraintData) => {
+    engine.ecs.events.on(`set${ConstraintData.name}Component`, (id: number, data: ConstraintData) => {
       this.#world.addConstraint(data);
     });
-    engine.ecs.events.on(`delete${PhysicsData.name}Component`, (_, data: PhysicsData) => {
+    engine.ecs.events.on(`delete${PhysicsData.name}Component`, (id: number, data: PhysicsData) => {
       this.#world.removeBody(data);
       this.#bodyToEntity.delete(data);
     });
-    engine.ecs.events.on(`delete${ConstraintData.name}Component`, (_, data: ConstraintData) => {
+    engine.ecs.events.on(`delete${ConstraintData.name}Component`, (id: number, data: ConstraintData) => {
       this.#world.removeConstraint(data);
     });
   }

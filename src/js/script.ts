@@ -1,6 +1,6 @@
 import { GUI } from 'dat.gui';
 import Engine from './engine';
-import { ComponentSignature, Entity, EntityManager } from './entities';
+import EntityManager from './ecs/entity-manager';
 import { Graphics } from './graphics/graphics';
 import AssetLoader from './load';
 import { Physics } from './physics';
@@ -8,10 +8,10 @@ import { Physics } from './physics';
 /**
  * Helper class for making core engine systems available to derived classes
  *
- * If `queries` is set, `update()` gets called once per each game entity which contains all
+ * If `queries` **IS** set, `update()` gets called once per each game entity which contains all
  * components specified in `queries`, and recieves that entity as a paramenter.
  *
- * If `queries` is NOT set, `update()` is only called once, and is not passed any entities.
+ * If `queries` **IS NOT** set, `update()` is only called once, and is not passed any entities.
  *
  * @example
  * // old code:
@@ -30,8 +30,6 @@ export default class GameScript {
 
   assetLoader: AssetLoader;
 
-  queries?: ComponentSignature;
-
   constructor(protected engine: Engine) {
     this.graphics = engine.graphics;
     this.physics = engine.physics;
@@ -40,9 +38,11 @@ export default class GameScript {
     this.assetLoader = engine.assetLoader;
   }
 
+  /** @virtual */
   // eslint-disable-next-line class-methods-use-this, no-empty-function
   init() {}
 
+  /** @virtual */
   // eslint-disable-next-line class-methods-use-this, no-empty-function
-  update(dt: number, entity?: Entity) {}
+  update(dt: number) {}
 }

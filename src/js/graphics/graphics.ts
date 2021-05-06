@@ -27,7 +27,7 @@ import {
   Light,
 } from 'three';
 import Engine from '../engine';
-import { Entity } from '../entities';
+import Entity from '../ecs/entity';
 import GraphicsUtils from './utils';
 
 export type CameraData = PerspectiveCamera;
@@ -115,14 +115,14 @@ export class Graphics {
     this.assignIdToObject(this.#camera);
 
     // listen to component events
-    engine.ecs.events.on(`set${GraphicsData.name}Component`, (id, object: GraphicsData) => {
+    engine.ecs.events.on(`set${GraphicsData.name}Component`, (id: number, object: GraphicsData) => {
       object.traverse((child) => {
         if (child instanceof Mesh || child instanceof Sprite || child instanceof Light) {
           this.addObjectToScene(child);
         }
       });
     });
-    engine.ecs.events.on(`delete${GraphicsData.name}Component`, (id, mesh: Mesh) => {
+    engine.ecs.events.on(`delete${GraphicsData.name}Component`, (id: number, mesh: Mesh) => {
       this.removeFromScene(mesh);
     });
 
@@ -261,10 +261,6 @@ export class Graphics {
     if (object instanceof Mesh || object instanceof Sprite) {
       this.extractMaterialTextures(object.material as Material);
     }
-
-    // stackoverflow fix for serializing spheres
-    // ? is this still necessary?
-    if (object instanceof Mesh) delete object.geometry.parameters;
 
     // send that bitch to the backend
     this.#worker.postMessage({

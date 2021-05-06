@@ -1,5 +1,5 @@
 import { Color, Sprite, SpriteMaterial } from 'three';
-import { Entity } from '../entities';
+import Entity from '../ecs/entity';
 import { GraphicsData } from '../graphics/graphics';
 import { Physics, PhysicsData } from '../physics';
 import GameScript from '../script';
