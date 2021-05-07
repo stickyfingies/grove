@@ -1,5 +1,4 @@
 import { Body, Sphere } from 'cannon-es';
-import $ from 'jquery';
 import {
   CanvasTexture, Sprite, SpriteMaterial,
 } from 'three';
@@ -94,11 +93,13 @@ export default class PlayerScript extends GameScript {
     });
 
     // handle death
-    this.ecs.events.on(`delete${HealthData.name}Component`, (id) => {
+    this.ecs.events.on(`delete${HealthData.name}Component`, (id: number) => {
       const score = player.getComponent(ScoreData);
       if (id === player.id) {
-        $('#blocker').show();
-        $('#load').hide().fadeIn(5000).html(`<h1>You Have Perished. Score... ${score.score}</h1>`);
+        document.querySelector('#blocker')?.setAttribute('style', 'display:block');
+        const loadText = document.querySelector('#load')!;
+        loadText.setAttribute('style', 'display:block');
+        loadText.innerHTML = `<h1>You Have Perished. Score... ${score.score}</h1>`;
       }
     });
 

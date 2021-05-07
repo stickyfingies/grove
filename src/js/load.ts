@@ -49,11 +49,11 @@ export default class AssetLoader {
         // serve asset to all cached requests
         this.#models[uri].traverse((child: Object3D) => {
           if (child instanceof Mesh) {
-            this.#callbacks[uri].forEach((cb: Function) => {
+            for (const cb of this.#callbacks[uri]) {
               child.updateMatrixWorld();
               const inst = child.clone();
-              cb(inst);
-            });
+              cb(inst as Mesh);
+            }
           }
         });
       });

@@ -12,7 +12,6 @@
 	"dependencies": {
 		"@types/dat.gui": "^0.7.6",
 		"@types/events": "^3.0.0",
-		"@types/jquery": "^3.5.5",
 		"@types/node": "^14.14.37",
 		"@types/stats": "^0.16.30",
 		"@types/three": "^0.126.2",
@@ -29,7 +28,6 @@
 		"express": "^4.14.1",
 		"express-session": "^1.14.1",
 		"fork-ts-checker-webpack-plugin": "^6.2.0",
-		"jquery": "^3.6.0",
 		"md5": "^2.3.0",
 		"mongodb": "^3.6.5",
 		"mongoose": "^5.12.2",

@@ -30,6 +30,8 @@ import {
  * Graphics Backend Data Specs
  */
 
+type ObjectJson = any;
+
 interface GraphicsBackendInitData {
   canvas: HTMLCanvasElement,
   buffer: SharedArrayBuffer,
@@ -46,7 +48,7 @@ interface GraphicsBackendUploadTextureData {
 }
 
 interface GraphicsBackendAddObjectData {
-  mesh: any,
+  mesh: ObjectJson,
   colorMapId: number,
   id: number
 }
@@ -58,6 +60,11 @@ interface GraphicsBackendRemoveObjectData {
 interface GraphicsBackendResizeData {
   width: number,
   height: number
+}
+
+interface GraphicsBackendUpdateMaterialData {
+  material: ObjectJson,
+  id: number,
 }
 
 /**
@@ -157,7 +164,7 @@ export default class GraphicsBackend {
       skybox.rotateY(0.0001);
 
       // copy transforms from transform buffer
-      this.#idToObject.forEach((object, id) => {
+      for (const [id, object] of this.#idToObject) {
         const offset = Number(id) * this.#elementsPerTransform;
 
         const matrix = new Matrix4().fromArray(tArr, offset);
@@ -169,7 +176,7 @@ export default class GraphicsBackend {
         if (matrix.elements[0] === 0) matrix.makeScale(0.1, 0.1, 0.1);
 
         object.matrix.copy(matrix);
-      });
+      }
 
       skybox.position.copy(this.#camera.position);
 
@@ -200,7 +207,7 @@ export default class GraphicsBackend {
     this.#textureCache.set(imageId, map);
   }
 
-  updateMaterial({ material, id }: any) {
+  updateMaterial({ material, id }: GraphicsBackendUpdateMaterialData) {
     const mat = this.deserializeMaterial(material);
 
     const mesh = this.#idToObject.get(id)! as Mesh | Sprite;
@@ -240,7 +247,7 @@ export default class GraphicsBackend {
     this.#renderer.setSize(width, height, false);
   }
 
-  private deserializeMaterial(json: any) {
+  private deserializeMaterial(json: ObjectJson) {
     const {
       map, alphaMap, normalMap, specularMap,
     } = json;

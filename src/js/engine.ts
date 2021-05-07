@@ -1,5 +1,4 @@
 import { DefaultLoadingManager } from 'three';
-import $ from 'jquery';
 // @ts-ignore
 import Stats from 'stats-js';
 import { GUI } from 'dat.gui';
@@ -30,7 +29,6 @@ export default class Engine {
 
   #assetLoader = new AssetLoader();
 
-  /** ECS Space where actual game objects go */
   #ecs = new EntityManager();
 
   /** Convenience method */
@@ -58,7 +56,7 @@ export default class Engine {
     return this.#ecs;
   }
 
-  init() {
+  async init() {
     Entity.defaultManager = this.ecs;
 
     // initialize engine systems
@@ -70,33 +68,34 @@ export default class Engine {
     DefaultLoadingManager.onProgress = (url, loaded, total) => {
       console.log(`${url} (${loaded}/${total})`);
       if (loaded === total) {
-        $('#spinner').hide();
-        $('#load-play-btn, .play-btn').show();
+        document.querySelector('#spinner')?.setAttribute('style', 'display:none');
+        document.querySelector('#load-play-btn')?.setAttribute('style', 'display:block');
       }
     };
 
     // load game scripts
-    gameScripts.scripts.forEach(async (scriptName) => {
-      const scriptModule = await import(`./game/${scriptName}`);
+    const scriptModules: any[] = [];
+    for (const scriptName of gameScripts.scripts) {
+      scriptModules.push(import(`./game/${scriptName}`));
+    }
 
-      // eslint-disable-next-line new-cap
-      const script: GameScript = new scriptModule.default(this);
-
+    // init game scripts
+    for (const scriptModule of await Promise.all(scriptModules)) {
+      const script: GameScript = new scriptModule.default(this); // eslint-disable-line new-cap
       this.#gameScripts.push(script);
-
       script.init();
-    });
+    }
 
     // load the map
     const map = maps['test-arena'];
-    map.objects.forEach((path) => {
+    for (const path of map.objects) {
       this.assetLoader.loadModel(path, (mesh) => {
         const body = AssetLoader.loadPhysicsModel(mesh, 0);
         new Entity()
           .setComponent(GraphicsData, mesh)
           .setComponent(PhysicsData, body);
       });
-    });
+    }
 
     // show performance statistics
     this.#stats.showPanel(1);
@@ -115,7 +114,7 @@ export default class Engine {
       this.physics.update(delta);
 
       // update game
-      this.#gameScripts.forEach((script) => script.update(delta));
+      for (const script of this.#gameScripts) script.update(delta);
 
       // update graphics
       this.graphics.update();

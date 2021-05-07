@@ -1,5 +1,4 @@
 import { Ray, Vector3 } from 'three';
-import $ from 'jquery';
 import Entity from '../ecs/entity';
 import { Physics, PhysicsData } from '../physics';
 import { CameraData, CAMERA_TAG, GraphicsData } from '../graphics/graphics';
@@ -51,7 +50,7 @@ export const getCameraDir = () => {
 
 export default class ShootingScript extends GameScript {
   init() {
-    $(document).on('mousedown', () => {
+    document.addEventListener('mousedown', () => {
       if (this.engine.running) shoot(Entity.getTag(PLAYER_TAG), getCameraDir());
     });
   }

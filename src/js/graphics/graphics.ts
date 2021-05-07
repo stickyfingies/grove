@@ -147,7 +147,7 @@ export class Graphics {
   }
 
   update() {
-    this.#idToObject.forEach(this.writeTransformToArray.bind(this));
+    for (const [id, object] of this.#idToObject) this.writeTransformToArray(id, object);
   }
 
   /**
@@ -185,9 +185,9 @@ export class Graphics {
     this.#availableObjectIds.push(id);
   };
 
-  private writeTransformToArray(object: Object3D) {
+  private writeTransformToArray(id: number, object: Object3D) {
     // calculate offset into array given mesh ID
-    const offset = object.userData.meshId * this.#elementsPerTransform;
+    const offset = id * this.#elementsPerTransform;
 
     // copy world matrix into transform buffer
     object.updateMatrixWorld();

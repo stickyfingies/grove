@@ -24,6 +24,11 @@ module.exports = {
     },
   },
   rules: {
+    'no-restricted-syntax': [
+      'error',
+      'LabeledStatement',
+      'WithStatement',
+    ],
     'no-console': 'off',
     'no-plusplus': ['error', { allowForLoopAfterthoughts: true }],
     'no-param-reassign': ['error', { props: false }],

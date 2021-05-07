@@ -1,4 +1,3 @@
-import $ from 'jquery';
 import GameScript from '../script';
 
 export default class PauseMenuScript extends GameScript {
@@ -8,11 +7,9 @@ export default class PauseMenuScript extends GameScript {
       const isLocked = (document.pointerLockElement === document.body);
       this.engine.running = isLocked;
 
-      $('#pause').toggle(!isLocked);
+      document.querySelector('#pause')?.setAttribute('style', isLocked ? 'display:none' : 'display:block');
 
-      if (isLocked) {
-        $('#blocker').css('display', 'none');
-      }
+      if (isLocked) document.querySelector('#blocker')?.setAttribute('style', 'display:none');
     };
 
     document.addEventListener('pointerlockchange', pointerlockchange);
@@ -22,6 +19,6 @@ export default class PauseMenuScript extends GameScript {
       document.body.requestPointerLock();
     };
 
-    $('.play-btn').on('click', click);
+    for (const btn of document.querySelectorAll('.play-btn')) btn.addEventListener('click', click);
   }
 }

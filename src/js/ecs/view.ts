@@ -19,7 +19,6 @@ export default class EcsView {
   /** Execute a callback for every entity that matches signature */
   iterateView(callback: (e: Entity) => void) {
     const ids = this.#ecs.submitQuery(this.#signature);
-
-    ids.forEach((id) => callback(new Entity(this.#ecs, id)));
+    for (const id of ids) callback(new Entity(this.#ecs, id));
   }
 }

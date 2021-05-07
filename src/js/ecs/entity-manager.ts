@@ -9,9 +9,12 @@ export type ComponentSignature = Set<DataType>;
 
 const areSetsEqual = <T>(setA: Set<T>, setB: Set<T>) => {
   let equal = setA.size === setB.size;
-  setA.forEach((value) => {
-    if (!setB.has(value)) equal = false;
-  });
+  for (const value of setA) {
+    if (!setB.has(value)) {
+      equal = false;
+      break;
+    }
+  }
   return equal;
 };
 
@@ -45,12 +48,13 @@ class Archetype {
   /** Check if this archetype contains at LEAST all the component types listed in `query` */
   containsSignature(query: ComponentSignature) {
     let matches = true;
-    query.forEach((type) => {
-      if (!(matches && this.signature.has(type))) {
-        // archetype doesn't have this component type
+
+    for (const type of query) {
+      if (!this.signature.has(type)) {
         matches = false;
+        break;
       }
-    });
+    }
 
     return matches;
   }
@@ -103,10 +107,10 @@ export default class EntityManager {
       const archetype = this.#idToArchetype.get(id)!;
 
       // emit 'delete' events for every component in this entity
-      archetype.signature.forEach((type) => {
+      for (const type of archetype.signature) {
         this.events.emit(`delete${type.name}Component`, id, this.getComponent(id, type));
         this.#dataManagers.get(type)?.deleteComponent(id);
-      });
+      }
 
       archetype.entities.delete(id);
 
@@ -192,15 +196,12 @@ export default class EntityManager {
     submitQuery(query: ComponentSignature) {
       const entities: number[] = [];
 
-      this.#idToArchetype.forEach((arch, id) => {
-        // ensure this archetype has all required components
-        if (!arch.containsSignature(query)) return;
+      // add entity ID's from archetypes that match signature
+      for (const [id, arch] of this.#idToArchetype) {
+        if (arch.containsSignature(query)) entities.push(id);
+      }
 
-        // add id to list
-        entities.push(id);
-      });
-
-      return entities;
+      return entities!;
     }
 
     // TODO document this
@@ -213,13 +214,13 @@ export default class EntityManager {
 
       // we should attempt to add this entity to an existing archetype
       // it's more than likely that one already exists
-      this.#archetypes.forEach((arch) => {
+      for (const arch of this.#archetypes) {
         if (areSetsEqual(arch.signature, signature)) {
           entityInArchetype = true;
           this.#idToArchetype.set(id, arch);
           arch.entities.add(id);
         }
-      });
+      }
 
       // if we couldn't find an archetype that matches this entity's list of components,
       // create one that contains this entity
