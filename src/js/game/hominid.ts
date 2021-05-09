@@ -50,7 +50,7 @@ export default class HominidScript extends GameScript {
     spawn();
 
     // and spawn more every 12 seconds
-    setInterval(spawn.bind(this), 12_000);
+    setInterval(spawn, 12_000);
 
     // when a hominid dies...
     this.ecs.events.on(`delete${HealthData.name}Component`, (id: number) => {
@@ -95,9 +95,9 @@ export default class HominidScript extends GameScript {
     });
   }
 
-  // `hominid` is the torso
   // eslint-disable-next-line class-methods-use-this
   update(dt: number) {
+    // `hominid` is the torso
     this.hominidView.iterateView((hominid) => {
       const player = Entity.getTag(PLAYER_TAG);
       const { bubble } = hominid.getComponent(HominidData);
@@ -118,12 +118,11 @@ export default class HominidScript extends GameScript {
         ? new Vector3().subVectors(playerPos, hominidPos)
         : new Vector3(0, 0, 0);
 
-      const hp = new Vector3(hominidPos.x, hominidPos.y, hominidPos.z); // hominid pos
-      const pp = new Vector3(playerPos.x, playerPos.y, playerPos.z); // player pos
-
       // shoot at player
-      if (hp.distanceTo(pp) <= bubble + 3 && Math.random() < 0.01) {
-        shoot(hominid, hp.subVectors(pp, hp).normalize());
+      if (hominidPos.distanceTo(playerPos) <= bubble + 3 && Math.random() < 0.01) {
+        const ball = shoot(hominid, hominidPos.subVectors(playerPos, hominidPos).normalize());
+        ((ball.getComponent(GraphicsData) as Mesh).material as MeshPhongMaterial).color = new Color('#EE5A24');
+        this.graphics.updateMaterial(ball.getComponent(GraphicsData) as Mesh);
       }
     });
   }
@@ -133,6 +132,7 @@ export default class HominidScript extends GameScript {
     const height = 1;
     const torsoMass = 3;
     const headMass = 1;
+    const color = '#EA2027';
 
     /**
     * Torso
@@ -150,6 +150,7 @@ export default class HominidScript extends GameScript {
     torso.setComponent(PhysicsData, torsoBody);
 
     const torsoMesh = GraphicsUtils.makeCylinder(radius, height + radius * 2);
+    torsoMesh.material.color = new Color(color);
     torso.setComponent(GraphicsData, torsoMesh);
 
     torso.setComponent(MovementData, new MovementData(3, 1.5));
@@ -172,6 +173,7 @@ export default class HominidScript extends GameScript {
     head.setComponent(PhysicsData, headBody);
 
     const headMesh = GraphicsUtils.makeBall(radius);
+    headMesh.material.color = new Color(color);
     headMesh.userData.norotate = true;
     head.setComponent(GraphicsData, headMesh);
 
@@ -220,7 +222,7 @@ export default class HominidScript extends GameScript {
     });
 
     // headshots deal damage
-    headBody.addEventListener('collide', ({ contact }: {contact: ContactEquation}) => {
+    headBody.addEventListener('collide', ({ contact }: { contact: ContactEquation }) => {
       const health = torso.getComponent(HealthData);
       const impact = contact.getImpactVelocityAlongNormal();
 

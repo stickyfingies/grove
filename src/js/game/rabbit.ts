@@ -5,12 +5,14 @@
  *
  * THIS FILE IS NOT USED ANYMORE - KEPT FOR REFERENCE PURPOSES
  */
+
 // @ts-nocheck
 
 import GameScript from '../script';
 import Entity from '../ecs/entity';
 import { GraphicsData } from '../graphics/graphics';
 import { Physics, PhysicsData } from '../physics';
+import { PLAYER_TAG } from './player';
 
 /**
  * Entity Tasks
@@ -55,8 +57,9 @@ export default class RabbitScript extends GameScript {
     });
   }
 
+  // eslint-disable-next-line class-methods-use-this
   update(dt: number, rabbit: Entity) {
-    const playerPos = Entity.getTag(this.ecs, 'player').getComponent(PhysicsData).interpolatedPosition;
+    const playerPos = Entity.getTag(PLAYER_TAG).getComponent(PhysicsData).interpolatedPosition;
     const body = rabbit.getComponent(PhysicsData);
     const distanceToPlayer = body.interpolatedPosition.distanceTo(playerPos);
 

@@ -1,3 +1,4 @@
+import autoBind from 'auto-bind';
 import EntityManager, { DataType } from './entity-manager';
 
 /**
@@ -15,6 +16,7 @@ export default class Entity {
   readonly #id: number;
 
   constructor(manager = Entity.defaultManager, id = manager.createEntity()) {
+    autoBind(this);
     this.#manager = manager;
     this.#id = id;
   }

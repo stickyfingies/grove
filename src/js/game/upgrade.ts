@@ -32,9 +32,9 @@ export default class UpgradeScript extends GameScript {
           player.getComponent(HealthData).hp += 15;
           upgradeBody.removeEventListener('collide', collideCb);
 
-          // ! <hack/> physics breaks when deleting upgrade immediately
+          // ! physics breaks when deleting upgrade immediately; wait 40ms
           // TODO defer entity / component deletion?
-          setTimeout(upgrade.delete.bind(upgrade), 40);
+          setTimeout(upgrade.delete, 40);
         }
       };
 

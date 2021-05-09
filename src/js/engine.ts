@@ -2,6 +2,7 @@ import { DefaultLoadingManager } from 'three';
 // @ts-ignore
 import Stats from 'stats-js';
 import { GUI } from 'dat.gui';
+import autoBind from 'auto-bind';
 import AssetLoader from './load';
 import { Graphics, GraphicsData } from './graphics/graphics';
 import { Physics, PhysicsData } from './physics';
@@ -56,6 +57,10 @@ export default class Engine {
     return this.#ecs;
   }
 
+  constructor() {
+    autoBind(this);
+  }
+
   async init() {
     Entity.defaultManager = this.ecs;
 
@@ -101,7 +106,7 @@ export default class Engine {
     this.#stats.showPanel(1);
     document.body.appendChild(this.#stats.dom);
 
-    requestAnimationFrame(this.animate.bind(this));
+    requestAnimationFrame(this.animate);
   }
 
   animate(now: number) {
@@ -124,6 +129,6 @@ export default class Engine {
 
     this.#lastFrameTime = now;
 
-    requestAnimationFrame(this.animate.bind(this));
+    requestAnimationFrame(this.animate);
   }
 }

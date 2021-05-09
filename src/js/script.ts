@@ -1,4 +1,5 @@
 import { GUI } from 'dat.gui';
+import autoBind from 'auto-bind';
 import Engine from './engine';
 import EntityManager from './ecs/entity-manager';
 import { Graphics } from './graphics/graphics';
@@ -13,13 +14,14 @@ import { Physics } from './physics';
  *
  * If `queries` **IS NOT** set, `update()` is only called once, and is not passed any entities.
  *
+ * @note `GameScript` employs Sindresorhus' `autoBind()` in the constructor, meaning there's no need
+ * to call `this.method.bind(this)` when passing methods as callbacks.
+ *
  * @example
- * // old code:
- * this.engine.graphics.doStuff();
- * // with GameScript:
- * this.graphics.doStuff();
+ * this.graphics.doSomething(); // no need for accessing engine directly
+ * this.assetLoader.loadModel('/assets/foo', this.loadCallback); // no need for .bind()
  */
-export default class GameScript {
+export default abstract class GameScript {
   graphics: Graphics;
 
   physics: Physics;
@@ -36,13 +38,14 @@ export default class GameScript {
     this.ecs = engine.ecs;
     this.gui = engine.gui;
     this.assetLoader = engine.assetLoader;
+    autoBind(this);
   }
 
   /** @virtual */
   // eslint-disable-next-line class-methods-use-this, no-empty-function
-  init() {}
+  init(): void {}
 
   /** @virtual */
   // eslint-disable-next-line class-methods-use-this, no-empty-function
-  update(dt: number) {}
+  update(dt: number): void {}
 }

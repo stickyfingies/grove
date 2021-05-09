@@ -1,7 +1,4 @@
-import {
-  Mesh,
-  Object3D,
-} from 'three';
+import { Mesh, Object3D } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import {
   Vec3,
@@ -47,12 +44,12 @@ export default class AssetLoader {
 
         // model may have been requested again since it started loading,
         // serve asset to all cached requests
-        this.#models[uri].traverse((child: Object3D) => {
+        this.#models[uri].traverse((child) => {
           if (child instanceof Mesh) {
             for (const cb of this.#callbacks[uri]) {
               child.updateMatrixWorld();
-              const inst = child.clone();
-              cb(inst as Mesh);
+              const inst = child.clone() as Mesh;
+              cb(inst);
             }
           }
         });
@@ -61,7 +58,7 @@ export default class AssetLoader {
 
     // load from the model cache if possible
     if (this.#models[uri]) {
-      this.#models[uri].traverse((child: Object3D) => {
+      this.#models[uri].traverse((child) => {
         if (child instanceof Mesh) {
           child.updateMatrixWorld();
           const inst = child.clone() as Mesh;

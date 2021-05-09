@@ -1,11 +1,20 @@
-import { AmbientLight, DirectionalLight } from 'three';
+import {
+  AmbientLight,
+  BackSide,
+  BoxBufferGeometry,
+  CanvasTexture,
+  DirectionalLight,
+  ImageBitmapLoader,
+  Mesh,
+  MeshBasicMaterial,
+} from 'three';
 import Entity from '../ecs/entity';
 import { GraphicsData } from '../graphics/graphics';
 import GameScript from '../script';
 
 export default class LightingScript extends GameScript {
   // eslint-disable-next-line class-methods-use-this
-  init() {
+  async init() {
     const sunlight = new Entity();
     {
       const light = new DirectionalLight(0xffffff, 1);
@@ -28,5 +37,34 @@ export default class LightingScript extends GameScript {
       const light = new AmbientLight(0xffffff, 0.16);
       ambient.setComponent(GraphicsData, light);
     }
+
+    const skybox = new Entity();
+
+    // skybox state
+    const imagePrefix = '/img/skybox/';
+    const directions = ['px', 'nx', 'py', 'ny', 'pz', 'nz'];
+    const imageSuffix = '.jpg';
+    const skyGeometry = new BoxBufferGeometry(2000, 2000, 2000);
+    const materialArray: MeshBasicMaterial[] = [];
+
+    // initialize image loader
+    const loader = new ImageBitmapLoader();
+
+    // load skybox images
+    for (let i = 0; i < 6; i++) {
+      loader.load(imagePrefix + directions[i] + imageSuffix, (image) => {
+        const map = new CanvasTexture(image);
+        const mat = new MeshBasicMaterial({
+          map,
+          side: BackSide,
+          fog: false,
+        });
+        materialArray[i] = mat;
+      });
+    }
+
+    // create skybox
+    const skyboxMesh = new Mesh(skyGeometry, materialArray);
+    setTimeout(() => skybox.setComponent(GraphicsData, skyboxMesh), 100);
   }
 }

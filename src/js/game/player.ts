@@ -37,7 +37,7 @@ export default class PlayerScript extends GameScript {
     const radius = 1.7;
     const shape = new Sphere(radius);
     const playerBody = new Body({
-      collisionFilterGroup: 2,
+      collisionFilterGroup: 2, // separate collision filter for raycasts
       allowSleep: false,
       fixedRotation: true,
       mass,
@@ -48,7 +48,6 @@ export default class PlayerScript extends GameScript {
 
     player.setComponent(MovementData, new MovementData(6, 1.5));
 
-    // initialize KB control options
     player.setComponent(KeyboardControlData, {});
 
     /**
@@ -81,7 +80,7 @@ export default class PlayerScript extends GameScript {
 
     drawHUD();
 
-    // handle fall damage
+    // handle impact damage
     playerBody.addEventListener('collide', ({ contact }: any) => {
       const health = player.getComponent(HealthData);
       const impact = contact.getImpactVelocityAlongNormal();

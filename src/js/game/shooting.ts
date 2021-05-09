@@ -1,4 +1,4 @@
-import { Ray, Vector3 } from 'three';
+import { Vector3 } from 'three';
 import Entity from '../ecs/entity';
 import { Physics, PhysicsData } from '../physics';
 import { CameraData, CAMERA_TAG, GraphicsData } from '../graphics/graphics';
@@ -6,7 +6,7 @@ import GraphicsUtils from '../graphics/utils';
 import GameScript from '../script';
 import { PLAYER_TAG } from './player';
 
-// shoots a ball outwards from an entity in an indicated direction
+/** Shoots a ball outwards from an entity in an indicated direction */
 export const shoot = (origin: Entity, shootDir: Vector3) => {
   const ball = new Entity();
 
@@ -14,7 +14,7 @@ export const shoot = (origin: Entity, shootDir: Vector3) => {
   const { x: vx, y: vy, z: vz } = origin.getComponent(PhysicsData).velocity;
   const { x: sdx, y: sdy, z: sdz } = shootDir;
 
-  const radius = 0.4;
+  const radius = 0.3;
   const mass = 10;
   const shootVelo = 40;
 
@@ -28,24 +28,18 @@ export const shoot = (origin: Entity, shootDir: Vector3) => {
 
   const collideCb = () => {
     body.removeEventListener('collide', collideCb);
-    setTimeout(ball.delete.bind(ball), 1500);
+    setTimeout(ball.delete, 1500);
   };
 
   body.addEventListener('collide', collideCb);
+
+  return ball;
 };
 
-// get a ThreeJS vector pointing outwards from the camera
-export const getCameraDir = () => {
+/** get a ThreeJS vector pointing outwards from the camera */
+const getCameraDir = () => {
   const camera = Entity.getTag(CAMERA_TAG).getComponent(CameraData);
-  const targetVec = new Vector3(0, 0, 1);
-  targetVec.unproject(camera);
-  const playerid = Entity.getTag(PLAYER_TAG);
-  const { x, y, z } = playerid.getComponent(PhysicsData).position;
-  const position = new Vector3(x, y, z);
-  const ray = new Ray(position, targetVec.sub(position).normalize());
-  targetVec.copy(ray.direction);
-
-  return targetVec;
+  return new Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
 };
 
 export default class ShootingScript extends GameScript {

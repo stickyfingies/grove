@@ -7,23 +7,13 @@ import GameScript from '../script';
 import { MovementData } from './movement';
 
 /**
- * Adding this component to an entity makes its physics body controllable via mouse and keyboard
- * @note depends on PhysicsData
+ * Adding this component to an entity makes its movement controllable via mouse and keyboard
+ * @note depends on: `PhysicsData`, `MovementData`
  */
 export class KeyboardControlData {}
 
 /**
- * Registers mouse/keyboard movements and applies them to every entity with `KeyboardControlData`
- *
- * Currently, this script reads input events and records them into movement commands, and then
- * immediately applies those commands to move an entity's physics body.  It may be beneficial to
- * separate this script into two separate systems - an input system, and a movement system.  That
- * way, game entities could be effected by the movement component irregardless of the source of the
- * movement - i.e. the player's moevement compoenent is updated via mouse & keyboard, an a.i.'s
- * movement component could be updated via an a.i. script, etc.
- *
- * tl;dr
- * TODO - generalize entity movement
+ * Registers mouse/keyboard input events and maps them to a `Movement` component
  */
 export default class KeyboardControlScript extends GameScript {
   /** W, UpArrow */
@@ -50,9 +40,9 @@ export default class KeyboardControlScript extends GameScript {
   kbControlView = new EcsView(this.ecs, new Set([PhysicsData, MovementData, KeyboardControlData]));
 
   init() {
-    document.addEventListener('mousemove', this.onMouseMove.bind(this));
-    document.addEventListener('keydown', this.onKeyDown.bind(this));
-    document.addEventListener('keyup', this.onKeyUp.bind(this));
+    document.addEventListener('mousemove', this.onMouseMove);
+    document.addEventListener('keydown', this.onKeyDown);
+    document.addEventListener('keyup', this.onKeyUp);
   }
 
   update(dt: number) {
@@ -62,7 +52,6 @@ export default class KeyboardControlScript extends GameScript {
 
       mvmt.direction = new Vector3(0, 0, 0);
 
-      // apply keyboard input
       if (this.moveForward) {
         mvmt.direction.z = -1;
       }
@@ -90,12 +79,16 @@ export default class KeyboardControlScript extends GameScript {
   private onMouseMove({ movementX, movementY }: MouseEvent) {
     if (!this.engine.running) return;
 
+    // Everything beyond this point contains arcane internet mathematics.
+    // Debug at your own peril.
+
     const euler = new Euler(0, 0, 0, 'YXZ');
     const camera = Entity.getTag(CAMERA_TAG).getComponent(CameraData);
     euler.setFromQuaternion(camera.quaternion);
 
-    euler.y -= movementX * 0.002;
-    euler.x -= movementY * 0.002;
+    const sensitivity = 0.002;
+    euler.y -= movementX * sensitivity;
+    euler.x -= movementY * sensitivity;
 
     const PI_2 = Math.PI / 2;
     euler.x = Math.max(PI_2 - this.maxPolarAngle, Math.min(PI_2 - this.minPolarAngle, euler.x));

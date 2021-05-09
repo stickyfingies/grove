@@ -11,13 +11,9 @@ import {
   MeshPhongMaterial,
   DataTexture,
   RGBAFormat,
-  ImageBitmapLoader,
-  CanvasTexture,
   RepeatWrapping,
   LinearFilter,
   BoxGeometry,
-  MeshBasicMaterial,
-  BackSide,
   LinearMipMapLinearFilter,
   Object3D,
   Matrix4,
@@ -128,45 +124,13 @@ export default class GraphicsBackend {
     cube.position.y = 30;
     this.#scene.add(cube);
 
-    // skybox state
-    const imagePrefix = '/img/skybox/';
-    const directions = ['px', 'nx', 'py', 'ny', 'pz', 'nz'];
-    const imageSuffix = '.jpg';
-    const skyGeometry = new BoxGeometry(2000, 2000, 2000);
-    const materialArray: MeshBasicMaterial[] = [];
-
-    // initialize image loader
-    const loader = new ImageBitmapLoader();
-    loader.setOptions({
-      imageOrientation: 'flipY',
-    });
-
-    // load skybox images
-    for (let i = 0; i < 6; i++) {
-      loader.load(imagePrefix + directions[i] + imageSuffix, (image) => {
-        const map = new CanvasTexture(image);
-        const mat = new MeshBasicMaterial({
-          map,
-          side: BackSide,
-          fog: false,
-        });
-        materialArray[i] = mat;
-      });
-    }
-
-    // create skybox
-    const skybox = new Mesh(skyGeometry, materialArray);
-    this.#scene.add(skybox);
-
     // backend thread render loop
     const render = () => {
       cube.rotateY(0.01);
-      skybox.rotateY(0.0001);
 
       // copy transforms from transform buffer
       for (const [id, object] of this.#idToObject) {
         const offset = Number(id) * this.#elementsPerTransform;
-
         const matrix = new Matrix4().fromArray(tArr, offset);
 
         // ! <hack/>
@@ -177,8 +141,6 @@ export default class GraphicsBackend {
 
         object.matrix.copy(matrix);
       }
-
-      skybox.position.copy(this.#camera.position);
 
       this.#renderer.render(this.#scene, this.#camera);
 
@@ -218,7 +180,13 @@ export default class GraphicsBackend {
   addObject({
     id, mesh,
   }: GraphicsBackendAddObjectData) {
-    const mat = mesh.materials ? this.deserializeMaterial(mesh.materials[0]) : null;
+    const mat: MeshPhongMaterial[] = [];
+
+    if (mesh.materials) {
+      for (const material of mesh.materials) {
+        mat.push(this.deserializeMaterial(material));
+      }
+    }
 
     mesh.images = [];
     mesh.textures = [];
@@ -226,7 +194,7 @@ export default class GraphicsBackend {
     const object = new ObjectLoader().parse(mesh);
 
     if (object instanceof Mesh || object instanceof Sprite) {
-      object.material = mat;
+      object.material = mat.length > 1 ? mat : mat[0];
     }
     object.matrixAutoUpdate = false;
 

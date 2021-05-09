@@ -15,7 +15,7 @@ export class HealthData {
 export default class HealthScript extends GameScript {
   healthView = new EcsView(this.ecs, new Set([HealthData]));
 
-  update(dt: number) {
+  update() {
     this.healthView.iterateView((entity) => {
       const health = entity.getComponent(HealthData);
 

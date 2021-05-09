@@ -33,7 +33,7 @@ import GraphicsUtils from './utils';
 export type CameraData = PerspectiveCamera;
 // eslint-disable-next-line no-redeclare
 export const CameraData = PerspectiveCamera;
-export type GraphicsData = Mesh | Sprite | Light;
+export type GraphicsData = Object3D;
 // eslint-disable-next-line no-redeclare
 export const GraphicsData = Object3D;
 
@@ -259,7 +259,13 @@ export class Graphics {
 
     // send object's texture data to backend
     if (object instanceof Mesh || object instanceof Sprite) {
-      this.extractMaterialTextures(object.material as Material);
+      if (object.material instanceof Material) {
+        this.extractMaterialTextures(object.material);
+      } else {
+        for (const material of object.material) {
+          this.extractMaterialTextures(material);
+        }
+      }
     }
 
     // send that bitch to the backend

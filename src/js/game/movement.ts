@@ -42,7 +42,7 @@ export default class MovementScript extends GameScript {
       if (!entity.hasComponent(PhysicsData)) console.error(`component ${MovementData.name} must be set after ${PhysicsData.name}`);
 
       // update ground info when entity collides with something
-      body.addEventListener('collide', ({ contact }: {contact: ContactEquation}) => {
+      body.addEventListener('collide', ({ contact }: { contact: ContactEquation }) => {
         const normal = new Vec3();
 
         // ensure the contact normal is facing outwards from the object, not the player
