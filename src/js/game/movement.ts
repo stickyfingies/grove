@@ -1,5 +1,5 @@
 import { ContactEquation, Vec3 } from 'cannon-es';
-import { MathUtils, Vector3 } from 'three';
+import { Vector3 } from 'three';
 import Entity from '../ecs/entity';
 import EcsView from '../ecs/view';
 import { PhysicsData } from '../physics';
@@ -17,6 +17,9 @@ export class MovementData {
 
   /** Flag whether the entity wants to jump or not */
   wantsToJump = false;
+
+  /** Flag whether the entity is sprinting */
+  sprinting = false;
 
   /**
    * Normal of surface the entity is standing on
@@ -39,7 +42,7 @@ export default class MovementScript extends GameScript {
       const body = entity.getComponent(PhysicsData);
 
       // entity movement depends on physics
-      if (!entity.hasComponent(PhysicsData)) console.error(`component ${MovementData.name} must be set after ${PhysicsData.name}`);
+      if (!entity.hasComponent(PhysicsData)) throw new Error(`Component ${MovementData.name} must be set after ${PhysicsData.name}`);
 
       // update ground info when entity collides with something
       body.addEventListener('collide', ({ contact }: { contact: ContactEquation }) => {
@@ -65,15 +68,7 @@ export default class MovementScript extends GameScript {
       // walkVector = direction * speed
       const walkVector = mvmt.direction.normalize();
       walkVector.multiplyScalar(mvmt.walkVelocity);
-
-      // slide down slopes
-      const angleFriction = 0.0;
-      const maxAngle = 20;
-      const groundAngle = MathUtils.radToDeg(new Vector3(0, 1, 0).angleTo(mvmt.groundNormal));
-      if (groundAngle > maxAngle) {
-        walkVector.x += (1 - mvmt.groundNormal.y) * mvmt.groundNormal.x * (1 - angleFriction);
-        walkVector.z += (1 - mvmt.groundNormal.y) * mvmt.groundNormal.z * (1 - angleFriction);
-      }
+      walkVector.multiplyScalar(mvmt.sprinting ? 2 : 1);
 
       // walk
       body.velocity.x += walkVector.x;

@@ -20,12 +20,10 @@ import {
   MaterialLoader,
   PCFSoftShadowMap,
   ObjectLoader,
+  GridHelper,
 } from 'three';
 
-/**
- * Graphics Backend Data Specs
- */
-
+/** Type resulting from `threejsobject.toJSON()` */
 type ObjectJson = any;
 
 interface GraphicsBackendInitData {
@@ -37,7 +35,7 @@ interface GraphicsBackendInitData {
 }
 
 interface GraphicsBackendUploadTextureData {
-  imageId: number,
+  imageId: string,
   imageWidth: number,
   imageHeight: number,
   imageData: ArrayBufferView,
@@ -74,7 +72,7 @@ export default class GraphicsBackend {
    * main camera used to render the scene
    * @note camera has Id#0
    */
-  #camera = new PerspectiveCamera(45, 2, 0.1, 2000);
+  #camera = new PerspectiveCamera(66, 2, 0.1, 2000);
 
   /** a scene graph object which holds all renderable meshes */
   #scene = new Scene();
@@ -86,7 +84,7 @@ export default class GraphicsBackend {
   #idToObject = new Map<number, Object3D>();
 
   /** map of texture identifiers to raw image data */
-  #textureCache = new Map<number, DataTexture>();
+  #textureCache = new Map<string, DataTexture>();
 
   /** number of elements per each transform matrix in the shared array buffer */
   readonly #elementsPerTransform = 16;
@@ -94,7 +92,7 @@ export default class GraphicsBackend {
   init({
     canvas, buffer, width, height, pixelRatio,
   }: GraphicsBackendInitData) {
-    const tArr = new Float32Array(buffer);
+    const transformArray = new Float32Array(buffer);
 
     const context = canvas.getContext('webgl2', { antialias: true })!;
 
@@ -124,23 +122,21 @@ export default class GraphicsBackend {
     cube.position.y = 30;
     this.#scene.add(cube);
 
-    // backend thread render loop
+    // grid
+    const grid = new GridHelper(100, 100);
+    grid.position.y = 1;
+    // grid.rotateX(Math.PI / 2);
+    console.log(grid.toJSON());
+    this.#scene.add(grid);
+    const grid1 = new GridHelper(99, 50, 0xff00ff, 0xff0000);
+    grid1.position.y = 1.1;
+    this.#scene.add(grid1);
+
+    // graphics thread render loop
     const render = () => {
       cube.rotateY(0.01);
 
-      // copy transforms from transform buffer
-      for (const [id, object] of this.#idToObject) {
-        const offset = Number(id) * this.#elementsPerTransform;
-        const matrix = new Matrix4().fromArray(tArr, offset);
-
-        // ! <hack/>
-        // before the main thread starts pushing object matrices to the transform buffer, there will
-        // be a period of time where `matrix` consists of entirely zeroes.  ThreeJS doesn't
-        // particularly like when scale elements are zero, so set them to something else as a fix.
-        if (matrix.elements[0] === 0) matrix.makeScale(0.1, 0.1, 0.1);
-
-        object.matrix.copy(matrix);
-      }
+      this.readTransformsFromArray(transformArray);
 
       this.#renderer.render(this.#scene, this.#camera);
 
@@ -151,12 +147,27 @@ export default class GraphicsBackend {
     requestAnimationFrame(render);
   }
 
+  /** Copy object transforms into their corresponding ThreeJS renderable */
+  private readTransformsFromArray(transformArray: Float32Array) {
+    for (const [id, object] of this.#idToObject) {
+      const offset = id * this.#elementsPerTransform;
+      const matrix = new Matrix4().fromArray(transformArray, offset);
+
+      // ! <hack/>
+      // before the main thread starts pushing object matrices to the transform buffer, there will
+      // be a period of time where `matrix` consists of entirely zeroes.  ThreeJS doesn't
+      // particularly like when scale elements are zero, so set them to something else as a fix.
+      if (matrix.elements[0] === 0) matrix.makeScale(0.1, 0.1, 0.1);
+
+      object.matrix.copy(matrix);
+    }
+  }
+
+  /** Emplaces raw texture data into a ThreeJS texture object */
   uploadTexture({
     imageId, imageData, imageWidth, imageHeight,
   }: GraphicsBackendUploadTextureData) {
     const map = new DataTexture(imageData, imageWidth, imageHeight, RGBAFormat);
-
-    // set texture options
     map.wrapS = RepeatWrapping;
     map.wrapT = RepeatWrapping;
     map.magFilter = LinearFilter;
@@ -165,10 +176,10 @@ export default class GraphicsBackend {
     map.flipY = true;
     map.needsUpdate = true;
 
-    // store texture in cache
     this.#textureCache.set(imageId, map);
   }
 
+  /** Updates the material of a renderable object */
   updateMaterial({ material, id }: GraphicsBackendUpdateMaterialData) {
     const mat = this.deserializeMaterial(material);
 
@@ -177,6 +188,7 @@ export default class GraphicsBackend {
     mesh.material = mat;
   }
 
+  /** Adds a renderable object to the scene */
   addObject({
     id, mesh,
   }: GraphicsBackendAddObjectData) {
@@ -196,30 +208,33 @@ export default class GraphicsBackend {
     if (object instanceof Mesh || object instanceof Sprite) {
       object.material = mat.length > 1 ? mat : mat[0];
     }
-    object.matrixAutoUpdate = false;
 
+    object.matrixAutoUpdate = false;
     this.#scene.add(object);
     this.#idToObject.set(id, object);
   }
 
+  /** Removes a renderable object from the scene */
   removeObject({ id }: GraphicsBackendRemoveObjectData) {
     const object = this.#idToObject.get(id)!;
     this.#idToObject.delete(id);
     this.#scene.remove(object);
   }
 
+  /** Resizes the render target */
   resize({ width, height }: GraphicsBackendResizeData) {
     this.#camera.aspect = width / height;
     this.#camera.updateProjectionMatrix();
-
     this.#renderer.setSize(width, height, false);
   }
 
+  /** Takes a JSON material description and creates a tangible (textured) ThreeJS material */
   private deserializeMaterial(json: ObjectJson) {
     const {
       map, alphaMap, normalMap, specularMap,
     } = json;
 
+    // ? can this process be automated
     delete json.map; //
     delete json.matcap;
     delete json.alphaMap; //

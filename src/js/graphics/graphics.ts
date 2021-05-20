@@ -37,6 +37,11 @@ export type GraphicsData = Object3D;
 // eslint-disable-next-line no-redeclare
 export const GraphicsData = Object3D;
 
+interface IBackendCommand {
+  type: string;
+  [data: string]: any;
+}
+
 /**
  * Entity tag used to retrieve the main camera
  * @example Entity.getTag(CAMERA_TAG)
@@ -69,6 +74,9 @@ export class Graphics {
 
   /** Set of all texture UUID's that have already been uploaded to the backend */
   #textureCache = new Set<string>();
+
+  /** Queue of commands to be submitted to the backend */
+  #commandQueue: IBackendCommand[] = [];
 
   /** Worker thread handle on which the graphics backend is ran */
   #worker = new Worker(new URL('./worker.ts', import.meta.url));
@@ -114,11 +122,13 @@ export class Graphics {
       .setComponent(CameraData, this.#camera);
     this.assignIdToObject(this.#camera);
 
+    // TODO this is too implicit { entity.setComponent() => [event blackbox] => addObjectToScene() }
+    // TODO prefer { mesh = graphics.makeObject(); entity.setComponent(mesh); }
     // listen to component events
     engine.ecs.events.on(`set${GraphicsData.name}Component`, (id: number, object: GraphicsData) => {
       object.traverse((child) => {
         if (child instanceof Mesh || child instanceof Sprite || child instanceof Light) {
-          this.addObjectToScene(child);
+          this.addObjectToScene(object);
         }
       });
     });
@@ -138,7 +148,7 @@ export class Graphics {
 
     // attach graphics backend to resize event hook
     window.addEventListener('resize', () => {
-      this.#worker.postMessage({
+      this.#commandQueue.push({
         type: 'resize',
         width: window.innerWidth,
         height: window.innerHeight,
@@ -147,7 +157,16 @@ export class Graphics {
   }
 
   update() {
-    for (const [id, object] of this.#idToObject) this.writeTransformToArray(id, object);
+    this.flushCommands();
+    this.writeTransformsToArray();
+  }
+
+  /**
+   * Upload queued graphics commands to backend & clear queue
+   */
+  flushCommands() {
+    for (const cmd of this.#commandQueue) this.#worker.postMessage(cmd);
+    this.#commandQueue = [];
   }
 
   /**
@@ -157,7 +176,7 @@ export class Graphics {
   updateMaterial(object: Mesh | Sprite) {
     this.extractMaterialTextures(object.material as Material);
 
-    this.#worker.postMessage({
+    this.#commandQueue.push({
       type: 'updateMaterial',
       material: (object.material as Material).toJSON(),
       id: object.userData.meshId,
@@ -175,7 +194,7 @@ export class Graphics {
     const id = object.userData.meshId;
 
     // inform the graphics backend
-    this.#worker.postMessage({
+    this.#commandQueue.push({
       type: 'removeObject',
       id,
     });
@@ -185,17 +204,27 @@ export class Graphics {
     this.#availableObjectIds.push(id);
   };
 
-  private writeTransformToArray(id: number, object: Object3D) {
-    // calculate offset into array given mesh ID
-    const offset = id * this.#elementsPerTransform;
+  /**
+   * Flush all renderable objects' transforms to the shared transform buffer
+   */
+  private writeTransformsToArray() {
+    // for every renderable...
+    for (const [id, object] of this.#idToObject) {
+      // calculate offset into array given mesh ID
+      const offset = id * this.#elementsPerTransform;
 
-    // copy world matrix into transform buffer
-    object.updateMatrixWorld();
-    for (let i = 0; i < this.#elementsPerTransform; i++) {
-      this.#array[offset + i] = object.matrixWorld.elements[i];
+      // copy world matrix into transform buffer
+      object.updateMatrixWorld();
+      for (let i = 0; i < this.#elementsPerTransform; i++) {
+        this.#array[offset + i] = object.matrixWorld.elements[i];
+      }
     }
   }
 
+  /**
+   * Smart algorithm for assigning ID's to renderable objects by reusing ID's from old, removed
+   * objects first, and generating a new ID only if no recyclable ID's exist.
+   */
   private assignIdToObject(object: Object3D): number {
     let id = this.#objectId;
 
@@ -204,6 +233,7 @@ export class Graphics {
       id = this.#availableObjectIds.shift()!;
     } else {
       this.#objectId += 1;
+      if (this.#objectId > this.#maxEntityCount) throw new Error(`[graphics] exceeded maximum object count: ${this.#maxEntityCount}`);
     }
 
     // set mesh/ID relationships
@@ -217,24 +247,24 @@ export class Graphics {
    * Ship a texture to the graphics backend, but only if the texture has not already been uploaded.
    */
   private uploadTexture(map: Texture) {
-    // if we've already loaded this texture and cached it, there's no work to be done.
-    if (this.#textureCache.has(map.uuid)) return;
+    if (this.#textureCache.has(map.uuid)) return; // image is already cached
+
+    const { image, uuid } = map;
+    const { width, height } = image;
 
     // grab raw image data from the texture
-    const { ctx } = GraphicsUtils.scratchCanvasContext(map.image.width, map.image.height);
-    ctx.drawImage(map.image, 0, 0);
-    const imageData = ctx.getImageData(0, 0, map.image.width, map.image.height);
+    const { ctx } = GraphicsUtils.scratchCanvasContext(width, height);
+    ctx.drawImage(image, 0, 0);
+    const imageData = ctx.getImageData(0, 0, width, height);
 
-    // cache it
-    this.#textureCache.add(map.uuid);
+    this.#textureCache.add(uuid);
 
-    // send pixel data to backend
-    this.#worker.postMessage({
+    this.#commandQueue.push({
       type: 'uploadTexture',
-      imageId: map.uuid,
+      imageId: uuid,
       imageData: imageData.data,
-      imageWidth: map.image.width,
-      imageHeight: map.image.height,
+      imageWidth: width,
+      imageHeight: height,
     });
   }
 
@@ -248,10 +278,10 @@ export class Graphics {
   /**
    * Upload a renderable object to the graphics backend.
    * Establishing a scene hierarchy is possible by specifying `object.parent`
-   * Current supported objects: Mesh, Sprite
+   *
+   * Current supported objects: `Mesh`, `Sprite`, `Light`
    */
   private addObjectToScene(object: Object3D) {
-    // maintain a scene-graph-like structure
     if (object.parent) object.parent.add(object);
     else this.#scene.add(object);
 
@@ -269,7 +299,7 @@ export class Graphics {
     }
 
     // send that bitch to the backend
-    this.#worker.postMessage({
+    this.#commandQueue.push({
       type: 'addObject',
       name: object.name,
       mesh: object.toJSON(),

@@ -110,8 +110,8 @@ export class Physics {
     const shape = new Sphere(radius);
     const body = new Body({ mass });
     body.addShape(shape, new Vec3(0, 0, 0));
-    body.addShape(shape, new Vec3(0, height / 2, 0));
-    body.addShape(shape, new Vec3(0, -height / 2, 0));
+    body.addShape(shape, new Vec3(0, height / 2 - radius, 0));
+    body.addShape(shape, new Vec3(0, -height / 2 + radius, 0));
 
     return body;
   }

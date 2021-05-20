@@ -23,7 +23,7 @@ export default class GraphicsUtils {
   }
 
   static makeCylinder(radius: number, height: number) {
-    const geometry = new CylinderBufferGeometry(radius, radius * 0.8, height);
+    const geometry = new CylinderBufferGeometry(radius, radius, height);
     const material = new MeshPhongMaterial({ color: 0x00CCFF });
     const mesh = new Mesh(geometry, material);
 

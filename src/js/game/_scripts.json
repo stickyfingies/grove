@@ -1,7 +1,6 @@
 {
     "scripts": [
-        "lighting",
-        "meshTransform",
+        "scene",
         "keyboardControls",
         "movement",
         "player",
@@ -9,6 +8,7 @@
         "upgrade",
         "health",
         "shooting",
-        "pauseMenu"
+        "pauseMenu",
+        "meshTransform"
     ]
 }

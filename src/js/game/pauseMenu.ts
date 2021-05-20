@@ -5,10 +5,14 @@ export default class PauseMenuScript extends GameScript {
   init() {
     const pointerlockchange = () => {
       const isLocked = (document.pointerLockElement === document.body);
+
+      // actually pause game simulation
       this.engine.running = isLocked;
 
+      // toggle pause menu
       document.querySelector('#pause')?.setAttribute('style', isLocked ? 'display:none' : 'display:block');
 
+      // hide black screen when game starts
       if (isLocked) document.querySelector('#blocker')?.setAttribute('style', 'display:none');
     };
 

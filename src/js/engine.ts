@@ -1,4 +1,4 @@
-import { DefaultLoadingManager } from 'three';
+import { DefaultLoadingManager, Cache } from 'three';
 // @ts-ignore
 import Stats from 'stats-js';
 import { GUI } from 'dat.gui';
@@ -63,6 +63,7 @@ export default class Engine {
 
   async init() {
     Entity.defaultManager = this.ecs;
+    Cache.enabled = true;
 
     // initialize engine systems
     this.graphics.init(this);
@@ -96,20 +97,25 @@ export default class Engine {
     for (const path of map.objects) {
       this.assetLoader.loadModel(path, (mesh) => {
         const body = AssetLoader.loadPhysicsModel(mesh, 0);
+        mesh.receiveShadow = true;
         new Entity()
           .setComponent(GraphicsData, mesh)
           .setComponent(PhysicsData, body);
       });
     }
 
+    // between the game scripts and the map, we probably just created a bunch of renderables.
+    // start that backend work now so it isn't being done when the first frame starts rendering.
+    this.graphics.update();
+
     // show performance statistics
     this.#stats.showPanel(1);
     document.body.appendChild(this.#stats.dom);
 
-    requestAnimationFrame(this.animate);
+    requestAnimationFrame(this.update);
   }
 
-  animate(now: number) {
+  update(now: number) {
     const delta = now - this.#lastFrameTime;
 
     this.#stats.begin();
@@ -129,6 +135,6 @@ export default class Engine {
 
     this.#lastFrameTime = now;
 
-    requestAnimationFrame(this.animate);
+    requestAnimationFrame(this.update);
   }
 }

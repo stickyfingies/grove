@@ -160,8 +160,7 @@ export default class EntityManager {
     getComponent<T>(id: number, type: DataType<T>): T {
       // lazily initialize data manager
       if (!this.#dataManagers.has(type)) {
-        console.error(`component type ${type.name} is not registered`);
-        this.#dataManagers.set(type, new DataManager());
+        throw new Error(`component type ${type.name} is not registered`);
       }
 
       return this.#dataManagers.get(type)?.getComponent(id)!;
@@ -186,7 +185,7 @@ export default class EntityManager {
     /** Get a specific entity by its tag */
     getTag(tag: symbol) {
       if (!this.#tagList.has(tag)) {
-        console.error(`no entity found with tag:${tag.description}`);
+        throw new Error(`no entity found with tag:${tag.description}`);
       }
 
       return this.#tagList.get(tag)!;

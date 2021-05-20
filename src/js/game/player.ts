@@ -19,22 +19,34 @@ import ScoreData from './score';
 export const PLAYER_TAG = Symbol('player');
 
 export default class PlayerScript extends GameScript {
+  player: Entity;
+
+  hud: Entity;
+
+  hudCanvas: HTMLCanvasElement;
+
+  hudCtx: CanvasRenderingContext2D;
+
   init() {
-    const player = new Entity()
+    const { canvas, ctx } = GraphicsUtils.scratchCanvasContext(256, 256);
+    this.hudCanvas = canvas;
+    this.hudCtx = ctx;
+
+    this.player = new Entity()
       .addTag(PLAYER_TAG);
 
-    player.setComponent(HealthData, {
+    this.player.setComponent(HealthData, {
       hp: 100,
       max: 100,
     });
 
-    player.setComponent(ScoreData, {
+    this.player.setComponent(ScoreData, {
       score: 0,
     });
 
     // create physics body
     const mass = 100;
-    const radius = 1.7;
+    const radius = 1;
     const shape = new Sphere(radius);
     const playerBody = new Body({
       collisionFilterGroup: 2, // separate collision filter for raycasts
@@ -43,60 +55,55 @@ export default class PlayerScript extends GameScript {
       mass,
     });
     playerBody.addShape(shape);
-    playerBody.position.y = 15;
-    player.setComponent(PhysicsData, playerBody);
+    playerBody.position.y = 12;
+    this.player.setComponent(PhysicsData, playerBody);
 
-    player.setComponent(MovementData, new MovementData(6, 1.5));
+    this.player.setComponent(MovementData, new MovementData(2.25, 0.7));
 
-    player.setComponent(KeyboardControlData, {});
+    this.player.setComponent(KeyboardControlData, {});
 
-    /**
-     * HUD
-     * @note hud currently only updates when player takes damage (score may be off)
-     */
-
-    const hud = new Entity();
+    this.hud = new Entity();
 
     const hudSprite = new Sprite();
     hudSprite.material = new SpriteMaterial();
     hudSprite.position.set(0, -0.5, -1.3);
     hudSprite.scale.set(0.2, 0.2, 0.2);
     hudSprite.parent = Entity.getTag(CAMERA_TAG).getComponent(CameraData);
-    hud.setComponent(GraphicsData, hudSprite);
+    this.hud.setComponent(GraphicsData, hudSprite);
 
-    const drawHUD = () => {
-      const { canvas, ctx } = GraphicsUtils.scratchCanvasContext(256, 256);
-      const score = player.getComponent(ScoreData);
-      const health = player.getComponent(HealthData);
-      ctx.font = '54px Arial';
-      ctx.fillStyle = 'red';
-      ctx.textAlign = 'center';
-      ctx.fillText(`${health.hp}/${health.max}HP`, canvas.width / 2, 54);
-      ctx.fillText(`${score.score} points`, canvas.width / 2, 108);
-
-      hudSprite.material.map = new CanvasTexture(canvas);
-      this.graphics.updateMaterial(hudSprite);
-    };
-
-    drawHUD();
+    this.drawHUD();
 
     // handle impact damage
     playerBody.addEventListener('collide', ({ contact }: any) => {
-      const health = player.getComponent(HealthData);
+      const health = this.player.getComponent(HealthData);
       const impact = contact.getImpactVelocityAlongNormal();
 
       if (Math.abs(impact) >= 15) {
         health.hp -= Math.floor(Math.abs(impact) / 10);
-        drawHUD();
+        this.drawHUD();
       }
+    });
+
+    // handle enemy deaths
+    this.ecs.events.on('enemyDied', () => {
+      const score = this.player.getComponent(ScoreData);
+      score.score += 1;
+      this.drawHUD();
+    });
+
+    // heal
+    this.ecs.events.on('healPlayer', (amount: number) => {
+      const health = this.player.getComponent(HealthData);
+      health.hp += amount;
+      this.drawHUD();
     });
 
     // handle death
     this.ecs.events.on(`delete${HealthData.name}Component`, (id: number) => {
-      const score = player.getComponent(ScoreData);
-      if (id === player.id) {
+      const score = this.player.getComponent(ScoreData);
+      if (id === this.player.id) {
         document.querySelector('#blocker')?.setAttribute('style', 'display:block');
-        const loadText = document.querySelector('#load')!;
+        const loadText = document.querySelector('#load')! as HTMLElement;
         loadText.setAttribute('style', 'display:block');
         loadText.innerHTML = `<h1>You Have Perished. Score... ${score.score}</h1>`;
       }
@@ -106,5 +113,21 @@ export default class PlayerScript extends GameScript {
     this.gui.add(playerBody.interpolatedPosition, 'x').listen();
     this.gui.add(playerBody.interpolatedPosition, 'y').listen();
     this.gui.add(playerBody.interpolatedPosition, 'z').listen();
+  }
+
+  drawHUD() {
+    const score = this.player.getComponent(ScoreData);
+    const health = this.player.getComponent(HealthData);
+    const hudSprite = this.hud.getComponent(GraphicsData) as Sprite;
+
+    this.hudCtx.clearRect(0, 0, this.hudCanvas.width, this.hudCanvas.height);
+    this.hudCtx.font = '52px Arial';
+    this.hudCtx.fillStyle = 'red';
+    this.hudCtx.textAlign = 'center';
+    this.hudCtx.fillText(`${health.hp}/${health.max}HP`, this.hudCanvas.width / 2, 54);
+    this.hudCtx.fillText(`${score.score} points`, this.hudCanvas.width / 2, 108);
+
+    hudSprite.material.map = new CanvasTexture(this.hudCanvas);
+    this.graphics.updateMaterial(hudSprite);
   }
 }

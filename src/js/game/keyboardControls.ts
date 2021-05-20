@@ -31,6 +31,9 @@ export default class KeyboardControlScript extends GameScript {
   /** SpaceBar */
   wantsToJump = false;
 
+  /** Shift */
+  sprint = false;
+
   /** Minimum look angle, in radians */
   readonly minPolarAngle = 0;
 
@@ -66,13 +69,14 @@ export default class KeyboardControlScript extends GameScript {
       }
 
       mvmt.wantsToJump = this.wantsToJump;
+      mvmt.sprinting = this.sprint;
 
       const camera = Entity.getTag(CAMERA_TAG).getComponent(CameraData);
       mvmt.direction.applyQuaternion(camera.quaternion);
 
-      // todo this needs to be done AFTER MovementScript updates
+      // TODO this needs to be done AFTER MovementScript updates
       const { x: px, y: py, z: pz } = body.position;
-      camera.position.copy(new Vector3(px, py, pz));
+      camera.position.copy(new Vector3(px, py + 0.45, pz));
     });
   }
 
@@ -117,6 +121,9 @@ export default class KeyboardControlScript extends GameScript {
       case ' ':
         this.wantsToJump = true;
         break;
+      case 'Shift':
+        this.sprint = true;
+        break;
       default:
     }
   }
@@ -141,6 +148,9 @@ export default class KeyboardControlScript extends GameScript {
         break;
       case ' ':
         this.wantsToJump = false;
+        break;
+      case 'Shift':
+        this.sprint = false;
         break;
       default:
     }

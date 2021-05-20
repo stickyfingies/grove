@@ -1,9 +1,10 @@
-import { Color, Sprite, SpriteMaterial } from 'three';
+import {
+  Color, Sprite, SpriteMaterial, TextureLoader,
+} from 'three';
 import Entity from '../ecs/entity';
 import { GraphicsData } from '../graphics/graphics';
 import { Physics, PhysicsData } from '../physics';
 import GameScript from '../script';
-import { HealthData } from './health';
 import { PLAYER_TAG } from './player';
 
 /**
@@ -12,7 +13,7 @@ import { PLAYER_TAG } from './player';
 export default class UpgradeScript extends GameScript {
   // eslint-disable-next-line class-methods-use-this
   init() {
-    const makeUpgrade = () => {
+    const makeUpgrade = async () => {
       const upgrade = new Entity();
 
       const randomPos = () => Math.random() * 70 - 35;
@@ -24,12 +25,13 @@ export default class UpgradeScript extends GameScript {
       const sprite = new Sprite();
       sprite.material = new SpriteMaterial();
       sprite.material.color = new Color(0xff00ff);
+      sprite.material.map = await new TextureLoader().loadAsync('/img/HealthUpgrade.png');
       upgrade.setComponent(GraphicsData, sprite);
 
-      const collideCb = ({ body, contact, target }: any) => {
+      const collideCb = ({ body }: { body: PhysicsData }) => {
         const player = Entity.getTag(PLAYER_TAG);
         if (body === player.getComponent(PhysicsData)) {
-          player.getComponent(HealthData).hp += 15;
+          this.ecs.events.emit('healPlayer', 15);
           upgradeBody.removeEventListener('collide', collideCb);
 
           // ! physics breaks when deleting upgrade immediately; wait 40ms
