@@ -101,7 +101,7 @@ app.get('/play', (req, res) => {
   if (user && user.username) {
     res.set('Cross-Origin-Embedder-Policy', 'require-corp');
     res.set('Cross-Origin-Opener-Policy', 'same-origin');
-    res.render(path.resolve('views/play.ejs'), { user });
+    res.sendFile(path.resolve('views/play.html'));
   } else { res.redirect('/login'); }
 });
 

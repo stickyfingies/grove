@@ -1,0 +1,33 @@
+{
+    "spawn": [
+        {
+            "name": "Homie",
+            "PhysicsData": {
+                "type": "capsule",
+                "mass": 7,
+                "radius": 0.3,
+                "height": 1.737
+            },
+            "GraphicsData": {
+                "type": "model",
+                "path": "/models/character-base-glb/CharacterBase.glb"
+            }
+        },
+        {
+            "name": "Sun Light",
+            "GraphicsData": {
+                "type": "light:directional",
+                "color": "#ffffff",
+                "position": { "x": 10, "y": 30, "z": 20 }
+            }
+        },
+        {
+            "name": "Ambient Light",
+            "GraphicsData": {
+                "type": "light:ambient",
+                "color": "#ffffff",
+                "intensity": 0.16
+            }
+        }
+    ]
+}

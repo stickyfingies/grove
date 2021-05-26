@@ -72,7 +72,7 @@ export default class GraphicsBackend {
    * main camera used to render the scene
    * @note camera has Id#0
    */
-  #camera = new PerspectiveCamera(66, 2, 0.1, 2000);
+  #camera = new PerspectiveCamera(75, 2, 0.1, 2000);
 
   /** a scene graph object which holds all renderable meshes */
   #scene = new Scene();
@@ -126,7 +126,6 @@ export default class GraphicsBackend {
     const grid = new GridHelper(100, 100);
     grid.position.y = 1;
     // grid.rotateX(Math.PI / 2);
-    console.log(grid.toJSON());
     this.#scene.add(grid);
     const grid1 = new GridHelper(99, 50, 0xff00ff, 0xff0000);
     grid1.position.y = 1.1;
