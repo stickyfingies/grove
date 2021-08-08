@@ -6,88 +6,88 @@ import { PhysicsData } from '../physics';
 import GameScript from '../script';
 
 export class MovementData {
-  /** Direction the entity should walk */
-  direction = new Vector3();
+    /** Direction the entity should walk */
+    direction = new Vector3();
 
-  /** Speed that gets applied for normal movement */
-  walkVelocity: number;
+    /** Speed that gets applied for normal movement */
+    walkVelocity: number;
 
-  /** Speed that gets applied in a jump */
-  jumpVelocity: number;
+    /** Speed that gets applied in a jump */
+    jumpVelocity: number;
 
-  /** Flag whether the entity wants to jump or not */
-  wantsToJump = false;
+    /** Flag whether the entity wants to jump or not */
+    wantsToJump = false;
 
-  /** Flag whether the entity is sprinting */
-  sprinting = false;
+    /** Flag whether the entity is sprinting */
+    sprinting = false;
 
-  /**
-   * Normal of surface the entity is standing on
-   * @internal
-   */
-  groundNormal = new Vector3();
+    /**
+     * Normal of surface the entity is standing on
+     * @internal
+     */
+    groundNormal = new Vector3();
 
-  constructor(walkVelocity: number, jumpVelocity: number) {
-    this.walkVelocity = walkVelocity;
-    this.jumpVelocity = jumpVelocity;
-  }
+    constructor(walkVelocity: number, jumpVelocity: number) {
+        this.walkVelocity = walkVelocity;
+        this.jumpVelocity = jumpVelocity;
+    }
 }
 
 export default class MovementScript extends GameScript {
-  movementView = new EcsView(this.ecs, new Set([MovementData, PhysicsData]));
+    movementView = new EcsView(this.ecs, new Set([MovementData, PhysicsData]));
 
-  init() {
-    this.ecs.events.on(`set${MovementData.name}Component`, (id: number, mvmt: MovementData) => {
-      const entity = new Entity(Entity.defaultManager, id);
-      const body = entity.getComponent(PhysicsData);
+    init() {
+        this.ecs.events.on(`set${MovementData.name}Component`, (id: number, mvmt: MovementData) => {
+            const entity = new Entity(Entity.defaultManager, id);
+            const body = entity.getComponent(PhysicsData);
 
-      // entity movement depends on physics
-      if (!entity.hasComponent(PhysicsData)) throw new Error(`Component ${MovementData.name} must be set after ${PhysicsData.name}`);
+            // entity movement depends on physics
+            if (!entity.hasComponent(PhysicsData)) throw new Error(`Component ${MovementData.name} must be set after ${PhysicsData.name}`);
 
-      // update ground info when entity collides with something
-      body.addEventListener('collide', ({ contact }: { contact: ContactEquation }) => {
-        const normal = new Vec3();
+            // update ground info when entity collides with something
+            body.addEventListener('collide', ({ contact }: { contact: ContactEquation }) => {
+                const normal = new Vec3();
 
-        // ensure the contact normal is facing outwards from the object, not the player
-        if (contact.bi.id === body.id) {
-          contact.ni.negate(normal);
-        } else {
-          normal.copy(contact.ni);
-        }
+                // ensure the contact normal is facing outwards from the object, not the player
+                if (contact.bi.id === body.id) {
+                    contact.ni.negate(normal);
+                } else {
+                    normal.copy(contact.ni);
+                }
 
-        mvmt.groundNormal = new Vector3(normal.x, normal.y, normal.z);
-      });
-    });
-  }
+                mvmt.groundNormal = new Vector3(normal.x, normal.y, normal.z);
+            });
+        });
+    }
 
-  update(dt: number) {
-    this.movementView.iterateView((entity) => {
-      const body = entity.getComponent(PhysicsData);
-      const mvmt = entity.getComponent(MovementData);
+    update(dt: number) {
+        this.movementView.iterateView((entity) => {
+            const body = entity.getComponent(PhysicsData);
+            const mvmt = entity.getComponent(MovementData);
 
-      // walkVector = direction * speed
-      const walkVector = mvmt.direction.normalize();
-      walkVector.multiplyScalar(mvmt.walkVelocity);
-      walkVector.multiplyScalar(mvmt.sprinting ? 2 : 1);
+            // walkVector = direction * speed
+            const walkVector = mvmt.direction.normalize();
+            walkVector.multiplyScalar(mvmt.walkVelocity);
+            walkVector.multiplyScalar(mvmt.sprinting ? 2 : 1);
 
-      // walk
-      body.velocity.x += walkVector.x;
-      body.velocity.z += walkVector.z;
+            // walk
+            body.velocity.x += walkVector.x;
+            body.velocity.z += walkVector.z;
 
-      const { max, min } = Math;
-      const clamp = (num: number, a: number, b: number) => max(min(num, max(a, b)), min(a, b));
+            const { max, min } = Math;
+            const clamp = (n: number, a: number, b: number) => max(min(n, max(a, b)), min(a, b));
 
-      // restrict speed
-      body.velocity.x = clamp(body.velocity.x, -walkVector.x, walkVector.x);
-      body.velocity.z = clamp(body.velocity.z, -walkVector.z, walkVector.z);
+            // restrict speed
+            body.velocity.x = clamp(body.velocity.x, -walkVector.x, walkVector.x);
+            body.velocity.z = clamp(body.velocity.z, -walkVector.z, walkVector.z);
 
-      // try to jump
-      if (mvmt.wantsToJump) {
-        const raycastDst = new Vec3(body.position.x, body.position.y - 2, body.position.z);
-        const canJump = this.physics.raycast(body.position, raycastDst);
+            // try to jump
+            if (mvmt.wantsToJump) {
+                const raycastDst = new Vec3(body.position.x, body.position.y - 2, body.position.z);
+                const canJump = this.physics.raycast(body.position, raycastDst);
 
-        if (canJump) body.velocity.y += mvmt.jumpVelocity;
-      }
-    });
-  }
+                if (canJump) body.velocity.y += mvmt.jumpVelocity;
+            }
+        });
+    }
 }

@@ -3,27 +3,27 @@
  */
 
 import {
-  WebGLRenderer,
-  Scene,
-  PerspectiveCamera,
-  Mesh,
-  Sprite,
-  MeshPhongMaterial,
-  DataTexture,
-  RGBAFormat,
-  RepeatWrapping,
-  LinearFilter,
-  BoxGeometry,
-  LinearMipMapLinearFilter,
-  Object3D,
-  Matrix4,
-  MaterialLoader,
-  PCFSoftShadowMap,
-  ObjectLoader,
-  GridHelper,
+    WebGLRenderer,
+    Scene,
+    PerspectiveCamera,
+    Mesh,
+    Sprite,
+    MeshPhongMaterial,
+    DataTexture,
+    RGBAFormat,
+    RepeatWrapping,
+    LinearFilter,
+    BoxGeometry,
+    LinearMipMapLinearFilter,
+    Object3D,
+    Matrix4,
+    MaterialLoader,
+    PCFSoftShadowMap,
+    ObjectLoader,
+    GridHelper,
 } from 'three';
 
-/** Type resulting from `threejsobject.toJSON()` */
+/** Type resulting from `threejs_object.toJSON()` */
 type ObjectJson = any;
 
 interface GraphicsBackendInitData {
@@ -72,7 +72,7 @@ export default class GraphicsBackend {
    * main camera used to render the scene
    * @note camera has Id#0
    */
-  #camera = new PerspectiveCamera(75, 2, 0.1, 2000);
+  #camera = new PerspectiveCamera(60, 1, 0.1, 2000);
 
   /** a scene graph object which holds all renderable meshes */
   #scene = new Scene();
@@ -90,172 +90,174 @@ export default class GraphicsBackend {
   readonly #elementsPerTransform = 16;
 
   init({
-    canvas, buffer, width, height, pixelRatio,
+      canvas, buffer, width, height, pixelRatio,
   }: GraphicsBackendInitData) {
-    const transformArray = new Float32Array(buffer);
+      const transformArray = new Float32Array(buffer);
 
-    const context = canvas.getContext('webgl2', { antialias: true })!;
+      const context = canvas.getContext('webgl2', { antialias: true })!;
 
-    // initialize renderer instance
-    this.#renderer = new WebGLRenderer({
-      canvas,
-      context,
-      antialias: true,
-    });
-    this.#renderer.setClearColor(0x000000);
-    this.#renderer.setSize(width, height, false);
-    this.#renderer.setPixelRatio(pixelRatio);
-    this.#renderer.shadowMap.enabled = true;
-    this.#renderer.shadowMap.type = PCFSoftShadowMap;
+      // initialize renderer instance
+      this.#renderer = new WebGLRenderer({
+          canvas,
+          context,
+          antialias: true,
+      });
+      this.#renderer.setClearColor(0x000000);
+      this.#renderer.setSize(width, height, false);
+      this.#renderer.setPixelRatio(pixelRatio);
+      this.#renderer.shadowMap.enabled = true;
+      this.#renderer.shadowMap.type = PCFSoftShadowMap;
 
-    // set up camera
-    this.#camera.aspect = width / height;
-    this.#camera.updateProjectionMatrix();
-    this.#camera.matrixAutoUpdate = false;
-    this.#scene.add(this.#camera);
-    this.#idToObject.set(0, this.#camera);
+      // set up camera
+      this.#camera.aspect = width / height;
+      this.#camera.updateProjectionMatrix();
+      this.#camera.matrixAutoUpdate = false;
+      this.#scene.add(this.#camera);
+      this.#idToObject.set(0, this.#camera);
 
-    // test cube
-    const cube = new Mesh(new BoxGeometry(6, 6, 6), new MeshPhongMaterial({
-      color: 0xff0000,
-    }));
-    cube.position.y = 30;
-    this.#scene.add(cube);
+      // test cube
+      const cube = new Mesh(new BoxGeometry(6, 6, 6), new MeshPhongMaterial({
+          color: 0xff0000,
+      }));
+      cube.position.y = 30;
+      this.#scene.add(cube);
 
-    // grid
-    const grid = new GridHelper(100, 100);
-    grid.position.y = 1;
-    // grid.rotateX(Math.PI / 2);
-    this.#scene.add(grid);
-    const grid1 = new GridHelper(99, 50, 0xff00ff, 0xff0000);
-    grid1.position.y = 1.1;
-    this.#scene.add(grid1);
+      // grid
+      const grid = new GridHelper(100, 100);
+      grid.position.y = 1;
+      // grid.rotateX(Math.PI / 2);
+      this.#scene.add(grid);
+      const grid1 = new GridHelper(99, 50, 0xff00ff, 0xff0000);
+      grid1.position.y = 1.1;
+      this.#scene.add(grid1);
 
-    // graphics thread render loop
-    const render = () => {
-      cube.rotateY(0.01);
+      // graphics thread render loop
+      const render = () => {
+          cube.rotateY(0.01);
 
-      this.readTransformsFromArray(transformArray);
+          this.readTransformsFromArray(transformArray);
 
-      this.#renderer.render(this.#scene, this.#camera);
+          this.#renderer.render(this.#scene, this.#camera);
 
+          requestAnimationFrame(render);
+      };
+
+      // start rendering
       requestAnimationFrame(render);
-    };
-
-    // start rendering
-    requestAnimationFrame(render);
   }
 
   /** Copy object transforms into their corresponding ThreeJS renderable */
   private readTransformsFromArray(transformArray: Float32Array) {
-    for (const [id, object] of this.#idToObject) {
-      const offset = id * this.#elementsPerTransform;
-      const matrix = new Matrix4().fromArray(transformArray, offset);
+      for (const [id, object] of this.#idToObject) {
+          const offset = id * this.#elementsPerTransform;
+          const matrix = new Matrix4().fromArray(transformArray, offset);
 
-      // ! <hack/>
-      // before the main thread starts pushing object matrices to the transform buffer, there will
-      // be a period of time where `matrix` consists of entirely zeroes.  ThreeJS doesn't
-      // particularly like when scale elements are zero, so set them to something else as a fix.
-      if (matrix.elements[0] === 0) matrix.makeScale(0.1, 0.1, 0.1);
+          // ! <hack/>
+          // before the main thread starts pushing object matrices to the transform buffer,
+          // there will be a period of time where `matrix` consists of entirely zeroes.
+          // ThreeJS doesn't particularly like when scale elements are zero, so set them
+          // to something else as a fix.
+          if (matrix.elements[0] === 0) matrix.makeScale(0.1, 0.1, 0.1);
 
-      object.matrix.copy(matrix);
-    }
+          object.matrix.copy(matrix);
+      }
   }
 
   /** Emplaces raw texture data into a ThreeJS texture object */
   uploadTexture({
-    imageId, imageData, imageWidth, imageHeight,
+      imageId, imageData, imageWidth, imageHeight,
   }: GraphicsBackendUploadTextureData) {
-    const map = new DataTexture(imageData, imageWidth, imageHeight, RGBAFormat);
-    map.wrapS = RepeatWrapping;
-    map.wrapT = RepeatWrapping;
-    map.magFilter = LinearFilter;
-    map.minFilter = LinearMipMapLinearFilter;
-    map.generateMipmaps = true;
-    map.flipY = true;
-    map.needsUpdate = true;
+      const map = new DataTexture(imageData, imageWidth, imageHeight, RGBAFormat);
+      map.wrapS = RepeatWrapping;
+      map.wrapT = RepeatWrapping;
+      map.magFilter = LinearFilter;
+      map.minFilter = LinearMipMapLinearFilter;
+      map.generateMipmaps = true;
+      map.flipY = true;
+      map.needsUpdate = true;
 
-    this.#textureCache.set(imageId, map);
+      this.#textureCache.set(imageId, map);
   }
 
   /** Updates the material of a renderable object */
   updateMaterial({ material, id }: GraphicsBackendUpdateMaterialData) {
-    const mat = this.deserializeMaterial(material);
+      const mat = this.deserializeMaterial(material);
 
-    const mesh = this.#idToObject.get(id)! as Mesh | Sprite;
+      const mesh = this.#idToObject.get(id)! as Mesh | Sprite;
 
-    mesh.material = mat;
+      mesh.material = mat;
   }
 
   /** Adds a renderable object to the scene */
   addObject({
-    id, mesh,
+      id, mesh,
   }: GraphicsBackendAddObjectData) {
-    const mat: MeshPhongMaterial[] = [];
+      const mat: MeshPhongMaterial[] = [];
 
-    if (mesh.materials) {
-      for (const material of mesh.materials) {
-        mat.push(this.deserializeMaterial(material));
+      if (mesh.materials) {
+          for (const material of mesh.materials) {
+              mat.push(this.deserializeMaterial(material));
+          }
       }
-    }
 
-    mesh.images = [];
-    mesh.textures = [];
+      mesh.images = [];
+      mesh.textures = [];
 
-    const object = new ObjectLoader().parse(mesh);
+      const object = new ObjectLoader().parse(mesh);
 
-    if (object instanceof Mesh || object instanceof Sprite) {
-      object.material = mat.length > 1 ? mat : mat[0];
-    }
+      if (object instanceof Mesh || object instanceof Sprite) {
+          object.material = mat.length > 1 ? mat : mat[0];
+      }
 
-    object.matrixAutoUpdate = false;
-    this.#scene.add(object);
-    this.#idToObject.set(id, object);
+      object.matrixAutoUpdate = false;
+      this.#scene.add(object);
+      this.#idToObject.set(id, object);
   }
 
   /** Removes a renderable object from the scene */
   removeObject({ id }: GraphicsBackendRemoveObjectData) {
-    const object = this.#idToObject.get(id)!;
-    this.#idToObject.delete(id);
-    this.#scene.remove(object);
+      const object = this.#idToObject.get(id)!;
+      this.#idToObject.delete(id);
+      this.#scene.remove(object);
   }
 
   /** Resizes the render target */
   resize({ width, height }: GraphicsBackendResizeData) {
-    this.#camera.aspect = width / height;
-    this.#camera.updateProjectionMatrix();
-    this.#renderer.setSize(width, height, false);
+      console.log(`resize ${width}, ${height}`);
+      // this.#camera.aspect = width / height;
+      // this.#camera.updateProjectionMatrix();
+      this.#renderer.setSize(width, height, false);
   }
 
   /** Takes a JSON material description and creates a tangible (textured) ThreeJS material */
   private deserializeMaterial(json: ObjectJson) {
-    const {
-      map, alphaMap, normalMap, specularMap,
-    } = json;
+      const {
+          map, alphaMap, normalMap, specularMap,
+      } = json;
 
-    // ? can this process be automated
-    delete json.map; //
-    delete json.matcap;
-    delete json.alphaMap; //
-    delete json.bumpMap;
-    delete json.normalMap; //
-    delete json.displacementMap;
-    delete json.roughnessMap;
-    delete json.metalnessMap;
-    delete json.emissiveMap;
-    delete json.specularMap; //
-    delete json.envMap;
-    delete json.lightMap;
-    delete json.aoMap;
+      // [?] can this process be automated
+      delete json.map; //
+      delete json.matcap;
+      delete json.alphaMap; //
+      delete json.bumpMap;
+      delete json.normalMap; //
+      delete json.displacementMap;
+      delete json.roughnessMap;
+      delete json.metalnessMap;
+      delete json.emissiveMap;
+      delete json.specularMap; //
+      delete json.envMap;
+      delete json.lightMap;
+      delete json.aoMap;
 
-    const mat = new MaterialLoader().parse(json) as MeshPhongMaterial;
+      const mat = new MaterialLoader().parse(json) as MeshPhongMaterial;
 
-    // assign textures
-    if (map) mat.map = this.#textureCache.get(map)!;
-    if (alphaMap) mat.alphaMap = this.#textureCache.get(alphaMap)!;
-    if (normalMap) mat.normalMap = this.#textureCache.get(normalMap)!;
-    if (specularMap) mat.specularMap = this.#textureCache.get(specularMap)!;
+      // assign textures
+      if (map) mat.map = this.#textureCache.get(map)!;
+      if (alphaMap) mat.alphaMap = this.#textureCache.get(alphaMap)!;
+      if (normalMap) mat.normalMap = this.#textureCache.get(normalMap)!;
+      if (specularMap) mat.specularMap = this.#textureCache.get(specularMap)!;
 
-    return mat;
+      return mat;
   }
 }

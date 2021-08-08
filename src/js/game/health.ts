@@ -5,27 +5,27 @@ import GameScript from '../script';
  * Anything with a health component is alive.  Death is signified by removing the health component.
  */
 export class HealthData {
-  /** current hp value */
-  hp: number;
+    /** current hp value */
+    hp: number;
 
-  /** maximum hp value */
-  max: number;
+    /** maximum hp value */
+    max: number;
 }
 
 export default class HealthScript extends GameScript {
-  healthView = new EcsView(this.ecs, new Set([HealthData]));
+    healthView = new EcsView(this.ecs, new Set([HealthData]));
 
-  update() {
-    this.healthView.iterateView((entity) => {
-      const health = entity.getComponent(HealthData);
+    update() {
+        this.healthView.iterateView((entity) => {
+            const health = entity.getComponent(HealthData);
 
-      // cap hp value at max hp value
-      health.hp = Math.min(health.hp, health.max);
+            // cap hp value at max hp value
+            health.hp = Math.min(health.hp, health.max);
 
-      // this hoe dead
-      if (health.hp <= 0) {
-        entity.deleteComponent(HealthData);
-      }
-    });
-  }
+            // this hoe dead
+            if (health.hp <= 0) {
+                entity.deleteComponent(HealthData);
+            }
+        });
+    }
 }

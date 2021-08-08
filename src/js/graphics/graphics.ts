@@ -15,16 +15,16 @@
  */
 
 import {
-  PerspectiveCamera,
-  Object3D,
-  Mesh,
-  Sprite,
-  Texture,
-  Material,
-  Raycaster,
-  Vector2,
-  Scene,
-  Light,
+    PerspectiveCamera,
+    Object3D,
+    Mesh,
+    Sprite,
+    Texture,
+    Material,
+    Raycaster,
+    Vector2,
+    Scene,
+    Light,
 } from 'three';
 import Engine from '../engine';
 import Entity from '../ecs/entity';
@@ -104,69 +104,71 @@ export class Graphics {
 
   /** Calculates the size of the transform buffer */
   get bufferSize() {
-    return this.#bytesPerElement * this.#elementsPerTransform * this.#maxEntityCount;
+      return this.#bytesPerElement * this.#elementsPerTransform * this.#maxEntityCount;
   }
 
   constructor() {
-    this.#buffer = new SharedArrayBuffer(this.bufferSize);
-    this.#array = new Float32Array(this.#buffer);
+      this.#buffer = new SharedArrayBuffer(this.bufferSize);
+      this.#array = new Float32Array(this.#buffer);
   }
 
   init(engine: Engine) {
-    const offscreenCanvas = document.getElementById('main-canvas') as HTMLCanvasElement;
-    const offscreen = offscreenCanvas.transferControlToOffscreen();
+      const offscreenCanvas = document.getElementById('main-canvas') as HTMLCanvasElement;
+      // @ts-ignore - TypeScript complains about limited offscreen canvas API support
+      const offscreen: OffscreenCanvas = offscreenCanvas.transferControlToOffscreen();
 
-    // create the camera as a game entity
-    new Entity(engine.ecs)
-      .addTag(CAMERA_TAG)
-      .setComponent(CameraData, this.#camera);
-    this.assignIdToObject(this.#camera);
+      // create the camera as a game entity
+      new Entity(engine.ecs)
+          .addTag(CAMERA_TAG)
+          .setComponent(CameraData, this.#camera);
+      this.assignIdToObject(this.#camera);
 
-    // TODO this is too implicit { entity.setComponent() => [event blackbox] => addObjectToScene() }
-    // TODO prefer { mesh = graphics.makeObject(); entity.setComponent(mesh); }
-    // listen to component events
-    engine.ecs.events.on(`set${GraphicsData.name}Component`, (id: number, object: GraphicsData) => {
-      object.traverse((child) => {
-        if (child instanceof Mesh || child instanceof Sprite || child instanceof Light) {
-          this.addObjectToScene(object);
-        }
+      // TODO too implicit: { entity.setComponent() => [event blackbox] => addObjectToScene() }
+      // TODO prefer: { mesh = graphics.makeObject(); entity.setComponent(mesh); }
+      // listen to component events
+      engine.ecs.events.on(`set${GraphicsData.name}Component`, (id: number, object: GraphicsData) => {
+          object.traverse((child) => {
+              if (child instanceof Mesh || child instanceof Sprite || child instanceof Light) {
+                  this.addObjectToScene(object);
+              }
+          });
       });
-    });
-    engine.ecs.events.on(`delete${GraphicsData.name}Component`, (id: number, mesh: Mesh) => {
-      this.removeFromScene(mesh);
-    });
-
-    // initialize graphics backend
-    this.#worker.postMessage({
-      type: 'init',
-      buffer: this.#buffer,
-      canvas: offscreen,
-      width: window.innerWidth,
-      height: window.innerHeight,
-      pixelRatio: window.devicePixelRatio,
-    }, [offscreen]);
-
-    // attach graphics backend to resize event hook
-    window.addEventListener('resize', () => {
-      this.#commandQueue.push({
-        type: 'resize',
-        width: window.innerWidth,
-        height: window.innerHeight,
+      engine.ecs.events.on(`delete${GraphicsData.name}Component`, (id: number, mesh: Mesh) => {
+          this.removeFromScene(mesh);
       });
-    });
+
+      // initialize graphics backend
+      // @ts-ignore - I guess TypeScript is really just a bitch about offscreen API's.
+      this.#worker.postMessage({
+          type: 'init',
+          buffer: this.#buffer,
+          canvas: offscreen,
+          width: window.innerWidth,
+          height: window.innerHeight,
+          pixelRatio: window.devicePixelRatio,
+      }, [offscreen]);
+
+      // attach graphics backend to resize event hook
+      window.addEventListener('resize', () => {
+          this.#commandQueue.push({
+              type: 'resize',
+              width: window.innerWidth,
+              height: window.innerHeight,
+          });
+      });
   }
 
   update() {
-    this.flushCommands();
-    this.writeTransformsToArray();
+      this.flushCommands();
+      this.writeTransformsToArray();
   }
 
   /**
    * Upload queued graphics commands to backend & clear queue
    */
   flushCommands() {
-    for (const cmd of this.#commandQueue) this.#worker.postMessage(cmd);
-    this.#commandQueue = [];
+      for (const cmd of this.#commandQueue) this.#worker.postMessage(cmd);
+      this.#commandQueue = [];
   }
 
   /**
@@ -174,51 +176,51 @@ export class Graphics {
    * Thus, materials need to be manually flushed after updates
    */
   updateMaterial(object: Mesh | Sprite) {
-    this.extractMaterialTextures(object.material as Material);
+      this.extractMaterialTextures(object.material as Material);
 
-    this.#commandQueue.push({
-      type: 'updateMaterial',
-      material: (object.material as Material).toJSON(),
-      id: object.userData.meshId,
-    });
+      this.#commandQueue.push({
+          type: 'updateMaterial',
+          material: (object.material as Material).toJSON(),
+          id: object.userData.meshId,
+      });
   }
 
   raycast() {
-    const raycaster = new Raycaster();
-    raycaster.setFromCamera(new Vector2(), this.#camera);
+      const raycaster = new Raycaster();
+      raycaster.setFromCamera(new Vector2(), this.#camera);
 
-    return raycaster.intersectObjects(Array.from(this.#idToObject.values()));
+      return raycaster.intersectObjects(Array.from(this.#idToObject.values()));
   }
 
   private removeFromScene = (object: Object3D) => {
-    const id = object.userData.meshId;
+      const id = object.userData.meshId;
 
-    // inform the graphics backend
-    this.#commandQueue.push({
-      type: 'removeObject',
-      id,
-    });
+      // inform the graphics backend
+      this.#commandQueue.push({
+          type: 'removeObject',
+          id,
+      });
 
-    // recycle ID
-    this.#idToObject.delete(id);
-    this.#availableObjectIds.push(id);
+      // recycle ID
+      this.#idToObject.delete(id);
+      this.#availableObjectIds.push(id);
   };
 
   /**
    * Flush all renderable objects' transforms to the shared transform buffer
    */
   private writeTransformsToArray() {
-    // for every renderable...
-    for (const [id, object] of this.#idToObject) {
+      // for every renderable...
+      for (const [id, object] of this.#idToObject) {
       // calculate offset into array given mesh ID
-      const offset = id * this.#elementsPerTransform;
+          const offset = id * this.#elementsPerTransform;
 
-      // copy world matrix into transform buffer
-      object.updateMatrixWorld();
-      for (let i = 0; i < this.#elementsPerTransform; i++) {
-        this.#array[offset + i] = object.matrixWorld.elements[i];
+          // copy world matrix into transform buffer
+          object.updateMatrixWorld();
+          for (let i = 0; i < this.#elementsPerTransform; i++) {
+              this.#array[offset + i] = object.matrixWorld.elements[i];
+          }
       }
-    }
   }
 
   /**
@@ -226,53 +228,53 @@ export class Graphics {
    * objects first, and generating a new ID only if no recyclable ID's exist.
    */
   private assignIdToObject(object: Object3D): number {
-    let id = this.#objectId;
+      let id = this.#objectId;
 
-    // pick a recycled ID if one is available
-    if (this.#availableObjectIds.length > 0) {
-      id = this.#availableObjectIds.shift()!;
-    } else {
-      this.#objectId += 1;
-      if (this.#objectId > this.#maxEntityCount) throw new Error(`[graphics] exceeded maximum object count: ${this.#maxEntityCount}`);
-    }
+      // pick a recycled ID if one is available
+      if (this.#availableObjectIds.length > 0) {
+          id = this.#availableObjectIds.shift()!;
+      } else {
+          this.#objectId += 1;
+          if (this.#objectId > this.#maxEntityCount) throw new Error(`[graphics] exceeded maximum object count: ${this.#maxEntityCount}`);
+      }
 
-    // set mesh/ID relationships
-    this.#idToObject.set(id, object);
-    object.userData.meshId = id;
+      // set mesh/ID relationships
+      this.#idToObject.set(id, object);
+      object.userData.meshId = id;
 
-    return id;
+      return id;
   }
 
   /**
    * Ship a texture to the graphics backend, but only if the texture has not already been uploaded.
    */
   private uploadTexture(map: Texture) {
-    if (this.#textureCache.has(map.uuid)) return; // image is already cached
+      if (this.#textureCache.has(map.uuid)) return; // image is already cached
 
-    const { image, uuid } = map;
-    const { width, height } = image;
+      const { image, uuid } = map;
+      const { width, height } = image;
 
-    // grab raw image data from the texture
-    const { ctx } = GraphicsUtils.scratchCanvasContext(width, height);
-    ctx.drawImage(image, 0, 0);
-    const imageData = ctx.getImageData(0, 0, width, height);
+      // grab raw image data from the texture
+      const { ctx } = GraphicsUtils.scratchCanvasContext(width, height);
+      ctx.drawImage(image, 0, 0);
+      const imageData = ctx.getImageData(0, 0, width, height);
 
-    this.#textureCache.add(uuid);
+      this.#textureCache.add(uuid);
 
-    this.#commandQueue.push({
-      type: 'uploadTexture',
-      imageId: uuid,
-      imageData: imageData.data,
-      imageWidth: width,
-      imageHeight: height,
-    });
+      this.#commandQueue.push({
+          type: 'uploadTexture',
+          imageId: uuid,
+          imageData: imageData.data,
+          imageWidth: width,
+          imageHeight: height,
+      });
   }
 
   private extractMaterialTextures(material: Material) {
-    // @ts-ignore
-    const { map, alphaMap } = material;
-    if (map) this.uploadTexture(map);
-    if (alphaMap) this.uploadTexture(alphaMap);
+      // @ts-ignore
+      const { map, alphaMap } = material;
+      if (map) this.uploadTexture(map);
+      if (alphaMap) this.uploadTexture(alphaMap);
   }
 
   /**
@@ -282,28 +284,28 @@ export class Graphics {
    * Current supported objects: `Mesh`, `Sprite`, `Light`
    */
   private addObjectToScene(object: Object3D) {
-    if (object.parent) object.parent.add(object);
-    else this.#scene.add(object);
+      if (object.parent) object.parent.add(object);
+      else this.#scene.add(object);
 
-    const id = this.assignIdToObject(object);
+      const id = this.assignIdToObject(object);
 
-    // send object's texture data to backend
-    if (object instanceof Mesh || object instanceof Sprite) {
-      if (object.material instanceof Material) {
-        this.extractMaterialTextures(object.material);
-      } else {
-        for (const material of object.material) {
-          this.extractMaterialTextures(material);
-        }
+      // send object's texture data to backend
+      if (object instanceof Mesh || object instanceof Sprite) {
+          if (object.material instanceof Material) {
+              this.extractMaterialTextures(object.material);
+          } else {
+              for (const material of object.material) {
+                  this.extractMaterialTextures(material);
+              }
+          }
       }
-    }
 
-    // send that bitch to the backend
-    this.#commandQueue.push({
-      type: 'addObject',
-      name: object.name,
-      mesh: object.toJSON(),
-      id,
-    });
+      // send that bitch to the backend
+      this.#commandQueue.push({
+          type: 'addObject',
+          name: object.name,
+          mesh: object.toJSON(),
+          id,
+      });
   }
 }

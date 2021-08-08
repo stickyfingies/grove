@@ -10,9 +10,9 @@ import GameScript from '../script';
 // meshes? bodies? custom component import `buildFromJson(...)`
 
 export class SpawnerData {
-  //
+    //
 }
 
 export default class SpawnerScript extends GameScript {
-  //
+    //
 }

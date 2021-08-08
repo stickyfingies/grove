@@ -22,30 +22,30 @@ import { Physics } from './physics';
  * this.assetLoader.loadModel('/assets/foo', this.loadCallback); // no need for .bind()
  */
 export default abstract class GameScript {
-  graphics: Graphics;
+    graphics: Graphics;
 
-  physics: Physics;
+    physics: Physics;
 
-  ecs: EntityManager;
+    ecs: EntityManager;
 
-  gui: GUI;
+    gui: GUI;
 
-  assetLoader: AssetLoader;
+    assetLoader: AssetLoader;
 
-  constructor(protected engine: Engine) {
-    this.graphics = engine.graphics;
-    this.physics = engine.physics;
-    this.ecs = engine.ecs;
-    this.gui = engine.gui;
-    this.assetLoader = engine.assetLoader;
-    autoBind(this);
-  }
+    constructor(protected engine: Engine) {
+        this.graphics = engine.graphics;
+        this.physics = engine.physics;
+        this.ecs = engine.ecs;
+        this.gui = engine.gui;
+        this.assetLoader = engine.assetLoader;
+        autoBind(this);
+    }
 
-  /** @virtual */
-  // eslint-disable-next-line class-methods-use-this, no-empty-function
-  init(): void {}
+    /** @virtual */
+    // eslint-disable-next-line class-methods-use-this, no-empty-function
+    init(): void {}
 
-  /** @virtual */
-  // eslint-disable-next-line class-methods-use-this, no-empty-function
-  update(dt: number): void {}
+    /** @virtual */
+    // eslint-disable-next-line class-methods-use-this, no-empty-function
+    update(dt: number): void {}
 }
