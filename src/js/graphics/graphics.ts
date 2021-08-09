@@ -148,6 +148,13 @@ export class Graphics {
             pixelRatio: window.devicePixelRatio,
         }, [offscreen]);
 
+        this.#worker.postMessage({
+            type: 'resize',
+            width: window.innerWidth,
+            height: window.innerHeight,
+            pixelRatio: window.devicePixelRatio,
+        });
+
         // attach graphics backend to resize event hook
         window.addEventListener('resize', () => {
             this.#commandQueue.push({

@@ -28,21 +28,21 @@ function createWindow() {
         const ext = path.extname(url);
 
         if (ext !== '.html') {
-            url = path.join(__dirname, '../../static/', url.substr(3));
+            url = path.join(__dirname, '../../dist/', url.substr(3));
         }
 
         callback({ path: url });
     });
 }
 
-// Fixes wonky camera behavior on HiDPI displays
-app.commandLine.appendSwitch('high-dpi-support', 1);
-app.commandLine.appendSwitch('force-device-scale-factor', 1);
+// The following command line switches disable DPI scaling
+// app.commandLine.appendSwitch('high-dpi-support', 1);
+// app.commandLine.appendSwitch('force-device-scale-factor', 1);
 
-app.whenReady().then(createWindow);
-
-app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit();
-    }
-});
+app
+    .on('window-all-closed', () => {
+        if (process.platform !== 'darwin') {
+            app.quit();
+        }
+    })
+    .whenReady().then(createWindow);
