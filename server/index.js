@@ -47,14 +47,14 @@ app.engine('ejs', ejs);
 
 app.use(express.json());
 app.use(express.urlencoded({
-  extended: true,
+    extended: true,
 }));
 app.use(session({
-  secret: '434dbc979dde137b5a2a5a4916464fecc8f7997f0caebd19e6e5d48b622a896b', // is a cookie
-  name: 'grove_usersession',
-  secure: true,
-  resave: true,
-  saveUninitialized: false,
+    secret: '434dbc979dde137b5a2a5a4916464fecc8f7997f0caebd19e6e5d48b622a896b', // is a cookie
+    name: 'grove_usersession',
+    secure: true,
+    resave: true,
+    saveUninitialized: false,
 }));
 app.use(compression());
 
@@ -65,77 +65,77 @@ _client(io);
 
 ///
 
-app.use(express.static('static', {
-  setHeaders(res) {
-    res.set('Cross-Origin-Embedder-Policy', 'require-corp');
-    res.set('Cross-Origin-Opener-Policy', 'same-origin');
-  },
+app.use(express.static('dist', {
+    setHeaders(res) {
+        res.set('Cross-Origin-Embedder-Policy', 'require-corp');
+        res.set('Cross-Origin-Opener-Policy', 'same-origin');
+    },
 }));
 
 app.use('/modules', express.static('node_modules'));
 
 app.get('/', (req, res) => {
-  const { session: { user } } = req;
-  if (user && user.username) { res.render(path.resolve('views/dashboard.ejs'), { user }); } else { res.render(path.resolve('views/index.ejs')); }
+    const { session: { user } } = req;
+    if (user && user.username) { res.render(path.resolve('views/dashboard.ejs'), { user }); } else { res.render(path.resolve('views/index.ejs')); }
 });
 
 app.get('/logout', (req, res) => {
-  const { session: { user } } = req;
-  if (user) {
-    console.log(`[${user.username}] logged out`);
-    delete req.session.user;
-  }
-  res.redirect('/');
+    const { session: { user } } = req;
+    if (user) {
+        console.log(`[${user.username}] logged out`);
+        delete req.session.user;
+    }
+    res.redirect('/');
 });
 
 app.get('/login', (req, res) => {
-  res.render(path.resolve('views/login.ejs'));
+    res.render(path.resolve('views/login.ejs'));
 });
 
 app.get('/register', (req, res) => {
-  res.render(path.resolve('views/register.ejs'));
+    res.render(path.resolve('views/register.ejs'));
 });
 
 app.get('/play', (req, res) => {
-  const { session: { user } } = req;
-  if (user && user.username) {
-    res.set('Cross-Origin-Embedder-Policy', 'require-corp');
-    res.set('Cross-Origin-Opener-Policy', 'same-origin');
-    res.sendFile(path.resolve('views/play.html'));
-  } else { res.redirect('/login'); }
+    const { session: { user } } = req;
+    if (user && user.username) {
+        res.set('Cross-Origin-Embedder-Policy', 'require-corp');
+        res.set('Cross-Origin-Opener-Policy', 'same-origin');
+        res.sendFile(path.resolve('views/play.html'));
+    } else { res.redirect('/login'); }
 });
 
 app.get('/robots.txt', (req, res) => {
-  res.sendFile(path.resolve('views/robots.txt'));
+    res.sendFile(path.resolve('views/robots.txt'));
 });
 
 app.get('/settings', (req, res) => {
-  res.render(path.resolve('views/settings.ejs'));
+    res.render(path.resolve('views/settings.ejs'));
 });
 
 ///
 
 app.post('/login', async (req, res) => {
-  const user = await dbFindUser(req.body);
-  if (user) {
-    console.log(`[${user.username}] logged in`);
-    req.session.user = user;
-    res.redirect('/');
-  } else { res.redirect('/login?err=user_not_found'); }
+    const user = await dbFindUser(req.body);
+    if (user) {
+        console.log(`[${user.username}] logged in`);
+        req.session.user = user;
+        res.redirect('/');
+    } else { res.redirect('/login?err=user_not_found'); }
 });
 
 app.post('/register', async (req, res) => {
-  const user = await dbNewUser(req.body);
-  if (user) {
-    console.log(`[${user.username}] made an account`);
-    req.session.user = user;
-    res.redirect('/');
-  } else { res.redirect('/register?err=birds_ate_the_server'); }
+    const user = await dbNewUser(req.body);
+    if (user) {
+        console.log(`[${user.username}] made an account`);
+        req.session.user = user;
+        res.redirect('/');
+    } else { res.redirect('/register?err=birds_ate_the_server'); }
 });
 
 ///
 
 const port = process.env.PORT ?? 80;
 http.listen(port, () => {
-  console.log(`NodeJS server listening For conections on localhost:${port}`);
+    console.log(`NodeJS server listening For conections on localhost:${port}`);
 });
