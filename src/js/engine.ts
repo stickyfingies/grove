@@ -79,7 +79,7 @@ export default class Engine {
             }
         };
 
-        // load game scripts
+        // dynamically load game scripts
         const scriptModules: any[] = [];
         for (const scriptName of gameScripts.scripts) {
             scriptModules.push(import(`./game/${scriptName}`));
@@ -96,6 +96,7 @@ export default class Engine {
         // load the map
         const map = maps['test-arena'];
         for (const path of map.objects) {
+            // we can't use `loadAsync` here because the map model may contain multiple meshes
             this.assetLoader.loadModel(path, (mesh) => {
                 const body = AssetLoader.loadPhysicsModel(mesh, 0);
                 mesh.receiveShadow = true;
@@ -122,13 +123,13 @@ export default class Engine {
         this.#stats.begin();
 
         if (this.running) {
-            // update physics
+            // step physics
             this.physics.update(delta);
 
-            // update game
+            // run per-frame game tasks
             for (const script of this.#gameScripts) script.update(delta);
 
-            // update graphics
+            // render scene
             this.graphics.update();
         }
 

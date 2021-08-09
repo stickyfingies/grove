@@ -51,9 +51,9 @@ export default class HominidScript extends GameScript {
         // and spawn more every 12 seconds
         setInterval(spawn, 12_000);
 
-        // when a hominid dies...
+        // when something dies...
         this.ecs.events.on(`delete${HealthData.name}Component`, (id: number) => {
-        // make sure it's really a hominid (this is a generic death event)
+            // make sure it's really a hominid (this is a generic death event)
             const entity = new Entity(Entity.defaultManager, id);
             if (!entity.hasComponent(HominidData)) return;
 
@@ -126,7 +126,7 @@ export default class HominidScript extends GameScript {
         });
     }
 
-    createHominid() {
+    async createHominid() {
         const headRadius = 0.18;
         const torsoRadius = 0.2;
         const height = 0.7;
@@ -173,69 +173,66 @@ export default class HominidScript extends GameScript {
         headBody.position.y += height / 2 + headRadius;
         head.setComponent(PhysicsData, headBody);
 
-        // TODO make this async, or... something.  this is disgusting.
-        this.assetLoader.loadModel('/models/head/head.glb', (mesh) => {
-            mesh.material = (mesh.material as Material).clone();
-            mesh.userData.norotate = true;
-            head.setComponent(GraphicsData, mesh);
+        const headMesh = await this.assetLoader.loadAsync('/models/head/head.glb');
+        headMesh.material = (headMesh.material as Material).clone();
+        headMesh.userData.norotate = true;
+        head.setComponent(GraphicsData, headMesh);
 
-            /**
-             * Neck
-             */
+        /**
+         * Neck
+         */
 
-            const neck = new ConstraintData(
-                headBody,
-                new Vec3(0, 0, 0),
-                torsoBody,
-                new Vec3(0, height + headRadius * 1.5, 0),
-                4,
-            );
-            neck.collideConnected = false;
-            head.setComponent(ConstraintData, neck);
+        const neck = new ConstraintData(
+            headBody,
+            new Vec3(0, 0, 0),
+            torsoBody,
+            new Vec3(0, height + headRadius * 1.5, 0),
+            4,
+        );
+        neck.collideConnected = false;
+        head.setComponent(ConstraintData, neck);
 
-            /**
-             * Halo
-             */
+        /**
+         * Halo
+         */
 
-            const halo = new Entity();
+        const halo = new Entity();
 
-            const drawHaloTexture = () => {
-                const { canvas, ctx } = GraphicsUtils.scratchCanvasContext(256, 256);
-                const health = torso.getComponent(HealthData);
-                ctx.font = '60px Arial';
-                ctx.fillStyle = 'red';
-                ctx.textAlign = 'center';
-                ctx.fillText(`${health.hp}/${health.max}`, 128, 128);
-                return new CanvasTexture(canvas);
-            };
+        const drawHaloTexture = () => {
+            const { canvas, ctx } = GraphicsUtils.scratchCanvasContext(256, 256);
+            const health = torso.getComponent(HealthData);
+            ctx.font = '60px Arial';
+            ctx.fillStyle = 'red';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${health.hp}/${health.max}`, 128, 128);
+            return new CanvasTexture(canvas);
+        };
 
-            const haloSprite = new Sprite();
-            haloSprite.material = new SpriteMaterial({ map: drawHaloTexture(), color: 0x55ff55 });
-            haloSprite.scale.set(2, 2, 2);
-            haloSprite.position.y += headRadius * 2;
-            // TODO everything is inside the callback so that head's GraphicsData exists here:
-            haloSprite.parent = head.getComponent(GraphicsData);
-            halo.setComponent(GraphicsData, haloSprite);
+        const haloSprite = new Sprite();
+        haloSprite.material = new SpriteMaterial({ map: drawHaloTexture(), color: 0x55ff55 });
+        haloSprite.scale.set(2, 2, 2);
+        haloSprite.position.y += headRadius * 2;
+        haloSprite.parent = head.getComponent(GraphicsData);
+        halo.setComponent(GraphicsData, haloSprite);
 
-            torso.setComponent(HominidData, {
-                bubble: 15,
-                torso,
-                head,
-                halo,
-            });
+        torso.setComponent(HominidData, {
+            bubble: 15,
+            torso,
+            head,
+            halo,
+        });
 
-            // headshots deal damage
-            headBody.addEventListener('collide', ({ contact }: { contact: ContactEquation }) => {
-                const health = torso.getComponent(HealthData);
-                const impact = contact.getImpactVelocityAlongNormal();
+        // headshots deal damage
+        headBody.addEventListener('collide', ({ contact }: { contact: ContactEquation }) => {
+            const health = torso.getComponent(HealthData);
+            const impact = contact.getImpactVelocityAlongNormal();
 
-                if (Math.abs(impact) >= 15 && torso.hasComponent(HealthData)) {
-                    health.hp -= Math.floor(Math.abs(impact) / 10);
-                    haloSprite.material.map = drawHaloTexture();
-                    haloSprite.material.opacity = health.hp / health.max;
-                    this.graphics.updateMaterial(haloSprite);
-                }
-            });
+            if (Math.abs(impact) >= 15 && torso.hasComponent(HealthData)) {
+                health.hp -= Math.floor(Math.abs(impact) / 10);
+                haloSprite.material.map = drawHaloTexture();
+                haloSprite.material.opacity = health.hp / health.max;
+                this.graphics.updateMaterial(haloSprite);
+            }
         });
     }
 }

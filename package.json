@@ -28,7 +28,6 @@
 		"events": "^3.3.0",
 		"express": "^4.14.1",
 		"express-session": "^1.14.1",
-		"fork-ts-checker-webpack-plugin": "^6.2.0",
 		"md5": "^2.3.0",
 		"mongodb": "^3.6.5",
 		"mongoose": "^5.12.2",
@@ -36,11 +35,7 @@
 		"socket.io": "^4.0.1",
 		"stats-js": "^1.0.1",
 		"style-loader": "^2.0.0",
-		"three": "^0.127.0",
-		"ts-loader": "^8.1.0",
-		"typescript": "^4.2.3",
-		"webpack": "^5.28.0",
-		"webpack-cli": "^4.6.0"
+		"three": "^0.127.0"
 	},
 	"scripts": {
 		"server": "node -r dotenv/config server/index.js",
@@ -57,6 +52,11 @@
 		"@typescript-eslint/parser": "^4.21.0",
 		"eslint": "^7.23.0",
 		"eslint-config-airbnb-base": "^14.2.1",
-		"eslint-plugin-import": "^2.22.1"
+		"eslint-plugin-import": "^2.22.1",
+		"fork-ts-checker-webpack-plugin": "^6.3.2",
+		"ts-loader": "^9.2.5",
+		"typescript": "^4.3.5",
+		"webpack": "^5.49.0",
+		"webpack-cli": "^4.7.2"
 	}
 }

@@ -53,7 +53,8 @@ interface GraphicsBackendRemoveObjectData {
 
 interface GraphicsBackendResizeData {
   width: number,
-  height: number
+  height: number,
+  pixelRatio: number
 }
 
 interface GraphicsBackendUpdateMaterialData {
@@ -222,10 +223,11 @@ export default class GraphicsBackend {
   }
 
   /** Resizes the render target */
-  resize({ width, height }: GraphicsBackendResizeData) {
+  resize({ width, height, pixelRatio }: GraphicsBackendResizeData) {
       console.log(`resize ${width}, ${height}`);
       // this.#camera.aspect = width / height;
       // this.#camera.updateProjectionMatrix();
+      this.#renderer.setPixelRatio(pixelRatio);
       this.#renderer.setSize(width, height, false);
   }
 

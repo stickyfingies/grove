@@ -49,148 +49,149 @@ interface IBackendCommand {
 export const CAMERA_TAG = Symbol('camera');
 
 export class Graphics {
-  /** Tree-like graph of the game scene, maintains parent-child relationships between renderables */
-  #scene = new Scene();
+    /** Tree-like graph of renderable game objects */
+    #scene = new Scene();
 
-  /**
-   * Map between mesh IDs and mesh instances
-   *
-   * @note mesh ID's are not the same as entity ID's, as we need a compact list of meshes,
-   * but not all entities will have mesh components.
-   */
-  #idToObject = new Map<number, Object3D>();
+    /**
+     * Map between mesh IDs and mesh instances
+     *
+     * @note mesh ID's are not the same as entity ID's, as we need a compact list of meshes,
+     * but not all entities will have mesh components.
+     */
+    #idToObject = new Map<number, Object3D>();
 
-  /**
-   * Every time a mesh gets removed from the scene, we recycle its ID so that the list of meshes
-   * stays compact.  Recycled, unused IDs go into this list.
-   */
-  #availableObjectIds: number[] = [];
+    /**
+     * Every time a mesh gets removed from the scene, we recycle its ID so that the list of meshes
+     * stays compact.  Recycled, unused IDs go into this list.
+     */
+    #availableObjectIds: number[] = [];
 
-  /**
-   * Next available mesh ID
-   * @note when assigning ID's, recycle any ID's from `#availableObjectIds` first
-   */
-  #objectId = 0;
+    /**
+     * Next available mesh ID
+     * @note when assigning ID's, recycle any ID's from `#availableObjectIds` first
+     */
+    #objectId = 0;
 
-  /** Set of all texture UUID's that have already been uploaded to the backend */
-  #textureCache = new Set<string>();
+    /** Set of all texture UUID's that have already been uploaded to the backend */
+    #textureCache = new Set<string>();
 
-  /** Queue of commands to be submitted to the backend */
-  #commandQueue: IBackendCommand[] = [];
+    /** Queue of commands to be submitted to the backend */
+    #commandQueue: IBackendCommand[] = [];
 
-  /** Worker thread handle on which the graphics backend is ran */
-  #worker = new Worker(new URL('./worker.ts', import.meta.url));
+    /** Worker thread handle on which the graphics backend is ran */
+    #worker = new Worker(new URL('./worker.ts', import.meta.url));
 
-  /** Cross-thread buffer of mesh transforms */
-  #buffer: SharedArrayBuffer;
+    /** Cross-thread buffer of mesh transforms */
+    #buffer: SharedArrayBuffer;
 
-  /** f32 array view over #buffer, used for raw access */
-  #array: Float32Array;
+    /** f32 array view over #buffer, used for raw access */
+    #array: Float32Array;
 
-  /**
-   * this camera acts as a proxy for the actual rendering camera in the backend
-   * @note camera has id #0
-   */
-  #camera = new PerspectiveCamera();
+    /**
+     * this camera acts as a proxy for the actual rendering camera in the backend
+     * @note camera has id #0
+     */
+    #camera = new PerspectiveCamera();
 
-  /** Number of bytes per each element in the shared array buffer */
-  readonly #bytesPerElement = Float32Array.BYTES_PER_ELEMENT;
+    /** Number of bytes per each element in the shared array buffer */
+    readonly #bytesPerElement = Float32Array.BYTES_PER_ELEMENT;
 
-  /** Number of elements per each matrix in the transform buffer (4x4 matrix = 16) */
-  readonly #elementsPerTransform = 16;
+    /** Number of elements per each matrix in the transform buffer (4x4 matrix = 16) */
+    readonly #elementsPerTransform = 16;
 
-  /** Maximum number of meshes whcih may exist concurrently */
-  readonly #maxEntityCount = 1024;
+    /** Maximum number of meshes whcih may exist concurrently */
+    readonly #maxEntityCount = 1024;
 
-  /** Calculates the size of the transform buffer */
-  get bufferSize() {
-      return this.#bytesPerElement * this.#elementsPerTransform * this.#maxEntityCount;
-  }
+    /** Calculates the size of the transform buffer */
+    get bufferSize() {
+        return this.#bytesPerElement * this.#elementsPerTransform * this.#maxEntityCount;
+    }
 
-  constructor() {
-      this.#buffer = new SharedArrayBuffer(this.bufferSize);
-      this.#array = new Float32Array(this.#buffer);
-  }
+    constructor() {
+        this.#buffer = new SharedArrayBuffer(this.bufferSize);
+        this.#array = new Float32Array(this.#buffer);
+    }
 
-  init(engine: Engine) {
-      const offscreenCanvas = document.getElementById('main-canvas') as HTMLCanvasElement;
-      // @ts-ignore - TypeScript complains about limited offscreen canvas API support
-      const offscreen: OffscreenCanvas = offscreenCanvas.transferControlToOffscreen();
+    init(engine: Engine) {
+        const offscreenCanvas = document.getElementById('main-canvas') as HTMLCanvasElement;
+        // @ts-ignore - TypeScript complains about limited offscreen canvas API support
+        const offscreen: OffscreenCanvas = offscreenCanvas.transferControlToOffscreen();
 
-      // create the camera as a game entity
-      new Entity(engine.ecs)
-          .addTag(CAMERA_TAG)
-          .setComponent(CameraData, this.#camera);
-      this.assignIdToObject(this.#camera);
+        // create the camera as a game entity
+        new Entity(engine.ecs)
+            .addTag(CAMERA_TAG)
+            .setComponent(CameraData, this.#camera);
+        this.assignIdToObject(this.#camera);
 
-      // TODO too implicit: { entity.setComponent() => [event blackbox] => addObjectToScene() }
-      // TODO prefer: { mesh = graphics.makeObject(); entity.setComponent(mesh); }
-      // listen to component events
-      engine.ecs.events.on(`set${GraphicsData.name}Component`, (id: number, object: GraphicsData) => {
-          object.traverse((child) => {
-              if (child instanceof Mesh || child instanceof Sprite || child instanceof Light) {
-                  this.addObjectToScene(object);
-              }
-          });
-      });
-      engine.ecs.events.on(`delete${GraphicsData.name}Component`, (id: number, mesh: Mesh) => {
-          this.removeFromScene(mesh);
-      });
+        // TODO too implicit: { entity.setComponent() => [event blackbox] => addObjectToScene() }
+        // TODO prefer: { mesh = graphics.makeObject(); entity.setComponent(mesh); }
+        // listen to component events
+        engine.ecs.events.on(`set${GraphicsData.name}Component`, (id: number, object: GraphicsData) => {
+            object.traverse((child) => {
+                if (child instanceof Mesh || child instanceof Sprite || child instanceof Light) {
+                    this.addObjectToScene(object);
+                }
+            });
+        });
+        engine.ecs.events.on(`delete${GraphicsData.name}Component`, (id: number, mesh: Mesh) => {
+            this.removeFromScene(mesh);
+        });
 
-      // initialize graphics backend
-      // @ts-ignore - I guess TypeScript is really just a bitch about offscreen API's.
-      this.#worker.postMessage({
-          type: 'init',
-          buffer: this.#buffer,
-          canvas: offscreen,
-          width: window.innerWidth,
-          height: window.innerHeight,
-          pixelRatio: window.devicePixelRatio,
-      }, [offscreen]);
+        // initialize graphics backend
+        // @ts-ignore - I guess TypeScript is really just a bitch about offscreen API's.
+        this.#worker.postMessage({
+            type: 'init',
+            buffer: this.#buffer,
+            canvas: offscreen,
+            width: window.innerWidth,
+            height: window.innerHeight,
+            pixelRatio: window.devicePixelRatio,
+        }, [offscreen]);
 
-      // attach graphics backend to resize event hook
-      window.addEventListener('resize', () => {
-          this.#commandQueue.push({
-              type: 'resize',
-              width: window.innerWidth,
-              height: window.innerHeight,
-          });
-      });
-  }
+        // attach graphics backend to resize event hook
+        window.addEventListener('resize', () => {
+            this.#commandQueue.push({
+                type: 'resize',
+                width: window.innerWidth,
+                height: window.innerHeight,
+                pixelRatio: window.devicePixelRatio,
+            });
+        });
+    }
 
-  update() {
-      this.flushCommands();
-      this.writeTransformsToArray();
-  }
+    update() {
+        this.flushCommands();
+        this.writeTransformsToArray();
+    }
 
-  /**
+    /**
    * Upload queued graphics commands to backend & clear queue
    */
-  flushCommands() {
-      for (const cmd of this.#commandQueue) this.#worker.postMessage(cmd);
-      this.#commandQueue = [];
-  }
+    flushCommands() {
+        for (const cmd of this.#commandQueue) this.#worker.postMessage(cmd);
+        this.#commandQueue = [];
+    }
 
-  /**
+    /**
    * Changes to material properties made by game code are not automatically mirrored by the backend.
    * Thus, materials need to be manually flushed after updates
    */
-  updateMaterial(object: Mesh | Sprite) {
-      this.extractMaterialTextures(object.material as Material);
+    updateMaterial(object: Mesh | Sprite) {
+        this.extractMaterialTextures(object.material as Material);
 
-      this.#commandQueue.push({
-          type: 'updateMaterial',
-          material: (object.material as Material).toJSON(),
-          id: object.userData.meshId,
-      });
-  }
+        this.#commandQueue.push({
+            type: 'updateMaterial',
+            material: (object.material as Material).toJSON(),
+            id: object.userData.meshId,
+        });
+    }
 
-  raycast() {
-      const raycaster = new Raycaster();
-      raycaster.setFromCamera(new Vector2(), this.#camera);
+    raycast() {
+        const raycaster = new Raycaster();
+        raycaster.setFromCamera(new Vector2(), this.#camera);
 
-      return raycaster.intersectObjects(Array.from(this.#idToObject.values()));
-  }
+        return raycaster.intersectObjects(Array.from(this.#idToObject.values()));
+    }
 
   private removeFromScene = (object: Object3D) => {
       const id = object.userData.meshId;

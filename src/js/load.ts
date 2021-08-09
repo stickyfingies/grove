@@ -20,6 +20,11 @@ export default class AssetLoader {
     /** List of functions to be executed once a model has loaded */
     #callbacks: Record<string, LoadCallback[]> = {};
 
+    /** Promise-based `loadModel`.  NOTE: only works when model contains one mesh! */
+    async loadAsync(uri: string): Promise<Mesh> {
+        return new Promise((resolve) => this.loadModel(uri, resolve));
+    }
+
     /** Creates one or more renderable meshes from a model file */
     loadModel(uri: string, callback: LoadCallback) {
         // increase access count for this model

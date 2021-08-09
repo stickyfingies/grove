@@ -3,8 +3,6 @@ const {
 } = require('electron');
 const path = require('path');
 
-app.commandLine.appendSwitch('enable-unsafe-webgpu'); // idr if this is used
-
 function createWindow() {
     const win = new BrowserWindow({
         width: 1280,
