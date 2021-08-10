@@ -1,10 +1,11 @@
 import { Euler, Vector3 } from 'three';
+
 import EcsView from '../ecs/view';
 import Entity from '../ecs/entity';
-import { CameraData, CAMERA_TAG } from '../graphics/graphics';
-import { PhysicsData } from '../physics';
 import GameScript from '../script';
 import { MovementData } from './movement';
+import { PhysicsData } from '../physics';
+import { CAMERA_TAG, CameraData } from '../graphics/graphics';
 
 /**
  * Adding this component to an entity makes its movement controllable via mouse and keyboard
@@ -40,7 +41,11 @@ export default class KeyboardControlScript extends GameScript {
     /** Maximum look angle, in radians */
     readonly maxPolarAngle = Math.PI;
 
-    kbControlView = new EcsView(this.ecs, new Set([PhysicsData, MovementData, KeyboardControlData]));
+    kbControlView = new EcsView(this.ecs, new Set([
+        PhysicsData,
+        MovementData,
+        KeyboardControlData,
+    ]));
 
     init() {
         document.addEventListener('mousemove', this.onMouseMove);

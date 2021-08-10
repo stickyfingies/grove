@@ -1,12 +1,12 @@
-import { Mesh, Object3D } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import {
-    Vec3,
-    Quaternion as CQuaternion,
     Body,
-    Trimesh,
+    Quaternion as CQuaternion,
     Material,
+    Trimesh,
+    Vec3,
 } from 'cannon-es';
+import { Mesh, Object3D } from 'three';
 
 type LoadCallback = (m: Mesh) => void;
 

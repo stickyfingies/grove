@@ -1,9 +1,10 @@
 import { GUI } from 'dat.gui';
 import autoBind from 'auto-bind';
+
+import AssetLoader from './load';
 import Engine from './engine';
 import EntityManager from './ecs/entity-manager';
 import { Graphics } from './graphics/graphics';
-import AssetLoader from './load';
 import { Physics } from './physics';
 
 /**

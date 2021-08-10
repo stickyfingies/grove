@@ -1,16 +1,15 @@
 import { Body, Sphere } from 'cannon-es';
-import {
-    CanvasTexture, Sprite, SpriteMaterial,
-} from 'three';
+import { CanvasTexture, Sprite, SpriteMaterial } from 'three';
+
 import Entity from '../ecs/entity';
-import { CameraData, CAMERA_TAG, GraphicsData } from '../graphics/graphics';
-import GraphicsUtils from '../graphics/utils';
-import { PhysicsData } from '../physics';
 import GameScript from '../script';
+import GraphicsUtils from '../graphics/utils';
 import { HealthData } from './health';
 import { KeyboardControlData } from './keyboardControls';
 import { MovementData } from './movement';
+import { PhysicsData } from '../physics';
 import ScoreData from './score';
+import { CAMERA_TAG, CameraData, GraphicsData } from '../graphics/graphics';
 
 /**
  * Entity tag used to retrieve the player

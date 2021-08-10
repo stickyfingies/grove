@@ -1,17 +1,17 @@
-import { DefaultLoadingManager, Cache } from 'three';
-// @ts-ignore
-import Stats from 'stats-js';
 import { GUI } from 'dat.gui';
 import autoBind from 'auto-bind';
+// @ts-ignore - @types/stats doesn't resolve to 'stats-js'
+import Stats from 'stats-js';
+import { Cache, DefaultLoadingManager } from 'three';
+
 import AssetLoader from './load';
-import { Graphics, GraphicsData } from './graphics/graphics';
-import { Physics, PhysicsData } from './physics';
 import Entity from './ecs/entity';
 import EntityManager from './ecs/entity-manager';
-
-import maps from './json/maps.json';
-import gameScripts from './game/_scripts.json';
 import GameScript from './script';
+import gameScripts from './game/_scripts.json';
+import maps from './json/maps.json';
+import { Graphics, GraphicsData } from './graphics/graphics';
+import { Physics, PhysicsData } from './physics';
 
 export default class Engine {
     running = false;
@@ -96,7 +96,7 @@ export default class Engine {
         // load the map
         const map = maps['test-arena'];
         for (const path of map.objects) {
-            // we can't use `loadAsync` here because the map model may contain multiple meshes
+            // we can't use `loadAsync` here because the map model may contain several meshes
             this.assetLoader.loadModel(path, (mesh) => {
                 const body = AssetLoader.loadPhysicsModel(mesh, 0);
                 mesh.receiveShadow = true;

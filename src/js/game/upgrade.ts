@@ -1,11 +1,12 @@
 import {
     Color, Sprite, SpriteMaterial, TextureLoader,
 } from 'three';
+
 import Entity from '../ecs/entity';
-import { GraphicsData } from '../graphics/graphics';
-import { Physics, PhysicsData } from '../physics';
 import GameScript from '../script';
+import { GraphicsData } from '../graphics/graphics';
 import { PLAYER_TAG } from './player';
+import { Physics, PhysicsData } from '../physics';
 
 /**
  * Spawns pink items which heal the player for 15 hp each upon contact.

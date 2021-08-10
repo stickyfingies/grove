@@ -1,10 +1,11 @@
 import {
+    CylinderBufferGeometry,
     Mesh,
     MeshPhongMaterial,
     Object3D,
     SphereBufferGeometry,
-    CylinderBufferGeometry,
 } from 'three';
+
 import Entity from '../ecs/entity';
 
 export default class GraphicsUtils {

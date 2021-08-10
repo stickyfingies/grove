@@ -1,10 +1,11 @@
 import { Vector3 } from 'three';
+
 import Entity from '../ecs/entity';
-import { Physics, PhysicsData } from '../physics';
-import { CameraData, CAMERA_TAG, GraphicsData } from '../graphics/graphics';
-import GraphicsUtils from '../graphics/utils';
 import GameScript from '../script';
+import GraphicsUtils from '../graphics/utils';
 import { PLAYER_TAG } from './player';
+import { CAMERA_TAG, CameraData, GraphicsData } from '../graphics/graphics';
+import { Physics, PhysicsData } from '../physics';
 
 /** Shoots a ball outwards from an entity in an indicated direction */
 export const shoot = (origin: Entity, shootDir: Vector3) => {
@@ -17,10 +18,19 @@ export const shoot = (origin: Entity, shootDir: Vector3) => {
     const radius = 0.3;
     const mass = 10;
     const shootVelo = 40;
+    const distanceFromOrigin = 2;
 
     const body = Physics.makeBall(mass, radius);
-    body.velocity.set(vx + sdx * shootVelo, vy + sdy * shootVelo, vz + sdz * shootVelo);
-    body.position.set(px + sdx * 5, py + sdy * 5, pz + sdz * 5);
+    body.velocity.set(
+        vx + sdx * shootVelo,
+        vy + sdy * shootVelo,
+        vz + sdz * shootVelo,
+    );
+    body.position.set(
+        px + sdx * distanceFromOrigin,
+        py + sdy * distanceFromOrigin,
+        pz + sdz * distanceFromOrigin,
+    );
     ball.setComponent(PhysicsData, body);
 
     const mesh = GraphicsUtils.makeBall(radius);
@@ -44,6 +54,7 @@ const getCameraDir = () => {
 
 export default class ShootingScript extends GameScript {
     init() {
+        // TODO possibly this should be moved to the player script
         document.addEventListener('mousedown', () => {
             if (this.engine.running) shoot(Entity.getTag(PLAYER_TAG), getCameraDir());
         });

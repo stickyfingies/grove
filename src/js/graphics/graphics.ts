@@ -15,17 +15,18 @@
  */
 
 import {
-    PerspectiveCamera,
-    Object3D,
+    Light,
+    Material,
     Mesh,
+    Object3D,
+    PerspectiveCamera,
+    Raycaster,
+    Scene,
     Sprite,
     Texture,
-    Material,
-    Raycaster,
     Vector2,
-    Scene,
-    Light,
 } from 'three';
+
 import Engine from '../engine';
 import Entity from '../ecs/entity';
 import GraphicsUtils from './utils';
@@ -138,7 +139,6 @@ export class Graphics {
         });
 
         // initialize graphics backend
-        // @ts-ignore - I guess TypeScript is really just a bitch about offscreen API's.
         this.#worker.postMessage({
             type: 'init',
             buffer: this.#buffer,
@@ -172,17 +172,17 @@ export class Graphics {
     }
 
     /**
-   * Upload queued graphics commands to backend & clear queue
-   */
+     * Upload queued graphics commands to backend & clear queue
+     */
     flushCommands() {
         for (const cmd of this.#commandQueue) this.#worker.postMessage(cmd);
         this.#commandQueue = [];
     }
 
     /**
-   * Changes to material properties made by game code are not automatically mirrored by the backend.
-   * Thus, materials need to be manually flushed after updates
-   */
+     * Changes to material properties made by game code are not automatically mirrored by
+     * the backend, so materials need to be manually flushed after updates
+     */
     updateMaterial(object: Mesh | Sprite) {
         this.extractMaterialTextures(object.material as Material);
 
@@ -200,120 +200,120 @@ export class Graphics {
         return raycaster.intersectObjects(Array.from(this.#idToObject.values()));
     }
 
-  private removeFromScene = (object: Object3D) => {
-      const id = object.userData.meshId;
+    private removeFromScene = (object: Object3D) => {
+        const id = object.userData.meshId;
 
-      // inform the graphics backend
-      this.#commandQueue.push({
-          type: 'removeObject',
-          id,
-      });
+        // inform the graphics backend
+        this.#commandQueue.push({
+            type: 'removeObject',
+            id,
+        });
 
-      // recycle ID
-      this.#idToObject.delete(id);
-      this.#availableObjectIds.push(id);
-  };
+        // recycle ID
+        this.#idToObject.delete(id);
+        this.#availableObjectIds.push(id);
+    };
 
-  /**
+    /**
    * Flush all renderable objects' transforms to the shared transform buffer
    */
-  private writeTransformsToArray() {
-      // for every renderable...
-      for (const [id, object] of this.#idToObject) {
-      // calculate offset into array given mesh ID
-          const offset = id * this.#elementsPerTransform;
+    private writeTransformsToArray() {
+        // for every renderable...
+        for (const [id, object] of this.#idToObject) {
+            // calculate offset into array given mesh ID
+            const offset = id * this.#elementsPerTransform;
 
-          // copy world matrix into transform buffer
-          object.updateMatrixWorld();
-          for (let i = 0; i < this.#elementsPerTransform; i++) {
-              this.#array[offset + i] = object.matrixWorld.elements[i];
-          }
-      }
-  }
+            // copy world matrix into transform buffer
+            object.updateMatrixWorld();
+            for (let i = 0; i < this.#elementsPerTransform; i++) {
+                this.#array[offset + i] = object.matrixWorld.elements[i];
+            }
+        }
+    }
 
-  /**
-   * Smart algorithm for assigning ID's to renderable objects by reusing ID's from old, removed
-   * objects first, and generating a new ID only if no recyclable ID's exist.
-   */
-  private assignIdToObject(object: Object3D): number {
-      let id = this.#objectId;
+    /**
+     * Smart algorithm for assigning ID's to renderable objects by reusing ID's from old, removed
+     * objects first, and generating a new ID only if no recyclable ID's exist.
+     */
+    private assignIdToObject(object: Object3D): number {
+        let id = this.#objectId;
 
-      // pick a recycled ID if one is available
-      if (this.#availableObjectIds.length > 0) {
-          id = this.#availableObjectIds.shift()!;
-      } else {
-          this.#objectId += 1;
-          if (this.#objectId > this.#maxEntityCount) throw new Error(`[graphics] exceeded maximum object count: ${this.#maxEntityCount}`);
-      }
+        // pick a recycled ID if one is available
+        if (this.#availableObjectIds.length > 0) {
+            id = this.#availableObjectIds.shift()!;
+        } else {
+            this.#objectId += 1;
+            if (this.#objectId > this.#maxEntityCount) throw new Error(`[graphics] exceeded maximum object count: ${this.#maxEntityCount}`);
+        }
 
-      // set mesh/ID relationships
-      this.#idToObject.set(id, object);
-      object.userData.meshId = id;
+        // set mesh/ID relationships
+        this.#idToObject.set(id, object);
+        object.userData.meshId = id;
 
-      return id;
-  }
+        return id;
+    }
 
-  /**
-   * Ship a texture to the graphics backend, but only if the texture has not already been uploaded.
-   */
-  private uploadTexture(map: Texture) {
-      if (this.#textureCache.has(map.uuid)) return; // image is already cached
+    /**
+     * Ship a texture to the graphics backend, but only if the texture has not already been uploaded
+     */
+    private uploadTexture(map: Texture) {
+        if (this.#textureCache.has(map.uuid)) return; // image is already cached
 
-      const { image, uuid } = map;
-      const { width, height } = image;
+        const { image, uuid } = map;
+        const { width, height } = image;
 
-      // grab raw image data from the texture
-      const { ctx } = GraphicsUtils.scratchCanvasContext(width, height);
-      ctx.drawImage(image, 0, 0);
-      const imageData = ctx.getImageData(0, 0, width, height);
+        // grab raw image data from the texture
+        const { ctx } = GraphicsUtils.scratchCanvasContext(width, height);
+        ctx.drawImage(image, 0, 0);
+        const imageData = ctx.getImageData(0, 0, width, height);
 
-      this.#textureCache.add(uuid);
+        this.#textureCache.add(uuid);
 
-      this.#commandQueue.push({
-          type: 'uploadTexture',
-          imageId: uuid,
-          imageData: imageData.data,
-          imageWidth: width,
-          imageHeight: height,
-      });
-  }
+        this.#commandQueue.push({
+            type: 'uploadTexture',
+            imageId: uuid,
+            imageData: imageData.data,
+            imageWidth: width,
+            imageHeight: height,
+        });
+    }
 
-  private extractMaterialTextures(material: Material) {
-      // @ts-ignore
-      const { map, alphaMap } = material;
-      if (map) this.uploadTexture(map);
-      if (alphaMap) this.uploadTexture(alphaMap);
-  }
+    private extractMaterialTextures(material: Material) {
+        // @ts-ignore
+        const { map, alphaMap } = material;
+        if (map) this.uploadTexture(map);
+        if (alphaMap) this.uploadTexture(alphaMap);
+    }
 
-  /**
-   * Upload a renderable object to the graphics backend.
-   * Establishing a scene hierarchy is possible by specifying `object.parent`
-   *
-   * Current supported objects: `Mesh`, `Sprite`, `Light`
-   */
-  private addObjectToScene(object: Object3D) {
-      if (object.parent) object.parent.add(object);
-      else this.#scene.add(object);
+    /**
+     * Upload a renderable object to the graphics backend.
+     * Establishing a scene hierarchy is possible by specifying `object.parent`
+     *
+     * Current supported objects: `Mesh`, `Sprite`, `Light`
+     */
+    private addObjectToScene(object: Object3D) {
+        if (object.parent) object.parent.add(object);
+        else this.#scene.add(object);
 
-      const id = this.assignIdToObject(object);
+        const id = this.assignIdToObject(object);
 
-      // send object's texture data to backend
-      if (object instanceof Mesh || object instanceof Sprite) {
-          if (object.material instanceof Material) {
-              this.extractMaterialTextures(object.material);
-          } else {
-              for (const material of object.material) {
-                  this.extractMaterialTextures(material);
-              }
-          }
-      }
+        // send object's texture data to backend
+        if (object instanceof Mesh || object instanceof Sprite) {
+            if (object.material instanceof Material) {
+                this.extractMaterialTextures(object.material);
+            } else {
+                for (const material of object.material) {
+                    this.extractMaterialTextures(material);
+                }
+            }
+        }
 
-      // send that bitch to the backend
-      this.#commandQueue.push({
-          type: 'addObject',
-          name: object.name,
-          mesh: object.toJSON(),
-          id,
-      });
-  }
+        // send that bitch to the backend
+        this.#commandQueue.push({
+            type: 'addObject',
+            name: object.name,
+            mesh: object.toJSON(),
+            id,
+        });
+    }
 }

@@ -1,7 +1,7 @@
 import EcsView from '../ecs/view';
+import GameScript from '../script';
 import { GraphicsData } from '../graphics/graphics';
 import { PhysicsData } from '../physics';
-import GameScript from '../script';
 
 export default class MeshTransformScript extends GameScript {
     transformView = new EcsView(this.ecs, new Set([GraphicsData, PhysicsData]));

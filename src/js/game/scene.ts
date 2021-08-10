@@ -8,11 +8,12 @@ import {
     Mesh,
     MeshBasicMaterial,
 } from 'three';
+
 import Entity from '../ecs/entity';
-import { CameraData, CAMERA_TAG, GraphicsData } from '../graphics/graphics';
-import { Physics, PhysicsData } from '../physics';
 import GameScript from '../script';
 import entities from '../json/entities.json';
+import { CAMERA_TAG, CameraData, GraphicsData } from '../graphics/graphics';
+import { Physics, PhysicsData } from '../physics';
 
 export default class SceneSetupScript extends GameScript {
     skybox: Entity;
@@ -46,7 +47,7 @@ export default class SceneSetupScript extends GameScript {
             const skyboxMesh = new Mesh(skyGeometry, materialArray);
 
             // graphics component can't be added until all textures have finished loading
-            // TODO use progress callbacks instead of timeouts
+            // TODO use progress callbacks instead of timeouts.  this is hacky as fuck.
             setTimeout(() => this.skybox.setComponent(GraphicsData, skyboxMesh), 300);
         }
 

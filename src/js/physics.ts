@@ -1,17 +1,17 @@
-/* eslint-disable max-classes-per-file */
 import {
-    World,
-    GSSolver,
-    SplitSolver,
     Body,
-    Vec3,
+    Cylinder,
+    GSSolver,
+    PointToPointConstraint,
     Ray,
     RaycastResult,
-    Sphere,
-    Cylinder,
-    PointToPointConstraint,
     SAPBroadphase,
+    Sphere,
+    SplitSolver,
+    Vec3,
+    World,
 } from 'cannon-es';
+
 import Engine from './engine';
 import Entity from './ecs/entity';
 

@@ -1,17 +1,25 @@
-import { ContactEquation, Vec3 } from 'cannon-es';
 import {
-    Color, Mesh, SpriteMaterial, Sprite, CanvasTexture, Vector3, MeshPhongMaterial, Material,
+    CanvasTexture,
+    Color,
+    Material,
+    Mesh,
+    MeshPhongMaterial,
+    Sprite,
+    SpriteMaterial,
+    Vector3,
 } from 'three';
+import { ContactEquation, Vec3 } from 'cannon-es';
+
 import EcsView from '../ecs/view';
 import Entity from '../ecs/entity';
+import GameScript from '../script';
 import { GraphicsData } from '../graphics/graphics';
 import GraphicsUtils from '../graphics/utils';
-import { ConstraintData, Physics, PhysicsData } from '../physics';
 import { HealthData } from './health';
-import GameScript from '../script';
-import { shoot } from './shooting';
-import { PLAYER_TAG } from './player';
 import { MovementData } from './movement';
+import { PLAYER_TAG } from './player';
+import { shoot } from './shooting';
+import { ConstraintData, Physics, PhysicsData } from '../physics';
 
 /**
  * This component should be added to the torso of the hominid.
@@ -118,11 +126,12 @@ export default class HominidScript extends GameScript {
             head.getComponent(GraphicsData).lookAt(playerPos);
 
             // shoot at player
-            // if (hominidPos.distanceTo(playerPos) <= bubble + 3 && Math.random() < 0.01) {
-            //   const ball = shoot(hominid, hominidPos.subVectors(playerPos, hominidPos).normalize());
-            //   ((ball.getComponent(GraphicsData) as Mesh).material as MeshPhongMaterial).color = new Color('#EE5A24');
-            //   this.graphics.updateMaterial(ball.getComponent(GraphicsData) as Mesh);
-            // }
+            if (hominidPos.distanceTo(playerPos) <= bubble + 3 && Math.random() < 0.01) {
+                const shootDir = hominidPos.subVectors(playerPos, hominidPos).normalize();
+                const ball = shoot(hominid, shootDir);
+                ((ball.getComponent(GraphicsData) as Mesh).material as MeshPhongMaterial).color = new Color('#EE5A24');
+                this.graphics.updateMaterial(ball.getComponent(GraphicsData) as Mesh);
+            }
         });
     }
 

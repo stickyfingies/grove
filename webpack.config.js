@@ -26,8 +26,9 @@
 
 import path from 'path';
 import webpack from 'webpack';
-import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
+
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
+import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 
 export default {
     mode: 'development',
@@ -36,7 +37,7 @@ export default {
         main: './src/js/main.ts',
     },
     output: {
-        filename: '[name].js',
+        filename: '[name].cjs',
         chunkFilename: '[chunkhash].js',
         path: path.resolve('dist/js/'),
         clean: true,
