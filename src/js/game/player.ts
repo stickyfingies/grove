@@ -1,5 +1,10 @@
 import { Body, Sphere } from 'cannon-es';
-import { CanvasTexture, Sprite, SpriteMaterial } from 'three';
+import {
+    CanvasTexture,
+    Sprite,
+    SpriteMaterial,
+    Vector3,
+} from 'three';
 
 import Entity from '../ecs/entity';
 import GameScript from '../script';
@@ -9,6 +14,7 @@ import { KeyboardControlData } from './keyboardControls';
 import { MovementData } from './movement';
 import { PhysicsData } from '../physics';
 import ScoreData from './score';
+import shoot from './shooting';
 import { CAMERA_TAG, CameraData, GraphicsData } from '../graphics/graphics';
 
 /**
@@ -16,6 +22,12 @@ import { CAMERA_TAG, CameraData, GraphicsData } from '../graphics/graphics';
  * @example Entity.getTag(PLAYER_TAG);
  */
 export const PLAYER_TAG = Symbol('player');
+
+/** get a ThreeJS vector pointing outwards from the camera */
+const getCameraDir = () => {
+    const camera = Entity.getTag(CAMERA_TAG).getComponent(CameraData);
+    return new Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+};
 
 export default class PlayerScript extends GameScript {
     player: Entity;
@@ -27,6 +39,10 @@ export default class PlayerScript extends GameScript {
     hudCtx: CanvasRenderingContext2D;
 
     init() {
+        document.addEventListener('mousedown', () => {
+            if (this.engine.running) shoot(Entity.getTag(PLAYER_TAG), getCameraDir());
+        });
+
         const { canvas, ctx } = GraphicsUtils.scratchCanvasContext(256, 256);
         this.hudCanvas = canvas;
         this.hudCtx = ctx;

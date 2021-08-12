@@ -1,14 +1,12 @@
 import { Vector3 } from 'three';
 
 import Entity from '../ecs/entity';
-import GameScript from '../script';
+import { GraphicsData } from '../graphics/graphics';
 import GraphicsUtils from '../graphics/utils';
-import { PLAYER_TAG } from './player';
-import { CAMERA_TAG, CameraData, GraphicsData } from '../graphics/graphics';
 import { Physics, PhysicsData } from '../physics';
 
 /** Shoots a ball outwards from an entity in an indicated direction */
-export const shoot = (origin: Entity, shootDir: Vector3) => {
+const shoot = (origin: Entity, shootDir: Vector3) => {
     const ball = new Entity();
 
     const { x: px, y: py, z: pz } = origin.getComponent(PhysicsData).position;
@@ -46,17 +44,4 @@ export const shoot = (origin: Entity, shootDir: Vector3) => {
     return ball;
 };
 
-/** get a ThreeJS vector pointing outwards from the camera */
-const getCameraDir = () => {
-    const camera = Entity.getTag(CAMERA_TAG).getComponent(CameraData);
-    return new Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-};
-
-export default class ShootingScript extends GameScript {
-    init() {
-        // TODO possibly this should be moved to the player script
-        document.addEventListener('mousedown', () => {
-            if (this.engine.running) shoot(Entity.getTag(PLAYER_TAG), getCameraDir());
-        });
-    }
-}
+export default shoot;

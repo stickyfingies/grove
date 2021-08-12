@@ -18,7 +18,7 @@ import GraphicsUtils from '../graphics/utils';
 import { HealthData } from './health';
 import { MovementData } from './movement';
 import { PLAYER_TAG } from './player';
-import { shoot } from './shooting';
+import shoot from './shooting';
 import { ConstraintData, Physics, PhysicsData } from '../physics';
 
 /**

@@ -61,7 +61,7 @@ export default {
         }, {
             test: /\.ts$/,
             exclude: /node_modules/,
-            use: ['ts-loader?transpileOnly=true'], // transpile only so we can run typechecking concurrently
+            use: ['ts-loader?transpileOnly=true'], // transpile only, for concurrent typechecking
         }],
     },
     optimization: {

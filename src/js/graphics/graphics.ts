@@ -200,7 +200,7 @@ export class Graphics {
         return raycaster.intersectObjects(Array.from(this.#idToObject.values()));
     }
 
-    private removeFromScene = (object: Object3D) => {
+    private removeFromScene(object: Object3D) {
         const id = object.userData.meshId;
 
         // inform the graphics backend
@@ -212,11 +212,11 @@ export class Graphics {
         // recycle ID
         this.#idToObject.delete(id);
         this.#availableObjectIds.push(id);
-    };
+    }
 
     /**
-   * Flush all renderable objects' transforms to the shared transform buffer
-   */
+     * Flush all renderable objects' transforms to the shared transform buffer
+     */
     private writeTransformsToArray() {
         // for every renderable...
         for (const [id, object] of this.#idToObject) {

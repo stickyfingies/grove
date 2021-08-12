@@ -24,16 +24,16 @@
 //               Buddha bless the code
 //
 
-import express from 'express';
 import HTTP from 'http';
-import path from 'path';
 import { Server as IOServer } from 'socket.io';
 import compression from 'compression';
-import session from 'express-session';
 import ejs from 'ejs-locals';
+import express from 'express';
+import path from 'path';
+import session from 'express-session';
 
 // eslint-disable-next-line import/extensions
-import { dbInit, dbFindUser, dbNewUser } from './mongo.js';
+import { dbFindUser, dbInit, dbNewUser } from './mongo.js';
 // eslint-disable-next-line import/extensions
 import _client from './client-interact.js';
 
@@ -76,7 +76,11 @@ app.use('/modules', express.static('node_modules'));
 
 app.get('/', (req, res) => {
     const { session: { user } } = req;
-    if (user && user.username) { res.render(path.resolve('views/dashboard.ejs'), { user }); } else { res.render(path.resolve('views/index.ejs')); }
+    if (user && user.username) {
+        res.render(path.resolve('views/dashboard.ejs'), { user });
+    } else {
+        res.render(path.resolve('views/index.ejs'));
+    }
 });
 
 app.get('/logout', (req, res) => {
@@ -102,7 +106,9 @@ app.get('/play', (req, res) => {
         res.set('Cross-Origin-Embedder-Policy', 'require-corp');
         res.set('Cross-Origin-Opener-Policy', 'same-origin');
         res.sendFile(path.resolve('views/play.html'));
-    } else { res.redirect('/login'); }
+    } else {
+        res.redirect('/login');
+    }
 });
 
 app.get('/robots.txt', (req, res) => {
@@ -121,7 +127,9 @@ app.post('/login', async (req, res) => {
         console.log(`[${user.username}] logged in`);
         req.session.user = user;
         res.redirect('/');
-    } else { res.redirect('/login?err=user_not_found'); }
+    } else {
+        res.redirect('/login?err=user_not_found');
+    }
 });
 
 app.post('/register', async (req, res) => {
@@ -130,7 +138,9 @@ app.post('/register', async (req, res) => {
         console.log(`[${user.username}] made an account`);
         req.session.user = user;
         res.redirect('/');
-    } else { res.redirect('/register?err=birds_ate_the_server'); }
+    } else {
+        res.redirect('/register?err=birds_ate_the_server');
+    }
 });
 
 ///

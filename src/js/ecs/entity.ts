@@ -1,4 +1,5 @@
 import autoBind from 'auto-bind';
+
 import EntityManager, { DataType } from './entity-manager';
 
 /**

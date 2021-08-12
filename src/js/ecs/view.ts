@@ -11,6 +11,10 @@ export default class EcsView {
     /** Signature to check entities for */
     #signature: ComponentSignature;
 
+    get ecs() { return this.#ecs; }
+
+    get signature() { return this.#signature; }
+
     constructor(ecs: EntityManager, signature: ComponentSignature) {
         this.#ecs = ecs;
         this.#signature = signature;

@@ -91,9 +91,7 @@ export default class EntityManager {
      */
     #archetypes: Archetype[] = [];
 
-    get events() {
-        return this.#events;
-    }
+    get events() { return this.#events; }
 
     /** Allocate an ID for a new entity */
     createEntity() {
@@ -136,24 +134,18 @@ export default class EntityManager {
         this.events.emit(`set${type.name}Component`, id, data);
     }
 
-    /** Delete a component for an entity */
+    /** Delete a component for an entity.  Returns whether the component was deleted */
     deleteComponent(id: number, type: DataType) {
         // assign to new entity archetype
         const signature = new Set(this.#idToArchetype.get(id)?.signature);
         signature.delete(type);
         this.refreshArchetype(id, signature);
 
-        // lazily initialize data manager
-        if (!this.#dataManagers.has(type)) {
-            console.warn(`component type ${type.name} is not registered`);
-            this.#dataManagers.set(type, new DataManager());
-        }
-
         // emit a `delete` event
         this.events.emit(`delete${type.name}Component`, id, this.getComponent(id, type));
 
         // delete the component (AFTER event)
-        this.#dataManagers.get(type)?.deleteComponent(id);
+        return this.#dataManagers.get(type)?.deleteComponent(id) ?? false;
     }
 
     /** Get a component from an entity */

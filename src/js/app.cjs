@@ -1,16 +1,15 @@
 const {
-    app, globalShortcut, protocol, BrowserWindow,
+    app,
+    globalShortcut,
+    protocol,
+    BrowserWindow,
 } = require('electron');
 const path = require('path');
 
-function createWindow() {
+const createWindow = () => {
     const win = new BrowserWindow({
         width: 1280,
         height: 720,
-        webPreferences: {
-            // webSecurity: false,
-            // preload: path.join(__dirname, 'preload.js'),
-        },
     });
 
     win.removeMenu();
@@ -33,7 +32,7 @@ function createWindow() {
 
         callback({ path: url });
     });
-}
+};
 
 // The following command line switches disable DPI scaling
 // app.commandLine.appendSwitch('high-dpi-support', 1);

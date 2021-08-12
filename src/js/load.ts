@@ -75,10 +75,8 @@ export default class AssetLoader {
 
     /** Creates a physics body from a renderable mesh's geometry */
     static loadPhysicsModel({ geometry, position, quaternion }: Mesh, mass: number) {
-        // extract vertex positions
+        // extract geometry data
         const verts = geometry.getAttribute('position').array as number[];
-
-        // extract triangle indices
         const faces = geometry.index?.array as number[];
 
         // create new physics body
@@ -91,6 +89,7 @@ export default class AssetLoader {
         body.addShape(shape);
 
         // copy transform from mesh -> physics body
+        // TODO vector utils would simplify this
         const { x: px, y: py, z: pz } = position;
         const {
             x: qx, y: qy, z: qz, w: qw,

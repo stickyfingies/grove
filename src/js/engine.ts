@@ -1,7 +1,6 @@
 import { GUI } from 'dat.gui';
+import Stats from 'stats.js';
 import autoBind from 'auto-bind';
-// @ts-ignore - @types/stats doesn't resolve to 'stats-js'
-import Stats from 'stats-js';
 import { Cache, DefaultLoadingManager } from 'three';
 
 import AssetLoader from './load';
@@ -33,29 +32,19 @@ export default class Engine {
     #ecs = new EntityManager();
 
     /** Convenience method */
-    get gui() {
-        return this.#gui;
-    }
+    get gui() { return this.#gui; }
 
     /** Convenience method */
-    get graphics() {
-        return this.#graphics;
-    }
+    get graphics() { return this.#graphics; }
 
     /** Convenience method */
-    get physics() {
-        return this.#physics;
-    }
+    get physics() { return this.#physics; }
 
     /** Convenience method */
-    get assetLoader() {
-        return this.#assetLoader;
-    }
+    get assetLoader() { return this.#assetLoader; }
 
     /** Convenience method */
-    get ecs() {
-        return this.#ecs;
-    }
+    get ecs() { return this.#ecs; }
 
     constructor() {
         autoBind(this);
