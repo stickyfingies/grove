@@ -22,14 +22,13 @@ const createWindow = () => {
     globalShortcut.register('f12', () => win.webContents.toggleDevTools());
     globalShortcut.register('CommandOrControl+Shift+I', () => win.webContents.toggleDevTools());
 
+    // correctly load relative file paths from the 'dist' directory
     protocol.interceptFileProtocol('file', (request, callback) => {
         let url = request.url.substr(8);
         const ext = path.extname(url);
-
         if (ext !== '.html') {
             url = path.join(__dirname, '../../dist/', url.substr(3));
         }
-
         callback({ path: url });
     });
 };

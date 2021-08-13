@@ -1,19 +1,32 @@
+import EventEmitter from 'events';
 import { GUI } from 'dat.gui';
 import Stats from 'stats.js';
 import autoBind from 'auto-bind';
-import { Cache, DefaultLoadingManager } from 'three';
 
 import AssetLoader from './load';
 import Entity from './ecs/entity';
 import EntityManager from './ecs/entity-manager';
 import GameScript from './script';
+
 import gameScripts from './game/_scripts.json';
 import maps from './json/maps.json';
 import { Graphics, GraphicsData } from './graphics/graphics';
 import { Physics, PhysicsData } from './physics';
 
 export default class Engine {
-    running = false;
+    readonly events = new EventEmitter();
+
+    readonly gui = new GUI();
+
+    readonly graphics = new Graphics();
+
+    readonly physics = new Physics();
+
+    readonly assetLoader = new AssetLoader();
+
+    readonly ecs = new EntityManager();
+
+    #running = false;
 
     #lastFrameTime = 0;
 
@@ -21,52 +34,21 @@ export default class Engine {
 
     #stats = new Stats();
 
-    #gui = new GUI();
-
-    #graphics = new Graphics();
-
-    #physics = new Physics();
-
-    #assetLoader = new AssetLoader();
-
-    #ecs = new EntityManager();
-
-    /** Convenience method */
-    get gui() { return this.#gui; }
-
-    /** Convenience method */
-    get graphics() { return this.#graphics; }
-
-    /** Convenience method */
-    get physics() { return this.#physics; }
-
-    /** Convenience method */
-    get assetLoader() { return this.#assetLoader; }
-
-    /** Convenience method */
-    get ecs() { return this.#ecs; }
-
     constructor() {
         autoBind(this);
     }
 
     async init() {
         Entity.defaultManager = this.ecs;
-        Cache.enabled = true;
 
         // initialize engine systems
         this.graphics.init(this);
         this.physics.init(this);
+        this.assetLoader.init();
 
-        // TODO move `onProgress` into AssetLoader, and UI into a game script
-        // show asset loading progress
-        DefaultLoadingManager.onProgress = (url, loaded, total) => {
-            console.log(`${url} (${loaded}/${total})`);
-            if (loaded === total) {
-                document.querySelector('#spinner')?.setAttribute('style', 'display:none');
-                document.querySelector('#load-play-btn')?.setAttribute('style', 'display:block');
-            }
-        };
+        // set up engine events
+        this.events.on('start', () => { this.#running = true; });
+        this.events.on('stop', () => { this.#running = false; });
 
         // dynamically load game scripts
         const scriptModules: any[] = [];
@@ -96,7 +78,7 @@ export default class Engine {
         }
 
         // between the game scripts and the map, we probably just created a bunch of renderables.
-        // start that backend work now so it isn't being done when the first frame starts rendering.
+        // run backend work now, so it isn't being done right when the first frame starts rendering.
         this.graphics.update();
 
         // show performance statistics
@@ -111,7 +93,7 @@ export default class Engine {
 
         this.#stats.begin();
 
-        if (this.running) {
+        if (this.#running) {
             // step physics
             this.physics.update(delta);
 

@@ -1,3 +1,4 @@
+import EventEmitter from 'events';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import {
     Body,
@@ -6,11 +7,19 @@ import {
     Trimesh,
     Vec3,
 } from 'cannon-es';
-import { Mesh, Object3D } from 'three';
+import {
+    Cache,
+    DefaultLoadingManager,
+    Mesh,
+    Object3D,
+} from 'three';
 
 type LoadCallback = (m: Mesh) => void;
 
 export default class AssetLoader {
+    /** Event bus for signalling when assets are loaded */
+    readonly events = new EventEmitter();
+
     /** Map between model name and model data */
     #models: Record<string, Object3D> = {};
 
@@ -19,6 +28,15 @@ export default class AssetLoader {
 
     /** List of functions to be executed once a model has loaded */
     #callbacks: Record<string, LoadCallback[]> = {};
+
+    // eslint-disable-next-line class-methods-use-this
+    init() {
+        Cache.enabled = true;
+        DefaultLoadingManager.onProgress = (url, loaded, total) => {
+            console.log(`${url} (${loaded}/${total})`);
+            this.events.emit('assetLoaded', url, loaded, total);
+        };
+    }
 
     /** Promise-based `loadModel`.  NOTE: only works when model contains one mesh! */
     async loadAsync(uri: string): Promise<Mesh> {

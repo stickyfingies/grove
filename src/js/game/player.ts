@@ -39,9 +39,12 @@ export default class PlayerScript extends GameScript {
     hudCtx: CanvasRenderingContext2D;
 
     init() {
-        document.addEventListener('mousedown', () => {
-            if (this.engine.running) shoot(Entity.getTag(PLAYER_TAG), getCameraDir());
-        });
+        const shootTowardsCrosshair = () => {
+            shoot(Entity.getTag(PLAYER_TAG), getCameraDir());
+        };
+
+        this.engine.events.on('start', () => document.addEventListener('mousedown', shootTowardsCrosshair));
+        this.engine.events.on('stop', () => document.removeEventListener('mousedown', shootTowardsCrosshair));
 
         const { canvas, ctx } = GraphicsUtils.scratchCanvasContext(256, 256);
         this.hudCanvas = canvas;

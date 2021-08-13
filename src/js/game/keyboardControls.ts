@@ -47,13 +47,21 @@ export default class KeyboardControlScript extends GameScript {
         KeyboardControlData,
     ]));
 
-    init() {
-        document.addEventListener('mousemove', this.onMouseMove);
-        document.addEventListener('keydown', this.onKeyDown);
-        document.addEventListener('keyup', this.onKeyUp);
+    override init() {
+        this.engine.events.on('start', () => {
+            document.addEventListener('mousemove', this.onMouseMove);
+            document.addEventListener('keydown', this.onKeyDown);
+            document.addEventListener('keyup', this.onKeyUp);
+        });
+
+        this.engine.events.on('stop', () => {
+            document.removeEventListener('mousemove', this.onMouseMove);
+            document.removeEventListener('keydown', this.onKeyDown);
+            document.removeEventListener('keyup', this.onKeyUp);
+        });
     }
 
-    update(dt: number) {
+    override update(dt: number) {
         this.kbControlView.iterateView((entity) => {
             const body = entity.getComponent(PhysicsData);
             const mvmt = entity.getComponent(MovementData);
@@ -86,8 +94,6 @@ export default class KeyboardControlScript extends GameScript {
     }
 
     private onMouseMove({ movementX, movementY }: MouseEvent) {
-        if (!this.engine.running) return;
-
         // Everything beyond this point contains arcane internet mathematics.
         // Debug at your own peril.
 

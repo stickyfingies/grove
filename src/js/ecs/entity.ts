@@ -11,20 +11,16 @@ export default class Entity {
     static defaultManager: EntityManager;
 
     /** The `EntityManager` this entity belongs to */
-    readonly #manager: EntityManager;
+    readonly manager: EntityManager;
 
     /** ID of the entity being wrapped */
-    readonly #id: number;
+    readonly id: number;
 
     constructor(manager = Entity.defaultManager, id = manager.createEntity()) {
         autoBind(this);
-        this.#manager = manager;
-        this.#id = id;
+        this.manager = manager;
+        this.id = id;
     }
-
-    get id() { return this.#id; }
-
-    get manager() { return this.#manager; }
 
     delete() {
         this.manager.deleteEntity(this.id);

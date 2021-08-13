@@ -23,15 +23,15 @@ import { Physics } from './physics';
  * this.assetLoader.loadModel('/assets/foo', this.loadCallback); // no need for .bind()
  */
 export default abstract class GameScript {
-    graphics: Graphics;
+    readonly graphics: Graphics;
 
-    physics: Physics;
+    readonly physics: Physics;
 
-    ecs: EntityManager;
+    readonly ecs: EntityManager;
 
-    gui: GUI;
+    readonly gui: GUI;
 
-    assetLoader: AssetLoader;
+    readonly assetLoader: AssetLoader;
 
     constructor(protected engine: Engine) {
         this.graphics = engine.graphics;

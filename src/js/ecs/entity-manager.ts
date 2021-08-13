@@ -71,7 +71,7 @@ export default class EntityManager {
      * Event bus for signalling when components are set / deleted
      * @eventProperty
      */
-    #events = new EventEmitter();
+    readonly events = new EventEmitter();
 
     /** Map from tags to entities */
     #tagList = new Map<symbol, number>();
@@ -90,8 +90,6 @@ export default class EntityManager {
      * TODO document archetypes
      */
     #archetypes: Archetype[] = [];
-
-    get events() { return this.#events; }
 
     /** Allocate an ID for a new entity */
     createEntity() {
