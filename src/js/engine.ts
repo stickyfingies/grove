@@ -47,8 +47,8 @@ export default class Engine {
         this.assetLoader.init();
 
         // set up engine events
-        this.events.on('start', () => { this.#running = true; });
-        this.events.on('stop', () => { this.#running = false; });
+        this.events.on('startLoop', () => { this.#running = true; });
+        this.events.on('stopLoop', () => { this.#running = false; });
 
         // dynamically load game scripts
         const scriptModules: any[] = [];

@@ -43,8 +43,12 @@ export default class PlayerScript extends GameScript {
             shoot(Entity.getTag(PLAYER_TAG), getCameraDir());
         };
 
-        this.engine.events.on('start', () => document.addEventListener('mousedown', shootTowardsCrosshair));
-        this.engine.events.on('stop', () => document.removeEventListener('mousedown', shootTowardsCrosshair));
+        this.engine.events.on('startLoop', () => {
+            document.addEventListener('mousedown', shootTowardsCrosshair);
+        });
+        this.engine.events.on('stopLoop', () => {
+            document.removeEventListener('mousedown', shootTowardsCrosshair);
+        });
 
         const { canvas, ctx } = GraphicsUtils.scratchCanvasContext(256, 256);
         this.hudCanvas = canvas;

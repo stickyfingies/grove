@@ -48,13 +48,13 @@ export default class KeyboardControlScript extends GameScript {
     ]));
 
     override init() {
-        this.engine.events.on('start', () => {
+        this.engine.events.on('startLoop', () => {
             document.addEventListener('mousemove', this.onMouseMove);
             document.addEventListener('keydown', this.onKeyDown);
             document.addEventListener('keyup', this.onKeyUp);
         });
 
-        this.engine.events.on('stop', () => {
+        this.engine.events.on('stopLoop', () => {
             document.removeEventListener('mousemove', this.onMouseMove);
             document.removeEventListener('keydown', this.onKeyDown);
             document.removeEventListener('keyup', this.onKeyUp);

@@ -27,9 +27,9 @@ export default class PauseMenuScript extends GameScript {
             const isLocked = (document.pointerLockElement === document.body);
 
             if (isLocked) {
-                this.engine.events.emit('start');
+                this.engine.events.emit('startLoop');
             } else {
-                this.engine.events.emit('stop');
+                this.engine.events.emit('stopLoop');
             }
 
             // toggle pause menu
