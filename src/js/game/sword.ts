@@ -23,15 +23,20 @@ export default class SwordScript extends GameScript {
             });
 
         document.addEventListener('click', () => {
+            // 0.5 second upswing and downswing
             anime({
                 targets: this.sword.getComponent(GraphicsData).rotation,
                 keyframes: [
                     { x: -Math.PI / 2 },
                     { x: 0 },
                 ],
-                duration: 4000,
+                duration: 1000,
                 easing: 'linear',
             });
+
+            for (const hit of this.graphics.raycast()) {
+                this.ecs.events.emit('dealDamage', hit.object.userData.entityId);
+            }
         });
     }
 }

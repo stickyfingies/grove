@@ -40,7 +40,10 @@ export default class PlayerScript extends GameScript {
 
     init() {
         const shootTowardsCrosshair = () => {
-            shoot(Entity.getTag(PLAYER_TAG), getCameraDir());
+            // wait 500ms so ball shoots at bottom of sword swing
+            // setTimeout(() => {
+            //     shoot(Entity.getTag(PLAYER_TAG), getCameraDir());
+            // }, 500);
         };
 
         this.engine.events.on('startLoop', () => {

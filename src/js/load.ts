@@ -39,20 +39,15 @@ export default class AssetLoader {
         };
     }
 
-    /** Promise-based `loadModel`.  NOTE: only works when model contains one mesh! */
-    // async loadAsync(uri: string): Promise<Mesh> {
-    //     return new Promise((resolve) => this.loadModel(uri, resolve));
-    // }
-
     /** Creates one or more renderable meshes from a model file */
     loadModel(uri: string): Promise<Mesh> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             // increase access count for this model
-            this.#accessCount[uri] = this.#accessCount[uri] ?? 0;
+            this.#accessCount[uri] ??= 0;
             this.#accessCount[uri] += 1;
 
             // register a new callback for when this model finishes loading
-            this.#callbacks[uri] = this.#callbacks[uri] ?? [];
+            this.#callbacks[uri] ??= [];
             this.#callbacks[uri].push(resolve);
 
             // if this is the first time this resource was requested, load it

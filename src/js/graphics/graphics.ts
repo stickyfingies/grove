@@ -127,8 +127,8 @@ export class Graphics {
         // TODO too implicit: { entity.setComponent() => [event blackbox] => addObjectToScene() }
         // TODO prefer: { mesh = graphics.makeObject(); entity.setComponent(mesh); }
         // listen to component events
-        engine.ecs.events.on(`set${GraphicsData.name}Component`, (id: number, object: GraphicsData) => {
-            this.addObjectToScene(object);
+        engine.ecs.events.on(`set${GraphicsData.name}Component`, (entityId: number, object: GraphicsData) => {
+            this.addObjectToScene(entityId, object);
         });
         engine.ecs.events.on(`delete${GraphicsData.name}Component`, (id: number, mesh: Mesh) => {
             this.removeFromScene(mesh);
@@ -287,7 +287,7 @@ export class Graphics {
      *
      * Current supported objects: `Mesh`, `Sprite`, `Light`
      */
-    private addObjectToScene(object: Object3D) {
+    private addObjectToScene(entityId: number, object: Object3D) {
         if (object.parent) object.parent.add(object);
         else this.#scene.add(object);
 
@@ -296,6 +296,7 @@ export class Graphics {
             if (!(node instanceof Mesh || node instanceof Sprite || node instanceof Light)) return;
 
             const id = this.assignIdToObject(node);
+            node.userData.entityId = entityId;
 
             if (node instanceof Mesh || node instanceof Sprite) {
                 if (node.material instanceof Material) {

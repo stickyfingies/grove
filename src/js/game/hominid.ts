@@ -63,7 +63,17 @@ export default class HominidScript extends GameScript {
         spawn();
 
         // and spawn more every 12 seconds
-        setInterval(spawn, 12_000);
+        // setInterval(spawn, 12_000);
+
+        this.ecs.events.on('dealDamage', (id: number) => {
+            const entity = new Entity(Entity.defaultManager, id);
+            if (!entity.hasComponent(HominidData)) return;
+
+            const { torso } = entity.getComponent(HominidData);
+            const health = torso.getComponent(HealthData);
+            if (!health) return;
+            health.hp -= 999999;
+        });
 
         // when something dies...
         this.ecs.events.on(`delete${HealthData.name}Component`, (id: number) => {
@@ -165,6 +175,7 @@ export default class HominidScript extends GameScript {
         torso.setComponent(PhysicsData, torsoBody);
 
         const torsoMesh = GraphicsUtils.makeCylinder(torsoRadius, height + torsoRadius * 2);
+        torsoMesh.name = 'Torso';
         torsoMesh.material.color = new Color(color);
         torsoMesh.position.set(torsoBody.position.x, torsoBody.position.y, torsoBody.position.z);
         torso.setComponent(GraphicsData, torsoMesh);
@@ -188,9 +199,12 @@ export default class HominidScript extends GameScript {
         headBody.position.y += height / 2 + headRadius;
         head.setComponent(PhysicsData, headBody);
 
-        const headMesh = await this.assetLoader.loadModel('/models/head/head.glb');
-        // TODO why was I cloning the material here?
-        // headMesh.material = (headMesh.material as Material).clone();
+        // The `head` model contains a light, a camera, a sphere, and a sprite?
+        const headModel = await this.assetLoader.loadModel('/models/head/head.glb');
+        const headMesh = headModel.children[2];
+        headMesh.name = 'Head';
+        // @ts-ignore TODO why was I cloning the material here?
+        // headMesh.material = headMesh.material.clone();
         headMesh.userData.norotate = true;
         head.setComponent(GraphicsData, headMesh);
 

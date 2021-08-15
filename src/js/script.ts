@@ -20,7 +20,7 @@ import { Physics } from './physics';
  *
  * @example
  * this.graphics.doSomething(); // no need for accessing engine directly
- * this.assetLoader.loadModel('/assets/foo', this.loadCallback); // no need for .bind()
+ * document.addEventListener('click', this.doSomething); // no need for .bind()
  */
 export default abstract class GameScript {
     readonly graphics: Graphics;
