@@ -79,6 +79,7 @@ export default class PlayerScript extends GameScript {
 
         playerBody.addShape(shape);
         playerBody.position.y = 12;
+        playerBody.position.x = 12;
 
         this.player.setComponent(PhysicsData, playerBody);
         this.player.setComponent(MovementData, new MovementData(2.25, 0.7));

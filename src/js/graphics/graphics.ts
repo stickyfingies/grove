@@ -128,11 +128,7 @@ export class Graphics {
         // TODO prefer: { mesh = graphics.makeObject(); entity.setComponent(mesh); }
         // listen to component events
         engine.ecs.events.on(`set${GraphicsData.name}Component`, (id: number, object: GraphicsData) => {
-            object.traverse((child) => {
-                if (child instanceof Mesh || child instanceof Sprite || child instanceof Light) {
-                    this.addObjectToScene(object);
-                }
-            });
+            this.addObjectToScene(object);
         });
         engine.ecs.events.on(`delete${GraphicsData.name}Component`, (id: number, mesh: Mesh) => {
             this.removeFromScene(mesh);
@@ -295,25 +291,29 @@ export class Graphics {
         if (object.parent) object.parent.add(object);
         else this.#scene.add(object);
 
-        const id = this.assignIdToObject(object);
-
         // send object's texture data to backend
-        if (object instanceof Mesh || object instanceof Sprite) {
-            if (object.material instanceof Material) {
-                this.extractMaterialTextures(object.material);
-            } else {
-                for (const material of object.material) {
-                    this.extractMaterialTextures(material);
+        object.traverse((node) => {
+            if (!(node instanceof Mesh || node instanceof Sprite || node instanceof Light)) return;
+
+            const id = this.assignIdToObject(node);
+
+            if (node instanceof Mesh || node instanceof Sprite) {
+                if (node.material instanceof Material) {
+                    this.extractMaterialTextures(node.material);
+                } else {
+                    for (const material of node.material) {
+                        this.extractMaterialTextures(material);
+                    }
                 }
             }
-        }
 
-        // send that bitch to the backend
-        this.#commandQueue.push({
-            type: 'addObject',
-            name: object.name,
-            mesh: object.toJSON(),
-            id,
+            // send that bitch to the backend
+            this.#commandQueue.push({
+                type: 'addObject',
+                name: node.name,
+                mesh: node.toJSON(),
+                id,
+            });
         });
     }
 }

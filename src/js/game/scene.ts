@@ -48,7 +48,7 @@ export default class SceneSetupScript extends GameScript {
 
             // graphics component can't be added until all textures have finished loading
             // TODO use progress callbacks instead of timeouts.  this is hacky as fuck.
-            setTimeout(() => this.skybox.setComponent(GraphicsData, skyboxMesh), 300);
+            setTimeout(() => this.skybox.setComponent(GraphicsData, skyboxMesh), 600);
         }
 
         for (const entity of entities.spawn) {
@@ -77,9 +77,10 @@ export default class SceneSetupScript extends GameScript {
                 const graphicsData = entity.GraphicsData;
                 switch (graphicsData.type) {
                 case 'model': {
-                    this.assetLoader.loadModel(graphicsData.path!, (mesh) => {
-                        e.setComponent(GraphicsData, mesh);
-                    });
+                    this.assetLoader.loadModel(graphicsData.path!)
+                        .then((mesh) => {
+                            e.setComponent(GraphicsData, mesh);
+                        });
                     break;
                 }
                 case 'light:directional': {

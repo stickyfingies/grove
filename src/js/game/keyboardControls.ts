@@ -47,7 +47,7 @@ export default class KeyboardControlScript extends GameScript {
         KeyboardControlData,
     ]));
 
-    override init() {
+    init() {
         this.engine.events.on('startLoop', () => {
             document.addEventListener('mousemove', this.onMouseMove);
             document.addEventListener('keydown', this.onKeyDown);
@@ -61,7 +61,7 @@ export default class KeyboardControlScript extends GameScript {
         });
     }
 
-    override update(dt: number) {
+    update(dt: number) {
         this.kbControlView.iterateView((entity) => {
             const body = entity.getComponent(PhysicsData);
             const mvmt = entity.getComponent(MovementData);

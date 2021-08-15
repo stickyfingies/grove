@@ -26,6 +26,7 @@ export default class PauseMenuScript extends GameScript {
         const pointerlockchange = () => {
             const isLocked = (document.pointerLockElement === document.body);
 
+            // Start or stop the core engine loop, depending if the window has cursor focus
             if (isLocked) {
                 this.engine.events.emit('startLoop');
             } else {

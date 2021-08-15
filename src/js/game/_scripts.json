@@ -5,6 +5,7 @@
         "keyboardControls",
         "movement",
         "player",
+        "sword",
         "hominid",
         "upgrade",
         "health",

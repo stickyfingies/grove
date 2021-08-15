@@ -15,6 +15,13 @@ import Engine from './engine';
  * Buddha shine upon these TypeScript files.
  */
 
+/**
+ * UPDATE 8/12/2021
+ * ================
+ * Big fat ole TODO: re-implement https://github.com/hybridalpaca/grove-revamped
+ * using the modern Grove engine!!  I'm SO down!
+ */
+
 const engine = new Engine();
 
 engine.init();

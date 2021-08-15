@@ -8,6 +8,7 @@ import {
     Vec3,
 } from 'cannon-es';
 import {
+    BufferGeometry,
     Cache,
     DefaultLoadingManager,
     Mesh,
@@ -39,66 +40,63 @@ export default class AssetLoader {
     }
 
     /** Promise-based `loadModel`.  NOTE: only works when model contains one mesh! */
-    async loadAsync(uri: string): Promise<Mesh> {
-        return new Promise((resolve) => this.loadModel(uri, resolve));
-    }
+    // async loadAsync(uri: string): Promise<Mesh> {
+    //     return new Promise((resolve) => this.loadModel(uri, resolve));
+    // }
 
     /** Creates one or more renderable meshes from a model file */
-    loadModel(uri: string, callback: LoadCallback) {
-        // increase access count for this model
-        this.#accessCount[uri] = this.#accessCount[uri] ?? 0;
-        this.#accessCount[uri] += 1;
+    loadModel(uri: string): Promise<Mesh> {
+        return new Promise((resolve, reject) => {
+            // increase access count for this model
+            this.#accessCount[uri] = this.#accessCount[uri] ?? 0;
+            this.#accessCount[uri] += 1;
 
-        // register a new callback for when this model finishes loading
-        this.#callbacks[uri] = this.#callbacks[uri] ?? [];
-        this.#callbacks[uri].push(callback);
+            // register a new callback for when this model finishes loading
+            this.#callbacks[uri] = this.#callbacks[uri] ?? [];
+            this.#callbacks[uri].push(resolve);
 
-        // if this is the first time this resource was requested, load it
-        if (this.#accessCount[uri] === 1) {
-            const loader = new GLTFLoader();
-            loader.load(uri, ({ scene: object }) => {
-                this.#models[uri] = object;
-                this.#models[uri].updateMatrixWorld();
+            // if this is the first time this resource was requested, load it
+            if (this.#accessCount[uri] === 1) {
+                const loader = new GLTFLoader();
+                loader.load(uri, ({ scene: object }) => {
+                    this.#models[uri] = object;
+                    this.#models[uri].updateMatrixWorld();
 
-                // for each child in object
-                //   upload child
-                //   for each texture in child
-                //      upload texture
+                    // for each child in object
+                    //   upload child
+                    //   for each texture in child
+                    //      upload texture
 
-                // model may have been requested again since it started loading,
-                // serve asset to all cached requests
-                this.#models[uri].traverse((child) => {
-                    if (child instanceof Mesh) {
-                        for (const cb of this.#callbacks[uri]) {
-                            child.updateMatrixWorld();
-                            const inst = child.clone() as Mesh;
-                            cb(inst);
-                        }
+                    // model may have been requested again since it started loading,
+                    // serve asset to all cached requests
+                    for (const cb of this.#callbacks[uri]) {
+                        const copy = this.#models[uri].clone() as Mesh;
+                        copy.updateMatrixWorld();
+                        cb(copy);
                     }
                 });
-            });
-        }
+            }
 
-        // load from the model cache if possible
-        if (this.#models[uri]) {
-            this.#models[uri].traverse((child) => {
-                if (child instanceof Mesh) {
-                    child.updateMatrixWorld();
-                    const inst = child.clone() as Mesh;
-                    callback(inst);
-                }
-            });
-        }
+            // load from the model cache if possible
+            if (this.#models[uri]) {
+                const ctopy = this.#models[uri].clone() as Mesh;
+                ctopy.updateMatrixWorld();
+                resolve(ctopy);
+            }
+        });
+    }
+
+    /** Takes a ThreeJS BufferGeometry and produces a CannonJS shape from it */
+    static loadPhysicsShape(geometry: BufferGeometry) {
+        const verts = geometry.getAttribute('position').array as number[];
+        const faces = geometry.index?.array as number[];
+        const shape = new Trimesh(verts, faces);
+        return shape;
     }
 
     /** Creates a physics body from a renderable mesh's geometry */
     static loadPhysicsModel({ geometry, position, quaternion }: Mesh, mass: number) {
-        // extract geometry data
-        const verts = geometry.getAttribute('position').array as number[];
-        const faces = geometry.index?.array as number[];
-
-        // create new physics body
-        const shape = new Trimesh(verts, faces);
+        const shape = this.loadPhysicsShape(geometry);
         const material = new Material('trimeshMaterial');
         const body = new Body({
             mass,

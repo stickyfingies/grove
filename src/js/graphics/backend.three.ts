@@ -43,7 +43,7 @@ interface GraphicsBackendUploadTextureData {
 
 interface GraphicsBackendAddObjectData {
   mesh: ObjectJson,
-  colorMapId: number,
+  name: string,
   id: number
 }
 
@@ -187,7 +187,7 @@ export default class GraphicsBackend {
 
     /** Adds a renderable object to the scene */
     addObject({
-        id, mesh,
+        id, mesh, name,
     }: GraphicsBackendAddObjectData) {
         const mat: MeshPhongMaterial[] = [];
 

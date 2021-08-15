@@ -1,5 +1,6 @@
 import EventEmitter from 'events';
 import { GUI } from 'dat.gui';
+import { Mesh } from 'three';
 import Stats from 'stats.js';
 import autoBind from 'auto-bind';
 
@@ -65,16 +66,22 @@ export default class Engine {
         }
 
         // load the map
-        const map = maps['test-arena'];
+        const map = maps['skjar-isles'];
         for (const path of map.objects) {
-            // we can't use `loadAsync` here because the map model may contain several meshes
-            this.assetLoader.loadModel(path, (mesh) => {
-                const body = AssetLoader.loadPhysicsModel(mesh, 0);
-                mesh.receiveShadow = true;
-                new Entity()
-                    .setComponent(GraphicsData, mesh)
-                    .setComponent(PhysicsData, body);
-            });
+            this.assetLoader.loadModel(path)
+                .then((mesh) => {
+                    mesh.traverse((child) => {
+                        if (child instanceof Mesh) {
+                            const body = AssetLoader.loadPhysicsModel(child, 0);
+                            new Entity()
+                            // .setComponent(GraphicsData, child)
+                                .setComponent(PhysicsData, body);
+                        }
+                    });
+
+                    new Entity()
+                        .setComponent(GraphicsData, mesh);
+                });
         }
 
         // between the game scripts and the map, we probably just created a bunch of renderables.

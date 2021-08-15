@@ -1,7 +1,13 @@
+/**
+ * Known bugs
+ * ==========
+ * - Hominids continue to spawn when the game is paused
+ * - Dead hominids dissappear after 2 seconds, regardless if the game is paused
+ */
+
 import {
     CanvasTexture,
     Color,
-    Material,
     Mesh,
     MeshPhongMaterial,
     Sprite,
@@ -143,9 +149,9 @@ export default class HominidScript extends GameScript {
         const headMass = 1;
         const color = '#EA2027';
 
-        /**
-        * Torso
-        */
+        // =====
+        // Torso
+        // =====
 
         const torso = new Entity();
 
@@ -169,9 +175,9 @@ export default class HominidScript extends GameScript {
             hp: 5, max: 5,
         });
 
-        /**
-         * Head
-         */
+        // ====
+        // Head
+        // ====
 
         const head = new Entity();
 
@@ -182,14 +188,15 @@ export default class HominidScript extends GameScript {
         headBody.position.y += height / 2 + headRadius;
         head.setComponent(PhysicsData, headBody);
 
-        const headMesh = await this.assetLoader.loadAsync('/models/head/head.glb');
-        headMesh.material = (headMesh.material as Material).clone();
+        const headMesh = await this.assetLoader.loadModel('/models/head/head.glb');
+        // TODO why was I cloning the material here?
+        // headMesh.material = (headMesh.material as Material).clone();
         headMesh.userData.norotate = true;
         head.setComponent(GraphicsData, headMesh);
 
-        /**
-         * Neck
-         */
+        // ====
+        // Neck
+        // ====
 
         const neck = new ConstraintData(
             headBody,
@@ -201,9 +208,9 @@ export default class HominidScript extends GameScript {
         neck.collideConnected = false;
         head.setComponent(ConstraintData, neck);
 
-        /**
-         * Halo
-         */
+        // ====
+        // Halo
+        // ====
 
         const halo = new Entity();
 
