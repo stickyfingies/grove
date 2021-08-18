@@ -179,7 +179,6 @@ export default class GraphicsBackend {
 
     /** Adds a renderable object to the scene */
     addObject({ id, data, ui }: GraphicsAddObjectCmd) {
-        console.log(data);
         const mat: MeshPhongMaterial[] = [];
         if (data.materials) {
             for (const materialData of data.materials) {
@@ -198,7 +197,6 @@ export default class GraphicsBackend {
 
         object.matrixAutoUpdate = false;
         (ui ? this.#uiscene : this.#scene).add(object);
-        if (ui) console.log(this.#uiscene.children);
         this.#idToObject.set(id, object);
     }
 

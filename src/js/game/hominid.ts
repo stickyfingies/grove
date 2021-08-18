@@ -63,7 +63,7 @@ export default class HominidScript extends GameScript {
         spawn();
 
         // and spawn more every 45 seconds
-        setInterval(spawn, 45_000);
+        // setInterval(spawn, 45_000);
 
         this.ecs.events.on('dealDamage', (id: number) => {
             const entity = new Entity(Entity.defaultManager, id);
@@ -106,13 +106,13 @@ export default class HominidScript extends GameScript {
 
             // decapitate >:)
             setTimeout(() => head.deleteComponent(ConstraintData), 50);
-            halo.delete();
+            // halo.delete();
 
             // delete corpse after 10 seconds
-            setTimeout(() => {
-                head.delete();
-                torso.delete();
-            }, 10_000);
+            // setTimeout(() => {
+            head.delete();
+            torso.delete();
+            // }, 10_000);
         });
     }
 
@@ -203,7 +203,7 @@ export default class HominidScript extends GameScript {
         const headModel = await this.assetLoader.loadModel('/models/head/head.glb');
         const headMesh = headModel;// .children[2];
         headMesh.name = 'Head';
-        // @ts-ignore TODO why was I cloning the material here?
+        // @ts-ignore - TODO why was I cloning the material here?
         // headMesh.material = headMesh.material.clone();
         headMesh.userData.norotate = true;
         head.setComponent(GraphicsData, headMesh);
@@ -242,6 +242,7 @@ export default class HominidScript extends GameScript {
         haloSprite.material = new SpriteMaterial({ map: drawHaloTexture(), color: 0x55ff55 });
         haloSprite.scale.set(2, 2, 2);
         haloSprite.position.y += headRadius * 2;
+        haloSprite.name = 'Halo';
         haloSprite.parent = head.getComponent(GraphicsData);
         halo.setComponent(GraphicsData, haloSprite);
 

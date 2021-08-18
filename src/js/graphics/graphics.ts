@@ -196,6 +196,10 @@ export class Graphics {
         return raycaster.intersectObjects(Array.from(this.#idToObject.values()));
     }
 
+    /**
+     * Submit a command to the backend.  Note that unless `immediate` is set to true, the commands
+     * will actually be queued until the next call to `flushCommands()`.
+     */
     private submitCommand(cmd: IGraphicsCommand, immediate = false, transfer?: OffscreenCanvas) {
         if (immediate) {
             this.#worker.postMessage(cmd, transfer ? [transfer] : undefined);
@@ -205,17 +209,21 @@ export class Graphics {
     }
 
     private removeFromScene(object: Object3D) {
-        const id = object.userData.meshId;
+        object.traverse((node) => {
+            if (!(node instanceof Mesh || node instanceof Sprite || node instanceof Light)) return;
 
-        // inform the graphics backend
-        this.submitCommand({
-            type: 'removeObject',
-            id,
+            const id = node.userData.meshId;
+
+            // inform the graphics backend
+            this.submitCommand({
+                type: 'removeObject',
+                id,
+            });
+
+            // recycle ID
+            this.#idToObject.delete(id);
+            this.#availableObjectIds.push(id);
         });
-
-        // recycle ID
-        this.#idToObject.delete(id);
-        this.#availableObjectIds.push(id);
     }
 
     /**
