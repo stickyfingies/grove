@@ -14,53 +14,25 @@ import {
     MeshPhongMaterial,
     Object3D,
     ObjectLoader,
+    OrthographicCamera,
     PCFSoftShadowMap,
     PerspectiveCamera,
     RGBAFormat,
     RepeatWrapping,
     Scene,
     Sprite,
+    SpriteMaterial,
     WebGLRenderer,
 } from 'three';
 
-/** Type resulting from `threejs_object.toJSON()` */
-type ObjectJson = any;
-
-interface GraphicsBackendInitData {
-  canvas: HTMLCanvasElement,
-  buffer: SharedArrayBuffer,
-  width: number,
-  height: number,
-  pixelRatio: number
-}
-
-interface GraphicsBackendUploadTextureData {
-  imageId: string,
-  imageWidth: number,
-  imageHeight: number,
-  imageData: ArrayBufferView,
-}
-
-interface GraphicsBackendAddObjectData {
-  mesh: ObjectJson,
-  name: string,
-  id: number
-}
-
-interface GraphicsBackendRemoveObjectData {
-  id: number
-}
-
-interface GraphicsBackendResizeData {
-  width: number,
-  height: number,
-  pixelRatio: number
-}
-
-interface GraphicsBackendUpdateMaterialData {
-  material: ObjectJson,
-  id: number,
-}
+import {
+    GraphicsAddObjectCmd,
+    GraphicsInitCmd,
+    GraphicsRemoveObjectCmd,
+    GraphicsResizeCmd,
+    GraphicsUpdateMaterialCmd,
+    GraphicsUploadTextureCmd,
+} from './commands';
 
 /**
  * Graphics backend designed to be ran on a WebWorker
@@ -70,13 +42,22 @@ export default class GraphicsBackend {
     [idx: string]: Function;
 
     /**
-     * main camera used to render the scene
+     * Main camera used to render the scene
      * @note camera has Id#0
      */
     #camera = new PerspectiveCamera(60, 1, 0.1, 2000);
 
-    /** a scene graph object which holds all renderable meshes */
+    /**
+     * Secondary camera used to render the UI
+     * @note uicamera has no Id
+     */
+    #uicamera = new OrthographicCamera(-20, 20, 20, -20, 1, 10);
+
+    /** Main scene graph object which holds all renderable meshes */
     #scene = new Scene();
+
+    /** Secondary scene which holds all UI elements */
+    #uiscene = new Scene();
 
     /** ThreeJS WebGL renderer instance */
     #renderer: WebGLRenderer;
@@ -90,12 +71,11 @@ export default class GraphicsBackend {
     /** number of elements per each transform matrix in the shared array buffer */
     readonly #elementsPerTransform = 16;
 
-    init({
-        canvas, buffer,
-    }: GraphicsBackendInitData) {
+    init({ canvas, buffer }: GraphicsInitCmd) {
         const transformArray = new Float32Array(buffer);
 
-        const context = canvas.getContext('webgl2', { antialias: true })!;
+        // typecast to WebGL1 context to satisfy ThreeJS' typings
+        const context = canvas.getContext('webgl2', { antialias: true })! as WebGLRenderingContext;
 
         // initialize renderer instance
         this.#renderer = new WebGLRenderer({
@@ -104,13 +84,17 @@ export default class GraphicsBackend {
             antialias: true,
         });
         this.#renderer.setClearColor(0x000000);
+        this.#renderer.autoClear = false;
         this.#renderer.shadowMap.enabled = true;
         this.#renderer.shadowMap.type = PCFSoftShadowMap;
 
-        // set up camera
+        // set up cameras
         this.#camera.matrixAutoUpdate = false;
         this.#scene.add(this.#camera);
         this.#idToObject.set(0, this.#camera);
+
+        this.#uicamera.matrixAutoUpdate = false;
+        this.#uicamera.position.z = 10;
 
         // test cube
         const cube = new Mesh(new BoxGeometry(6, 6, 6), new MeshPhongMaterial({
@@ -118,6 +102,11 @@ export default class GraphicsBackend {
         }));
         cube.position.y = 30;
         this.#scene.add(cube);
+
+        const crosshair = new Sprite(new SpriteMaterial({ color: 'black' }));
+        crosshair.scale.set(10, 10, 1);
+        crosshair.position.set(0, 0, -1);
+        this.#uiscene.add(crosshair);
 
         // grid
         const grid = new GridHelper(100, 100);
@@ -134,7 +123,10 @@ export default class GraphicsBackend {
 
             this.readTransformsFromArray(transformArray);
 
+            this.#renderer.clear();
             this.#renderer.render(this.#scene, this.#camera);
+            this.#renderer.clearDepth();
+            this.#renderer.render(this.#uiscene, this.#uicamera);
 
             requestAnimationFrame(render);
         };
@@ -163,7 +155,7 @@ export default class GraphicsBackend {
     /** Emplaces raw texture data into a ThreeJS texture object */
     uploadTexture({
         imageId, imageData, imageWidth, imageHeight,
-    }: GraphicsBackendUploadTextureData) {
+    }: GraphicsUploadTextureCmd) {
         const map = new DataTexture(imageData, imageWidth, imageHeight, RGBAFormat);
         map.wrapS = RepeatWrapping;
         map.wrapT = RepeatWrapping;
@@ -177,7 +169,7 @@ export default class GraphicsBackend {
     }
 
     /** Updates the material of a renderable object */
-    updateMaterial({ material, id }: GraphicsBackendUpdateMaterialData) {
+    updateMaterial({ material, id }: GraphicsUpdateMaterialCmd) {
         const mat = this.deserializeMaterial(material);
 
         const mesh = this.#idToObject.get(id)! as Mesh | Sprite;
@@ -186,43 +178,49 @@ export default class GraphicsBackend {
     }
 
     /** Adds a renderable object to the scene */
-    addObject({
-        id, mesh, name,
-    }: GraphicsBackendAddObjectData) {
+    addObject({ id, data, ui }: GraphicsAddObjectCmd) {
+        console.log(data);
         const mat: MeshPhongMaterial[] = [];
-
-        if (mesh.materials) {
-            for (const material of mesh.materials) {
-                mat.push(this.deserializeMaterial(material));
+        if (data.materials) {
+            for (const materialData of data.materials) {
+                mat.push(this.deserializeMaterial(materialData));
             }
         }
 
-        mesh.images = [];
-        mesh.textures = [];
+        data.images = [];
+        data.textures = [];
 
-        const object = new ObjectLoader().parse(mesh);
+        const object = new ObjectLoader().parse(data);
 
         if (object instanceof Mesh || object instanceof Sprite) {
             object.material = mat.length > 1 ? mat : mat[0];
         }
 
         object.matrixAutoUpdate = false;
-        this.#scene.add(object);
+        (ui ? this.#uiscene : this.#scene).add(object);
+        if (ui) console.log(this.#uiscene.children);
         this.#idToObject.set(id, object);
     }
 
     /** Removes a renderable object from the scene */
-    removeObject({ id }: GraphicsBackendRemoveObjectData) {
+    removeObject({ id }: GraphicsRemoveObjectCmd) {
         const object = this.#idToObject.get(id)!;
         this.#idToObject.delete(id);
         this.#scene.remove(object);
     }
 
     /** Resizes the render target */
-    resize({ width, height, pixelRatio }: GraphicsBackendResizeData) {
-        console.log(`resize ${width}, ${height}, ${pixelRatio}`);
+    resize({ width, height, pixelRatio }: GraphicsResizeCmd) {
+        console.log(`resize ${width} x ${height} @ ${pixelRatio}x scaling`);
+
         this.#camera.aspect = width / height;
         this.#camera.updateProjectionMatrix();
+
+        this.#uicamera.left = -width / 2;
+        this.#uicamera.right = width / 2;
+        this.#uicamera.top = height / 2;
+        this.#uicamera.bottom = -height / 2;
+        this.#uicamera.updateProjectionMatrix();
 
         this.#renderer.setSize(width, height, false);
 
@@ -231,7 +229,7 @@ export default class GraphicsBackend {
     }
 
     /** Takes a JSON material description and creates a tangible (textured) ThreeJS material */
-    private deserializeMaterial(json: ObjectJson) {
+    private deserializeMaterial(json: any) {
         const {
             map, alphaMap, normalMap, specularMap,
         } = json;

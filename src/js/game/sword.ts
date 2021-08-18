@@ -22,7 +22,9 @@ export default class SwordScript extends GameScript {
                 this.sword.setComponent(GraphicsData, mesh);
             });
 
-        document.addEventListener('click', () => {
+        document.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return;
+
             // 0.5 second upswing and downswing
             anime({
                 targets: this.sword.getComponent(GraphicsData).rotation,
@@ -34,9 +36,12 @@ export default class SwordScript extends GameScript {
                 easing: 'linear',
             });
 
-            for (const hit of this.graphics.raycast()) {
+            const hit = this.graphics.raycast()[0];
+            if (hit && hit.distance < 10) {
                 this.ecs.events.emit('dealDamage', hit.object.userData.entityId);
             }
+
+            // TODO: apply impact force
         });
     }
 }

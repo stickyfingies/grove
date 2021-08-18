@@ -30,17 +30,13 @@ import webpack from 'webpack';
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 
-export default {
+const commonConfig = {
     mode: 'development',
     name: 'js',
-    entry: {
-        main: './src/js/main.ts',
-    },
     output: {
         filename: '[name].cjs',
-        chunkFilename: '[chunkhash].js',
+        chunkFilename: '[id].js',
         path: path.resolve('dist/js/'),
-        clean: true,
     },
     watchOptions: {
         ignored: ['**/node_modules', 'server/'],
@@ -53,7 +49,7 @@ export default {
                 'css-loader?url=false',
             ],
         }, {
-            test: /\.js$/,
+            test: /\.(c?)js$/,
             exclude: /node_modules/,
             resolve: {
                 fullySpecified: false,
@@ -63,21 +59,6 @@ export default {
             exclude: /node_modules/,
             use: ['ts-loader?transpileOnly=true'], // transpile only, for concurrent typechecking
         }],
-    },
-    optimization: {
-        runtimeChunk: 'single',
-        splitChunks: {
-            chunks: 'all',
-            hidePathInfo: true,
-            cacheGroups: {
-                vendor: {
-                    test: /node_modules/,
-                    chunks: 'initial',
-                    name: 'vendor',
-                    enforce: true,
-                },
-            },
-        },
     },
     plugins: [
         new webpack.BannerPlugin(`\nMade with <3 by the Grove team | ${new Date()}\n`),
@@ -95,3 +76,20 @@ export default {
         extensions: ['.ts', '.js', '.json', '.css'],
     },
 };
+
+const createConfig = (opts) => ({ ...commonConfig, ...opts });
+
+export default [
+    createConfig({
+        target: 'web',
+        entry: {
+            main: './src/js/main.ts',
+        },
+    }),
+    createConfig({
+        target: 'electron-main',
+        entry: {
+            app: './src/js/app.ts',
+        },
+    }),
+];

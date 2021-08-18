@@ -62,8 +62,8 @@ export default class HominidScript extends GameScript {
         // spawn some at the beginning
         spawn();
 
-        // and spawn more every 12 seconds
-        // setInterval(spawn, 12_000);
+        // and spawn more every 45 seconds
+        setInterval(spawn, 45_000);
 
         this.ecs.events.on('dealDamage', (id: number) => {
             const entity = new Entity(Entity.defaultManager, id);
@@ -86,7 +86,7 @@ export default class HominidScript extends GameScript {
             const torsoBody = torso.getComponent(PhysicsData);
             const headBody = head.getComponent(PhysicsData);
             const torsoMesh = torso.getComponent(GraphicsData) as Mesh;
-            const headMesh = head.getComponent(GraphicsData) as Mesh;
+            // const headMesh = head.getComponent(GraphicsData) as Mesh;
 
             // increment player score
             this.ecs.events.emit('enemyDied');
@@ -101,8 +101,8 @@ export default class HominidScript extends GameScript {
             // change body part graphics properties
             (torsoMesh.material as MeshPhongMaterial).color = new Color(0x222222);
             this.graphics.updateMaterial(torsoMesh);
-            (headMesh.material as MeshPhongMaterial).color = new Color(0x222222);
-            this.graphics.updateMaterial(headMesh);
+            // (headMesh.material as MeshPhongMaterial).color = new Color(0x222222);
+            // this.graphics.updateMaterial(headMesh);
 
             // decapitate >:)
             setTimeout(() => head.deleteComponent(ConstraintData), 50);
@@ -201,7 +201,7 @@ export default class HominidScript extends GameScript {
 
         // The `head` model contains a light, a camera, a sphere, and a sprite?
         const headModel = await this.assetLoader.loadModel('/models/head/head.glb');
-        const headMesh = headModel.children[2];
+        const headMesh = headModel;// .children[2];
         headMesh.name = 'Head';
         // @ts-ignore TODO why was I cloning the material here?
         // headMesh.material = headMesh.material.clone();

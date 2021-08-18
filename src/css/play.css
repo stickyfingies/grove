@@ -112,14 +112,3 @@ html, body {
     bottom: 22%;
     right: 20%;
 }
-
-#crosshair {
-    background-color: black;
-    position: fixed;
-    width: 0.5em;
-    height: 0.5em;
-    left: 50%;
-    top: 50%;
-    margin-left: -0.25em;
-    margin-top: -0.25em;
-}

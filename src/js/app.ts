@@ -1,10 +1,10 @@
-const {
+import path from 'path';
+import {
+    BrowserWindow,
     app,
     globalShortcut,
     protocol,
-    BrowserWindow,
-} = require('electron');
-const path = require('path');
+} from 'electron';
 
 const createWindow = () => {
     const win = new BrowserWindow({

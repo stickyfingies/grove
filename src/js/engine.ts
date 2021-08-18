@@ -35,6 +35,12 @@ export default class Engine {
 
     #stats = new Stats();
 
+    #physicsStats = new Stats();
+
+    #scriptStats = new Stats();
+
+    #graphicsStats = new Stats();
+
     constructor() {
         autoBind(this);
     }
@@ -91,6 +97,15 @@ export default class Engine {
         // show performance statistics
         this.#stats.showPanel(1);
         document.body.appendChild(this.#stats.dom);
+        this.#physicsStats.showPanel(1);
+        this.#physicsStats.dom.style.cssText = 'position:absolute;top:0px;left:100px;';
+        document.body.appendChild(this.#physicsStats.dom);
+        this.#scriptStats.showPanel(1);
+        this.#scriptStats.dom.style.cssText = 'position:absolute;top:0px;left:180px;';
+        document.body.appendChild(this.#scriptStats.dom);
+        this.#graphicsStats.showPanel(1);
+        this.#graphicsStats.dom.style.cssText = 'position:absolute;top:0px;left:260px;';
+        document.body.appendChild(this.#graphicsStats.dom);
 
         requestAnimationFrame(this.update);
     }
@@ -102,13 +117,19 @@ export default class Engine {
 
         if (this.#running) {
             // step physics
+            this.#physicsStats.begin();
             this.physics.update(delta);
+            this.#physicsStats.end();
 
             // run per-frame game tasks
+            this.#scriptStats.begin();
             for (const script of this.#gameScripts) script.update(delta);
+            this.#scriptStats.end();
 
             // render scene
+            this.#graphicsStats.begin();
             this.graphics.update();
+            this.#graphicsStats.end();
         }
 
         this.#stats.end();

@@ -1,4 +1,4 @@
-import { Body, Sphere } from 'cannon-es';
+import { Body, ContactEquation, Sphere } from 'cannon-es';
 import {
     CanvasTexture,
     Sprite,
@@ -15,7 +15,7 @@ import { MovementData } from './movement';
 import { PhysicsData } from '../physics';
 import ScoreData from './score';
 import shoot from './shooting';
-import { CAMERA_TAG, CameraData, GraphicsData } from '../graphics/graphics';
+import { CAMERA_TAG, CameraData, UiData } from '../graphics/graphics';
 
 /**
  * Entity tag used to retrieve the player
@@ -39,11 +39,9 @@ export default class PlayerScript extends GameScript {
     hudCtx: CanvasRenderingContext2D;
 
     init() {
-        const shootTowardsCrosshair = () => {
-            // wait 500ms so ball shoots at bottom of sword swing
-            // setTimeout(() => {
-            //     shoot(Entity.getTag(PLAYER_TAG), getCameraDir());
-            // }, 500);
+        const shootTowardsCrosshair = (e: MouseEvent) => {
+            if (e.button !== 2) return;
+            shoot(Entity.getTag(PLAYER_TAG), getCameraDir());
         };
 
         this.engine.events.on('startLoop', () => {
@@ -92,15 +90,14 @@ export default class PlayerScript extends GameScript {
 
         const hudSprite = new Sprite();
         hudSprite.material = new SpriteMaterial();
-        hudSprite.position.set(0, -0.5, -1.3);
-        hudSprite.scale.set(0.2, 0.2, 0.2);
-        hudSprite.parent = Entity.getTag(CAMERA_TAG).getComponent(CameraData);
-        this.hud.setComponent(GraphicsData, hudSprite);
+        hudSprite.position.set(0, -200, -1);
+        hudSprite.scale.set(80, 80, 1);
+        this.hud.setComponent(UiData, hudSprite);
 
         this.drawHUD();
 
         // handle impact damage
-        playerBody.addEventListener('collide', ({ contact }: any) => {
+        playerBody.addEventListener('collide', ({ contact }: { contact: ContactEquation }) => {
             const health = this.player.getComponent(HealthData);
             const impact = contact.getImpactVelocityAlongNormal();
 
@@ -142,9 +139,11 @@ export default class PlayerScript extends GameScript {
     }
 
     drawHUD() {
+        console.log('[player] re-drawing HUD');
+
         const score = this.player.getComponent(ScoreData);
         const health = this.player.getComponent(HealthData);
-        const hudSprite = this.hud.getComponent(GraphicsData) as Sprite;
+        const hudSprite = this.hud.getComponent(UiData) as Sprite;
 
         this.hudCtx.clearRect(0, 0, this.hudCanvas.width, this.hudCanvas.height);
         this.hudCtx.font = '52px Arial';
