@@ -179,21 +179,34 @@ export default class GraphicsBackend {
 
     /** Adds a renderable object to the scene */
     addObject({ id, data, ui }: GraphicsAddObjectCmd) {
-        const mat: MeshPhongMaterial[] = [];
-        if (data.materials) {
-            for (const materialData of data.materials) {
-                mat.push(this.deserializeMaterial(materialData));
-            }
-        }
-
         data.images = [];
         data.textures = [];
 
+        const matMap = new Map<string, MeshPhongMaterial>();
+        if (data.materials) {
+            for (const materialData of data.materials) {
+                const mat = this.deserializeMaterial(materialData);
+                matMap.set(mat.uuid, mat);
+            }
+        }
+
         const object = new ObjectLoader().parse(data);
 
-        if (object instanceof Mesh || object instanceof Sprite) {
-            object.material = mat.length > 1 ? mat : mat[0];
-        }
+        // if (object.children.length) console.log(data);
+
+        object.traverse((node) => {
+            if (node instanceof Mesh || node instanceof Sprite) {
+                if (node.material.length) {
+                    const matList: MeshPhongMaterial[] = [];
+                    for (const mat of node.material) {
+                        matList.push(matMap.get(mat.uuid)!);
+                    }
+                    node.material = matList;
+                } else {
+                    node.material = matMap.get(node.material.uuid);
+                }
+            }
+        });
 
         object.matrixAutoUpdate = false;
         (ui ? this.#uiscene : this.#scene).add(object);
@@ -251,6 +264,7 @@ export default class GraphicsBackend {
 
         // assign textures
         if (map) mat.map = this.#textureCache.get(map)!;
+        if (map && !this.#textureCache.has(map)) console.error('foo');
         if (alphaMap) mat.alphaMap = this.#textureCache.get(alphaMap)!;
         if (normalMap) mat.normalMap = this.#textureCache.get(normalMap)!;
         if (specularMap) mat.specularMap = this.#textureCache.get(specularMap)!;

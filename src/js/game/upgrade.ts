@@ -1,5 +1,8 @@
 import {
-    Color, Sprite, SpriteMaterial, TextureLoader,
+    Color,
+    Sprite,
+    SpriteMaterial,
+    TextureLoader,
 } from 'three';
 
 import Entity from '../ecs/entity';
@@ -9,11 +12,12 @@ import { PLAYER_TAG } from './player';
 import { Physics, PhysicsData } from '../physics';
 
 /**
- * Spawns pink items which heal the player for 15 hp each upon contact.
+ * Spawns hearts which heal the player for 15 hp each upon contact.
  */
 export default class UpgradeScript extends GameScript {
-    // eslint-disable-next-line class-methods-use-this
-    init() {
+    async init() {
+        const upgradeTexture = await new TextureLoader().loadAsync('/img/HealthUpgrade.png');
+
         const makeUpgrade = async () => {
             const upgrade = new Entity();
 
@@ -26,7 +30,7 @@ export default class UpgradeScript extends GameScript {
             const sprite = new Sprite();
             sprite.material = new SpriteMaterial();
             sprite.material.color = new Color(0xff00ff);
-            sprite.material.map = await new TextureLoader().loadAsync('/img/HealthUpgrade.png');
+            sprite.material.map = upgradeTexture;
             upgrade.setComponent(GraphicsData, sprite);
 
             const collideCb = ({ body }: { body: PhysicsData }) => {

@@ -2,7 +2,7 @@
  * Known bugs
  * ==========
  * - Hominids continue to spawn when the game is paused
- * - Dead hominids dissappear after 2 seconds, regardless if the game is paused
+ * - Dead hominids dissappear after 3 seconds, regardless if the game is paused
  */
 
 import {
@@ -46,7 +46,7 @@ class HominidData {
 }
 
 export default class HominidScript extends GameScript {
-    hominidView = new EcsView(this.ecs, new Set([HominidData, HealthData]));
+    aliveHominidView = new EcsView(this.ecs, new Set([HominidData, HealthData]));
 
     init() {
         this.gui.add(this, 'createHominid').name('Spawn Hominid');
@@ -96,6 +96,10 @@ export default class HominidScript extends GameScript {
             torsoBody.fixedRotation = false;
             torsoBody.updateMassProperties();
             torsoBody.allowSleep = true;
+
+            headBody.angularDamping = 0.8;
+            headBody.fixedRotation = false;
+            headBody.updateMassProperties();
             headBody.allowSleep = true;
 
             // change body part graphics properties
@@ -105,20 +109,20 @@ export default class HominidScript extends GameScript {
             // this.graphics.updateMaterial(headMesh);
 
             // decapitate >:)
-            setTimeout(() => head.deleteComponent(ConstraintData), 50);
-            // halo.delete();
+            head.deleteComponent(ConstraintData);
+            halo.delete();
 
-            // delete corpse after 10 seconds
-            // setTimeout(() => {
-            head.delete();
-            torso.delete();
-            // }, 10_000);
+            // delete corpse after 3 seconds
+            setTimeout(() => {
+                head.delete();
+                torso.delete();
+            }, 3_000);
         });
     }
 
     update(dt: number) {
         // `hominid` is the torso
-        this.hominidView.iterateView((hominid) => {
+        this.aliveHominidView.iterateView((hominid) => {
             const player = Entity.getTag(PLAYER_TAG);
             const { bubble, head } = hominid.getComponent(HominidData);
 
@@ -177,7 +181,6 @@ export default class HominidScript extends GameScript {
         const torsoMesh = GraphicsUtils.makeCylinder(torsoRadius, height + torsoRadius * 2);
         torsoMesh.name = 'Torso';
         torsoMesh.material.color = new Color(color);
-        torsoMesh.position.set(torsoBody.position.x, torsoBody.position.y, torsoBody.position.z);
         torso.setComponent(GraphicsData, torsoMesh);
 
         torso.setComponent(MovementData, new MovementData(3, 1.5));
@@ -199,9 +202,8 @@ export default class HominidScript extends GameScript {
         headBody.position.y += height / 2 + headRadius;
         head.setComponent(PhysicsData, headBody);
 
-        // The `head` model contains a light, a camera, a sphere, and a sprite?
         const headModel = await this.assetLoader.loadModel('/models/head/head.glb');
-        const headMesh = headModel;// .children[2];
+        const headMesh = headModel;
         headMesh.name = 'Head';
         // @ts-ignore - TODO why was I cloning the material here?
         // headMesh.material = headMesh.material.clone();

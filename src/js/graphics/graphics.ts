@@ -15,7 +15,6 @@
  */
 
 import {
-    Light,
     Material,
     Mesh,
     Object3D,
@@ -70,7 +69,7 @@ export class Graphics {
      * Next available mesh ID
      * @note when assigning ID's, recycle any ID's from `#availableObjectIds` first
      */
-    #objectId = 0;
+    objectId = 0;
 
     /** Set of all texture UUID's that have already been uploaded to the backend */
     #textureCache = new Set<string>();
@@ -113,6 +112,8 @@ export class Graphics {
     }
 
     init(engine: Engine) {
+        engine.gui.add(this, 'objectId').listen();
+
         // make camera accessible through game entity
         new Entity(engine.ecs)
             .addTag(CAMERA_TAG)
@@ -209,21 +210,17 @@ export class Graphics {
     }
 
     private removeFromScene(object: Object3D) {
-        object.traverse((node) => {
-            if (!(node instanceof Mesh || node instanceof Sprite || node instanceof Light)) return;
+        const id = object.userData.meshId;
 
-            const id = node.userData.meshId;
-
-            // inform the graphics backend
-            this.submitCommand({
-                type: 'removeObject',
-                id,
-            });
-
-            // recycle ID
-            this.#idToObject.delete(id);
-            this.#availableObjectIds.push(id);
+        // inform the graphics backend
+        this.submitCommand({
+            type: 'removeObject',
+            id,
         });
+
+        // recycle ID
+        this.#idToObject.delete(id);
+        this.#availableObjectIds.push(id);
     }
 
     /**
@@ -248,14 +245,14 @@ export class Graphics {
      * objects first, and generating a new ID only if no recyclable ID's exist.
      */
     private assignIdToObject(object: Object3D): number {
-        let id = this.#objectId;
+        let id = this.objectId;
 
         // pick a recycled ID if one is available
         if (this.#availableObjectIds.length > 0) {
             id = this.#availableObjectIds.shift()!;
         } else {
-            this.#objectId += 1;
-            if (this.#objectId > this.#maxEntityCount) {
+            this.objectId += 1;
+            if (this.objectId > this.#maxEntityCount) {
                 throw new Error(`[graphics] exceeded maximum object count: ${this.#maxEntityCount}`);
             }
         }
@@ -309,12 +306,10 @@ export class Graphics {
         if (object.parent) object.parent.add(object);
         else this.#scene.add(object);
 
+        const id = this.assignIdToObject(object);
+        object.userData.entityId = entityId;
+
         object.traverse((node) => {
-            if (!(node instanceof Mesh || node instanceof Sprite || node instanceof Light)) return;
-
-            const id = this.assignIdToObject(node);
-            node.userData.entityId = entityId;
-
             // send object's texture data to backend
             if (node instanceof Mesh || node instanceof Sprite) {
                 if (node.material instanceof Material) {
@@ -325,14 +320,14 @@ export class Graphics {
                     }
                 }
             }
+        });
 
-            // send that bitch to the backend
-            this.submitCommand({
-                type: 'addObject',
-                data: node.toJSON(),
-                id,
-                ui,
-            });
+        // send that bitch to the backend
+        this.submitCommand({
+            type: 'addObject',
+            data: object.toJSON(),
+            id,
+            ui,
         });
     }
 }

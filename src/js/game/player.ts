@@ -139,8 +139,6 @@ export default class PlayerScript extends GameScript {
     }
 
     drawHUD() {
-        console.log('[player] re-drawing HUD');
-
         const score = this.player.getComponent(ScoreData);
         const health = this.player.getComponent(HealthData);
         const hudSprite = this.hud.getComponent(UiData) as Sprite;
