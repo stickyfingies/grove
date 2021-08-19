@@ -27,12 +27,14 @@
 import path from 'path';
 import webpack from 'webpack';
 
-import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
+// import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
+import CopyPlugin from 'copy-webpack-plugin';
 import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 
 const commonConfig = {
     mode: 'development',
     name: 'js',
+    devtool: 'eval-cheap-source-map',
     output: {
         filename: '[name].cjs',
         chunkFilename: '[id].js',
@@ -62,7 +64,13 @@ const commonConfig = {
     },
     plugins: [
         new webpack.BannerPlugin(`\nMade with <3 by the Grove team | ${new Date()}\n`),
-        new BundleAnalyzerPlugin(),
+        // new BundleAnalyzerPlugin(),
+        new CopyPlugin({
+            patterns: [
+                'src/js/ammo/ammo.wasm.js',
+                'src/js/ammo/ammo.wasm.wasm',
+            ],
+        }),
         new ForkTsCheckerWebpackPlugin({
             typescript: {
                 diagnosticOptions: {

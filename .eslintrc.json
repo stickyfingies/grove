@@ -1,7 +1,8 @@
 {
     "env": {
         "browser": true,
-        "es2021": true
+        "es2021": true,
+        "worker": true
     },
     "extends": [
         "airbnb-base"
@@ -31,6 +32,15 @@
             "error",
             "LabeledStatement",
             "WithStatement"
+        ],
+        "new-cap": [
+            "error",
+            {
+                "newIsCapExceptionPattern": "^Ammo\\..",
+                "capIsNewExceptions": [
+                    "Ammo"
+                ]
+            }
         ],
         "no-console": "off",
         "no-plusplus": [

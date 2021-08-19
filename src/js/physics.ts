@@ -1,3 +1,5 @@
+/* eslint-disable new-cap */
+
 import {
     Body,
     Box,
@@ -29,7 +31,17 @@ export class Physics {
 
     #bodyToEntity = new Map<Body, Entity>();
 
-    init(engine: Engine) {
+    #worker: Worker;
+
+    #tbuffer = new SharedArrayBuffer(4 * 16 * 1024);
+
+    #tview = new Float32Array(this.#tbuffer);
+
+    async init(engine: Engine) {
+        this.#worker = new Worker(new URL('./physicsworker.ts', import.meta.url));
+
+        this.#worker.postMessage({ type: 'init', buffer: this.#tbuffer });
+
         // general world options
         this.#world.gravity.set(0, -9.8, 0);
         this.#world.allowSleep = true;
