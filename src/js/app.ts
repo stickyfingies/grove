@@ -10,9 +10,6 @@ const createWindow = () => {
     const win = new BrowserWindow({
         width: 1280,
         height: 720,
-        webPreferences: {
-            preload: path.resolve(__dirname, 'preload.cjs'),
-        },
     });
 
     win.removeMenu();
@@ -40,7 +37,6 @@ const createWindow = () => {
 // app.commandLine.appendSwitch('high-dpi-support', 1);
 // app.commandLine.appendSwitch('force-device-scale-factor', 1);
 
-app.allowRendererProcessReuse = false;
 app
     .on('window-all-closed', () => {
         if (process.platform !== 'darwin') {

@@ -1,4 +1,5 @@
 node_modules
+src/node_modules
 dist/js/*.js
 dist/js/*.cjs
 push.sh
@@ -7,8 +8,6 @@ yarn-error.log
 .c9
 .theia
 .vs
-.vscode
+.git
 .env
-build/
-bin/
 out/

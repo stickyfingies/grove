@@ -58,9 +58,6 @@ const commonConfig = {
             test: /\.ts$/,
             exclude: /node_modules/,
             use: ['ts-loader?transpileOnly=true'], // transpile only, for concurrent typechecking
-        }, {
-            test: /\.node$/,
-            loader: 'node-loader',
         }],
     },
     plugins: [
@@ -93,15 +90,6 @@ export default [
         target: 'electron-main',
         entry: {
             app: './src/js/app.ts',
-        },
-    }),
-    createConfig({
-        target: 'electron-preload',
-        node: {
-            __dirname: false,
-        },
-        entry: {
-            preload: './src/js/preload.ts',
         },
     }),
 ];
