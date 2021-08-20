@@ -1,7 +1,6 @@
 /* global Ammo */
 
-// Ammo.js typings
-import './ammo/armadillo';
+import './ammo/ammotypes';
 
 importScripts('./ammo.wasm.js');
 
@@ -19,55 +18,10 @@ Ammo().then(() => {
     );
     dynamicsWorld.setGravity(new Ammo.btVector3(0, -9.8, 0));
 
-    // ground
-    (() => {
-        const transform = new Ammo.btTransform();
-        transform.setIdentity();
-        transform.setOrigin(new Ammo.btVector3(0, -56, 0));
-
-        const mass = 0;
-
-        const motionState = new Ammo.btDefaultMotionState(transform);
-        const shape = new Ammo.btBoxShape(new Ammo.btVector3(50, 50, 50));
-        const localInertia = new Ammo.btVector3(0, 0, 0);
-
-        const rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, motionState, shape, localInertia);
-        const ground = new Ammo.btRigidBody(rbInfo);
-        dynamicsWorld.addRigidBody(ground);
-    })();
-
-    let sphere: Ammo.btRigidBody;
-
-    // a ball
-    (() => {
-        const startTransform = new Ammo.btTransform();
-        startTransform.setIdentity();
-        startTransform.setOrigin(new Ammo.btVector3(2, 10, 0));
-
-        const mass = 1;
-
-        const motionState = new Ammo.btDefaultMotionState(startTransform);
-        const shape = new Ammo.btSphereShape(1);
-        const localInertia = new Ammo.btVector3(0, 0, 0);
-
-        shape.calculateLocalInertia(mass, localInertia);
-
-        const rbInfo = new Ammo.btRigidBodyConstructionInfo(mass, motionState, shape, localInertia);
-        sphere = new Ammo.btRigidBody(rbInfo);
-        dynamicsWorld.addRigidBody(sphere);
-    })();
-
-    // loop: step simulation
-    setInterval(() => {
-        dynamicsWorld.stepSimulation(1 / 60);
-
-        const trans = new Ammo.btTransform();
-        sphere.getMotionState().getWorldTransform(trans);
-        console.log(`world pos = ${[trans.getOrigin().x().toFixed(2), trans.getOrigin().y().toFixed(2), trans.getOrigin().z().toFixed(2)]}`);
-    }, 1000 / 60);
-
     let tbuffer: SharedArrayBuffer;
     let tview: Float32Array;
+
+    const idToRb = new Map<number, Ammo.btRigidBody>();
 
     // communication
     globalThis.onmessage = ({ data }) => {
@@ -78,10 +32,91 @@ Ammo().then(() => {
             const { buffer } = data;
             tbuffer = buffer;
             tview = new Float32Array(tbuffer);
+
+            // loop: step simulation
+            setInterval(() => {
+                dynamicsWorld.stepSimulation(1 / 60);
+
+                for (const [id, rb] of idToRb) {
+                    const trans = new Ammo.btTransform();
+                    rb.getMotionState().getWorldTransform(trans);
+
+                    const offset = id * 3;
+                    tview[offset + 0] = trans.getOrigin().x();
+                    tview[offset + 1] = trans.getOrigin().y();
+                    tview[offset + 2] = trans.getOrigin().z();
+                }
+            }, 1000 / 60);
             break;
         }
-        case 'addbox': {
-            // add a box to the scene, or something idk
+        case 'createSphere': {
+            const {
+                x, y, z, id,
+            } = data;
+
+            const startTransform = new Ammo.btTransform();
+            startTransform.setIdentity();
+            startTransform.setOrigin(new Ammo.btVector3(x, y, z));
+
+            const mass = 1;
+
+            const motionState = new Ammo.btDefaultMotionState(startTransform);
+            const shape = new Ammo.btSphereShape(1);
+            const localInertia = new Ammo.btVector3(0, 0, 0);
+
+            shape.calculateLocalInertia(mass, localInertia);
+
+            const rbInfo = new Ammo.btRigidBodyConstructionInfo(
+                mass,
+                motionState,
+                shape,
+                localInertia,
+            );
+            const sphere = new Ammo.btRigidBody(rbInfo);
+            dynamicsWorld.addRigidBody(sphere);
+
+            idToRb.set(id, sphere);
+
+            break;
+        }
+        case 'createConcave': {
+            const {
+                triangles, x, y, z, sx, sy, sz, qx, qy, qz, qw, id,
+            } = data;
+
+            const quat = new Ammo.btQuaternion(qx, qy, qz, qw);
+            const startTransform = new Ammo.btTransform();
+            startTransform.setIdentity();
+            startTransform.setOrigin(new Ammo.btVector3(x, y, z));
+            startTransform.setRotation(quat);
+
+            const motionState = new Ammo.btDefaultMotionState(startTransform);
+
+            const mass = 0;
+
+            const trimesh = new Ammo.btTriangleMesh();
+            for (let i = 0; i < triangles.length; i += 9) {
+                const v0 = new Ammo.btVector3(triangles[i + 0], triangles[i + 1], triangles[i + 2]);
+                const v1 = new Ammo.btVector3(triangles[i + 3], triangles[i + 4], triangles[i + 5]);
+                const v2 = new Ammo.btVector3(triangles[i + 6], triangles[i + 7], triangles[i + 8]);
+                trimesh.addTriangle(v0, v1, v2, false);
+            }
+            const localScale = new Ammo.btVector3(sx, sy, sz);
+            trimesh.setScaling(localScale);
+            const shape = new Ammo.btBvhTriangleMeshShape(trimesh, true, true);
+
+            const localInertia = new Ammo.btVector3(0, 0, 0);
+
+            const rbInfo = new Ammo.btRigidBodyConstructionInfo(
+                mass,
+                motionState,
+                shape,
+                localInertia,
+            );
+            const concave = new Ammo.btRigidBody(rbInfo);
+            dynamicsWorld.addRigidBody(concave);
+
+            idToRb.set(id, concave);
             break;
         }
         default: {

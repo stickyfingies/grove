@@ -2,6 +2,7 @@
     "scripts": [
         "loadingScreen",
         "scene",
+        "physicsTest",
         "keyboardControls",
         "movement",
         "player",

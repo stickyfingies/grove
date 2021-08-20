@@ -1,11 +1,11 @@
-/* eslint-disable new-cap */
-
+import { BufferGeometry } from 'three';
 import {
     Body,
     Box,
     Cylinder,
     GSSolver,
     PointToPointConstraint,
+    Quaternion,
     Ray,
     RaycastResult,
     SAPBroadphase,
@@ -32,6 +32,8 @@ export class Physics {
     #bodyToEntity = new Map<Body, Entity>();
 
     #worker: Worker;
+
+    #bodyId = 0;
 
     #tbuffer = new SharedArrayBuffer(4 * 16 * 1024);
 
@@ -80,11 +82,58 @@ export class Physics {
     }
 
     update(delta: number) {
+        console.log(`${this.#tview[0].toFixed(2)}, ${this.#tview[1].toFixed(2)}, ${this.#tview[2].toFixed(2)}`);
         this.#world.step(1 / 60, Math.min(delta, 1 / 30), 10);
     }
 
     getEntityFromBody(body: Body) {
         return this.#bodyToEntity.get(body);
+    }
+
+    createConcave(pos: Vec3, scale: Vec3, quat: Quaternion, geometry: BufferGeometry) {
+        const id = this.#bodyId;
+        this.#bodyId += 1;
+
+        const nonIndexedGeo = geometry.toNonIndexed();
+        const triangles = nonIndexedGeo.getAttribute('position').array;
+
+        this.#worker.postMessage({
+            type: 'createConcave',
+            triangles,
+            x: pos.x,
+            y: pos.y,
+            z: pos.z,
+            sx: scale.x,
+            sy: scale.y,
+            sz: scale.z,
+            qx: quat.x,
+            qy: quat.y,
+            qz: quat.z,
+            qw: quat.w,
+            id,
+        });
+
+        return id;
+    }
+
+    createSphere(pos: Vec3) {
+        const id = this.#bodyId;
+        this.#bodyId += 1;
+
+        this.#worker.postMessage({
+            type: 'createSphere',
+            x: pos.x,
+            y: pos.y,
+            z: pos.z,
+            id,
+        });
+
+        return id;
+    }
+
+    getBodyPosition(id: number) {
+        const offset = id * 3;
+        return new Vec3(this.#tview[offset + 0], this.#tview[offset + 1], this.#tview[offset + 2]);
     }
 
     /**

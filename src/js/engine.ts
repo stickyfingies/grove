@@ -1,8 +1,9 @@
 import EventEmitter from 'events';
 import { GUI } from 'dat.gui';
-import { Mesh } from 'three';
 import Stats from 'stats.js';
 import autoBind from 'auto-bind';
+import { Quaternion as CQuaternion, Vec3 } from 'cannon-es';
+import { Mesh, Quaternion, Vector3 } from 'three';
 
 import AssetLoader from './load';
 import Entity from './ecs/entity';
@@ -74,20 +75,30 @@ export default class Engine {
         // load the map
         const map = maps['skjar-isles'];
         for (const path of map.objects) {
-            this.assetLoader.loadModel(path)
-                .then((mesh) => {
-                    mesh.traverse((child) => {
-                        if (child instanceof Mesh) {
-                            const body = AssetLoader.loadPhysicsModel(child, 0);
-                            new Entity()
-                            // .setComponent(GraphicsData, child)
-                                .setComponent(PhysicsData, body);
-                        }
-                    });
+            const mesh = await this.assetLoader.loadModel(path);
+            mesh.traverse((node) => {
+                if (node instanceof Mesh) {
+                    const worldPos = new Vector3();
+                    const worldScale = new Vector3();
+                    const worldQuat = new Quaternion();
+                    node.getWorldPosition(worldPos);
+                    node.getWorldScale(worldScale);
+                    node.getWorldQuaternion(worldQuat);
+                    this.physics.createConcave(
+                        new Vec3(worldPos.x, worldPos.y, worldPos.z),
+                        new Vec3(worldScale.x, worldScale.y, worldScale.z),
+                        new CQuaternion(worldQuat.x, worldQuat.y, worldQuat.z, worldQuat.w),
+                        node.geometry,
+                    );
 
+                    const body = AssetLoader.loadPhysicsModel(node, 0);
                     new Entity()
-                        .setComponent(GraphicsData, mesh);
-                });
+                        .setComponent(PhysicsData, body);
+                }
+            });
+
+            new Entity()
+                .setComponent(GraphicsData, mesh);
         }
 
         // between the game scripts and the map, we probably just created a bunch of renderables.
