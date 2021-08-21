@@ -5,18 +5,23 @@ import './ammo/ammotypes';
 importScripts('./ammo.wasm.js');
 
 Ammo().then(() => {
+    // I don't plan on freeing any of this memory, since these objects will
+    // exist until the program's done executing so V8 will clear the memory
+    // for me then anyway.
     const collisionConfig = new Ammo.btDefaultCollisionConfiguration();
     const dispatcher = new Ammo.btCollisionDispatcher(collisionConfig);
     const overlappingPairCache = new Ammo.btDbvtBroadphase();
     const solver = new Ammo.btSequentialImpulseConstraintSolver();
-
     const dynamicsWorld = new Ammo.btDiscreteDynamicsWorld(
         dispatcher,
         overlappingPairCache,
         solver,
         collisionConfig,
     );
-    dynamicsWorld.setGravity(new Ammo.btVector3(0, -9.8, 0));
+
+    const gravity = new Ammo.btVector3(0, -9.8, 0);
+    dynamicsWorld.setGravity(gravity);
+    Ammo.destroy(gravity);
 
     let tbuffer: SharedArrayBuffer;
     let tview: Float32Array;
@@ -37,8 +42,8 @@ Ammo().then(() => {
             setInterval(() => {
                 dynamicsWorld.stepSimulation(1 / 60);
 
+                const trans = new Ammo.btTransform();
                 for (const [id, rb] of idToRb) {
-                    const trans = new Ammo.btTransform();
                     rb.getMotionState().getWorldTransform(trans);
 
                     const offset = id * 3;
@@ -46,24 +51,27 @@ Ammo().then(() => {
                     tview[offset + 1] = trans.getOrigin().y();
                     tview[offset + 2] = trans.getOrigin().z();
                 }
+                Ammo.destroy(trans);
             }, 1000 / 60);
             break;
         }
         case 'createSphere': {
+            console.log('[physics worker] createSphere');
             const {
-                x, y, z, id,
+                mass, radius, x, y, z, id,
             } = data;
 
+            const origin = new Ammo.btVector3(x, y, z);
             const startTransform = new Ammo.btTransform();
             startTransform.setIdentity();
-            startTransform.setOrigin(new Ammo.btVector3(x, y, z));
-
-            const mass = 1;
-
+            startTransform.setOrigin(origin);
             const motionState = new Ammo.btDefaultMotionState(startTransform);
-            const shape = new Ammo.btSphereShape(1);
-            const localInertia = new Ammo.btVector3(0, 0, 0);
+            Ammo.destroy(startTransform);
+            Ammo.destroy(origin);
 
+            const shape = new Ammo.btSphereShape(radius);
+
+            const localInertia = new Ammo.btVector3(0, 0, 0);
             shape.calculateLocalInertia(mass, localInertia);
 
             const rbInfo = new Ammo.btRigidBodyConstructionInfo(
@@ -73,9 +81,13 @@ Ammo().then(() => {
                 localInertia,
             );
             const sphere = new Ammo.btRigidBody(rbInfo);
-            dynamicsWorld.addRigidBody(sphere);
+            Ammo.destroy(rbInfo);
+            Ammo.destroy(localInertia);
 
+            dynamicsWorld.addRigidBody(sphere);
             idToRb.set(id, sphere);
+
+            // Memory left to be freed: RigidBody, shapes, motionState
 
             break;
         }
@@ -84,13 +96,16 @@ Ammo().then(() => {
                 triangles, x, y, z, sx, sy, sz, qx, qy, qz, qw, id,
             } = data;
 
+            const origin = new Ammo.btVector3(x, y, z);
             const quat = new Ammo.btQuaternion(qx, qy, qz, qw);
             const startTransform = new Ammo.btTransform();
             startTransform.setIdentity();
             startTransform.setOrigin(new Ammo.btVector3(x, y, z));
             startTransform.setRotation(quat);
-
             const motionState = new Ammo.btDefaultMotionState(startTransform);
+            Ammo.destroy(startTransform);
+            Ammo.destroy(quat);
+            Ammo.destroy(origin);
 
             const mass = 0;
 
@@ -101,11 +116,15 @@ Ammo().then(() => {
                 const v2 = new Ammo.btVector3(triangles[i + 6], triangles[i + 7], triangles[i + 8]);
                 trimesh.addTriangle(v0, v1, v2, false);
             }
+
             const localScale = new Ammo.btVector3(sx, sy, sz);
             trimesh.setScaling(localScale);
+            Ammo.destroy(localScale);
+
             const shape = new Ammo.btBvhTriangleMeshShape(trimesh, true, true);
 
             const localInertia = new Ammo.btVector3(0, 0, 0);
+            // don't calculate inertia; object has zero mass
 
             const rbInfo = new Ammo.btRigidBodyConstructionInfo(
                 mass,
@@ -114,9 +133,14 @@ Ammo().then(() => {
                 localInertia,
             );
             const concave = new Ammo.btRigidBody(rbInfo);
-            dynamicsWorld.addRigidBody(concave);
+            Ammo.destroy(rbInfo);
+            Ammo.destroy(localInertia);
 
+            dynamicsWorld.addRigidBody(concave);
             idToRb.set(id, concave);
+
+            // Memory left to be freed: RigidBody, shapes, motionState
+
             break;
         }
         default: {
@@ -124,4 +148,9 @@ Ammo().then(() => {
         }
         }
     };
+
+    // Send an empty message so the physics frontend knows Ammo is loaded
+    // TODO - this still fucks up, so move `globalThis.onMessage` to the outside of `Ammo().then()`
+    // @ts-ignore - Triggers some bullshit argument count error
+    globalThis.postMessage({ type: 'ready' });
 });

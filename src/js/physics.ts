@@ -39,10 +39,23 @@ export class Physics {
 
     #tview = new Float32Array(this.#tbuffer);
 
+    #idToBody = new Map<number, Body>();
+
     async init(engine: Engine) {
         this.#worker = new Worker(new URL('./physicsworker.ts', import.meta.url));
 
-        this.#worker.postMessage({ type: 'init', buffer: this.#tbuffer });
+        // Wait until ammo is loaded before telling the worker to init
+        this.#worker.onmessage = ({ data }) => {
+            switch (data.type) {
+            case 'ready': {
+                this.#worker.postMessage({ type: 'init', buffer: this.#tbuffer });
+                break;
+            }
+            default: {
+                throw new Error(`[physics] unknown message type ${data.type}`);
+            }
+            }
+        };
 
         // general world options
         this.#world.gravity.set(0, -9.8, 0);
@@ -66,7 +79,9 @@ export class Physics {
 
         // listen for entity events
         engine.ecs.events.on(`set${PhysicsData.name}Component`, (id: number, data: PhysicsData) => {
-            this.#world.addBody(data);
+            // if `data.shapes.length` === 3, it's because it's a capsule
+            // if the body has zero shapes, it's a mock for the new system - don't add to scene
+            if (data.shapes.length) this.#world.addBody(data);
             this.#bodyToEntity.set(data, new Entity(Entity.defaultManager, id));
         });
         engine.ecs.events.on(`set${ConstraintData.name}Component`, (id: number, data: ConstraintData) => {
@@ -82,7 +97,12 @@ export class Physics {
     }
 
     update(delta: number) {
-        console.log(`${this.#tview[0].toFixed(2)}, ${this.#tview[1].toFixed(2)}, ${this.#tview[2].toFixed(2)}`);
+        for (const [id, body] of this.#idToBody) {
+            const offset = 3 * id;
+            body.position.x = this.#tview[offset + 0];
+            body.position.y = this.#tview[offset + 1];
+            body.position.z = this.#tview[offset + 2];
+        }
         this.#world.step(1 / 60, Math.min(delta, 1 / 30), 10);
     }
 
@@ -113,22 +133,30 @@ export class Physics {
             id,
         });
 
-        return id;
+        const mock = new Body();
+        this.#idToBody.set(id, mock);
+
+        return mock;
     }
 
-    createSphere(pos: Vec3) {
+    createSphere(mass: number, radius: number, pos: Vec3) {
         const id = this.#bodyId;
         this.#bodyId += 1;
 
         this.#worker.postMessage({
             type: 'createSphere',
+            mass,
+            radius,
             x: pos.x,
             y: pos.y,
             z: pos.z,
             id,
         });
 
-        return id;
+        const mock = new Body();
+        this.#idToBody.set(id, mock);
+
+        return mock;
     }
 
     getBodyPosition(id: number) {

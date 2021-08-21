@@ -11,14 +11,16 @@ export default class MeshTransformScript extends GameScript {
             const body = entity.getComponent(PhysicsData);
             const mesh = entity.getComponent(GraphicsData);
 
-            const { x: px, y: py, z: pz } = body.interpolatedPosition;
+            const { x: px, y: py, z: pz } = body.position;
             const {
                 x: qx, y: qy, z: qz, w: qw,
-            } = body.interpolatedQuaternion;
+            } = body.quaternion;
 
             mesh.position.set(px, py, pz);
 
-            if (!mesh.userData.norotate) mesh.quaternion.set(qx, qy, qz, qw);
+            if (!mesh.userData.norotate) {
+                mesh.quaternion.set(qx, qy, qz, qw);
+            }
         });
     }
 }

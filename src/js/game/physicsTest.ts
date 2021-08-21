@@ -4,27 +4,23 @@ import Entity from '../ecs/entity';
 import GameScript from '../script';
 import { GraphicsData } from '../graphics/graphics';
 import GraphicsUtils from '../graphics/utils';
+import { PhysicsData } from '../physics';
 
 export default class PhysicsTestScript extends GameScript {
-    sphere: Entity;
-
-    rbId: number;
-
     init() {
-        this.rbId = this.physics.createSphere(new Vec3(2, 150, 0));
-
-        this.sphere = new Entity();
-        const mesh = GraphicsUtils.makeBall(1);
-        this.sphere.setComponent(GraphicsData, mesh);
-    }
-
-    update() {
-        const mesh = this.sphere.getComponent(GraphicsData);
-
-        const pos = this.physics.getBodyPosition(this.rbId);
-
-        mesh.position.x = pos.x;
-        mesh.position.y = pos.y;
-        mesh.position.z = pos.z;
+        {
+            const sphere = new Entity();
+            const mesh = GraphicsUtils.makeBall(0.5);
+            sphere.setComponent(GraphicsData, mesh);
+            const body = this.physics.createSphere(1, 0.5, new Vec3(2, 50, 0));
+            sphere.setComponent(PhysicsData, body);
+        }
+        {
+            const sphere = new Entity();
+            const mesh = GraphicsUtils.makeBall(0.5);
+            sphere.setComponent(GraphicsData, mesh);
+            const body = this.physics.createSphere(1, 0.5, new Vec3(4, 50, 0));
+            sphere.setComponent(PhysicsData, body);
+        }
     }
 }

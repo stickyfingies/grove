@@ -34,7 +34,7 @@ export default class AssetLoader {
     init() {
         Cache.enabled = true;
         DefaultLoadingManager.onProgress = (url, loaded, total) => {
-            console.log(`${url} (${loaded}/${total})`);
+            // console.log(`${url} (${loaded}/${total})`);
             this.events.emit('assetLoaded', url, loaded, total);
         };
     }
