@@ -24,7 +24,10 @@ export default class UpgradeScript extends GameScript {
 
             const randomPos = () => Math.random() * 70 - 35;
             const origin = new Vec3(randomPos(), 30, randomPos());
-            const upgradeBody = this.physics.createSphere(1000, 1, origin);
+            const upgradeBody = this.physics.createSphere({
+                mass: 1000,
+                pos: origin,
+            }, 1);
             upgrade.setComponent(PhysicsData, upgradeBody);
 
             const sprite = new Sprite();

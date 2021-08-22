@@ -25,6 +25,14 @@ export const ConstraintData = PointToPointConstraint;
 // eslint-disable-next-line no-redeclare
 export type ConstraintData = PointToPointConstraint;
 
+export type RigidBodyOptions = {
+    pos?: Vec3,
+    scale?: Vec3,
+    quat?: Quaternion,
+    mass?: number,
+    fixedRotation?: boolean
+}
+
 export class Physics {
     /** World container which holds all physical bodies */
     #world = new World();
@@ -40,6 +48,8 @@ export class Physics {
     #tview = new Float32Array(this.#tbuffer);
 
     #idToBody = new Map<number, Body>();
+
+    #bodyToId = new Map<Body, number>();
 
     async init(engine: Engine) {
         this.#worker = new Worker(new URL('./physicsworker.ts', import.meta.url));
@@ -110,7 +120,23 @@ export class Physics {
         return this.#bodyToEntity.get(body);
     }
 
-    createConcave(pos: Vec3, scale: Vec3, quat: Quaternion, geometry: BufferGeometry) {
+    addVelocity(body: Body, velocity: Vec3) {
+        if (body.shapes.length === 0) {
+            this.#worker.postMessage({
+                type: 'addVelocity',
+                id: this.#bodyToId.get(body),
+                x: velocity.x,
+                y: velocity.y,
+                z: velocity.z,
+            });
+        } else {
+            body.velocity.x += velocity.x;
+            body.velocity.y += velocity.y;
+            body.velocity.z += velocity.z;
+        }
+    }
+
+    createConcave(opts: RigidBodyOptions, geometry: BufferGeometry) {
         const id = this.#bodyId;
         this.#bodyId += 1;
 
@@ -120,48 +146,53 @@ export class Physics {
         this.#worker.postMessage({
             type: 'createConcave',
             triangles,
-            x: pos.x,
-            y: pos.y,
-            z: pos.z,
-            sx: scale.x,
-            sy: scale.y,
-            sz: scale.z,
-            qx: quat.x,
-            qy: quat.y,
-            qz: quat.z,
-            qw: quat.w,
+            x: opts.pos?.x ?? 0,
+            y: opts.pos?.y ?? 0,
+            z: opts.pos?.z ?? 0,
+            sx: opts.scale?.x ?? 1,
+            sy: opts.scale?.y ?? 1,
+            sz: opts.scale?.z ?? 1,
+            qx: opts.quat?.x ?? 0,
+            qy: opts.quat?.y ?? 0,
+            qz: opts.quat?.z ?? 0,
+            qw: opts.quat?.w ?? 1,
             id,
         });
 
         const mock = new Body();
         this.#idToBody.set(id, mock);
+        this.#bodyToId.set(mock, id);
 
         return mock;
     }
 
-    createSphere(mass: number, radius: number, pos: Vec3) {
+    createSphere(opts: RigidBodyOptions, radius: number) {
         const id = this.#bodyId;
         this.#bodyId += 1;
 
         this.#worker.postMessage({
             type: 'createSphere',
-            mass,
             radius,
-            x: pos.x,
-            y: pos.y,
-            z: pos.z,
+            mass: opts.mass,
+            x: opts.pos?.x ?? 0,
+            y: opts.pos?.y ?? 0,
+            z: opts.pos?.z ?? 0,
+            sx: opts.scale?.x ?? 1,
+            sy: opts.scale?.y ?? 1,
+            sz: opts.scale?.z ?? 1,
+            qx: opts.quat?.x ?? 0,
+            qy: opts.quat?.y ?? 0,
+            qz: opts.quat?.z ?? 0,
+            qw: opts.quat?.w ?? 1,
+            fixedRotation: opts.fixedRotation ?? false,
             id,
         });
 
         const mock = new Body();
         this.#idToBody.set(id, mock);
+        this.#bodyToId.set(mock, id);
 
         return mock;
-    }
-
-    getBodyPosition(id: number) {
-        const offset = id * 3;
-        return new Vec3(this.#tview[offset + 0], this.#tview[offset + 1], this.#tview[offset + 2]);
     }
 
     /**

@@ -26,6 +26,7 @@ Ammo().then(() => {
     let tbuffer: SharedArrayBuffer;
     let tview: Float32Array;
 
+    /** Map of ID's to RigidBodies */
     const idToRb = new Map<number, Ammo.btRigidBody>();
 
     // communication
@@ -34,8 +35,7 @@ Ammo().then(() => {
 
         switch (type) {
         case 'init': {
-            const { buffer } = data;
-            tbuffer = buffer;
+            tbuffer = data.buffer;
             tview = new Float32Array(tbuffer);
 
             // loop: step simulation
@@ -58,18 +58,24 @@ Ammo().then(() => {
         case 'createSphere': {
             console.log('[physics worker] createSphere');
             const {
-                mass, radius, x, y, z, id,
+                mass, fixedRotation, radius, x, y, z, sx, sy, sz, qx, qy, qz, qw, id,
             } = data;
 
             const origin = new Ammo.btVector3(x, y, z);
+            const quat = new Ammo.btQuaternion(qx, qy, qz, qw);
             const startTransform = new Ammo.btTransform();
             startTransform.setIdentity();
-            startTransform.setOrigin(origin);
+            startTransform.setOrigin(new Ammo.btVector3(x, y, z));
+            startTransform.setRotation(quat);
             const motionState = new Ammo.btDefaultMotionState(startTransform);
             Ammo.destroy(startTransform);
+            Ammo.destroy(quat);
             Ammo.destroy(origin);
 
             const shape = new Ammo.btSphereShape(radius);
+            const localScale = new Ammo.btVector3(sx, sy, sz);
+            shape.setLocalScaling(localScale);
+            Ammo.destroy(localScale);
 
             const localInertia = new Ammo.btVector3(0, 0, 0);
             shape.calculateLocalInertia(mass, localInertia);
@@ -83,6 +89,12 @@ Ammo().then(() => {
             const sphere = new Ammo.btRigidBody(rbInfo);
             Ammo.destroy(rbInfo);
             Ammo.destroy(localInertia);
+
+            if (fixedRotation) {
+                const angularFactor = new Ammo.btVector3(0, 0, 0);
+                sphere.setAngularFactor(angularFactor);
+                Ammo.destroy(angularFactor);
+            }
 
             dynamicsWorld.addRigidBody(sphere);
             idToRb.set(id, sphere);
@@ -140,6 +152,24 @@ Ammo().then(() => {
             idToRb.set(id, concave);
 
             // Memory left to be freed: RigidBody, shapes, motionState
+
+            break;
+        }
+        case 'addVelocity': {
+            const {
+                id, x, y, z,
+            } = data;
+
+            const body = idToRb.get(id)!;
+
+            const velocity = body.getLinearVelocity();
+            const newVelocity = new Ammo.btVector3(
+                velocity.x() + x,
+                velocity.y() + y,
+                velocity.z() + z,
+            );
+            body.setLinearVelocity(newVelocity);
+            Ammo.destroy(newVelocity);
 
             break;
         }

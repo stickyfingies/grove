@@ -54,6 +54,9 @@ export default class Engine {
         this.physics.init(this);
         this.assetLoader.init();
 
+        // TODO - replace this with `await this.physics.init(this);`
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
         // set up engine events
         this.events.on('startLoop', () => { this.#running = true; });
         this.events.on('stopLoop', () => { this.#running = false; });
@@ -84,12 +87,12 @@ export default class Engine {
                     node.getWorldPosition(worldPos);
                     node.getWorldScale(worldScale);
                     node.getWorldQuaternion(worldQuat);
-                    this.physics.createConcave(
-                        new Vec3(worldPos.x, worldPos.y, worldPos.z),
-                        new Vec3(worldScale.x, worldScale.y, worldScale.z),
-                        new CQuaternion(worldQuat.x, worldQuat.y, worldQuat.z, worldQuat.w),
-                        node.geometry,
-                    );
+                    this.physics.createConcave({
+                        pos: new Vec3(worldPos.x, worldPos.y, worldPos.z),
+                        scale: new Vec3(worldScale.x, worldScale.y, worldScale.z),
+                        quat: new CQuaternion(worldQuat.x, worldQuat.y, worldQuat.z, worldQuat.w),
+                    },
+                    node.geometry);
 
                     const body = AssetLoader.loadPhysicsModel(node, 0);
                     new Entity()

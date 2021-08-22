@@ -50,11 +50,8 @@ export default class MovementScript extends GameScript {
                 const normal = new Vec3();
 
                 // ensure the contact normal is facing outwards from the object, not the player
-                if (contact.bi.id === body.id) {
-                    contact.ni.negate(normal);
-                } else {
-                    normal.copy(contact.ni);
-                }
+                if (contact.bi.id === body.id) contact.ni.negate(normal);
+                else normal.copy(contact.ni);
 
                 mvmt.groundNormal = new Vector3(normal.x, normal.y, normal.z);
             });
@@ -72,8 +69,8 @@ export default class MovementScript extends GameScript {
             walkVector.multiplyScalar(mvmt.sprinting ? 2 : 1);
 
             // walk
-            body.velocity.x += walkVector.x;
-            body.velocity.z += walkVector.z;
+            const walkVelocity = new Vec3(walkVector.x, 0, walkVector.z);
+            this.physics.addVelocity(body, walkVelocity);
 
             const { max, min } = Math;
             const clamp = (n: number, a: number, b: number) => max(min(n, max(a, b)), min(a, b));

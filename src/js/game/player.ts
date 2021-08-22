@@ -1,4 +1,6 @@
-import { Body, ContactEquation, Sphere } from 'cannon-es';
+import {
+    Body, ContactEquation, Sphere, Vec3,
+} from 'cannon-es';
 import {
     CanvasTexture,
     Sprite,
@@ -74,7 +76,7 @@ export default class PlayerScript extends GameScript {
         const playerBody = new Body({
             collisionFilterGroup: 2, // separate collision filter for raycasts
             allowSleep: false,
-            fixedRotation: true,
+            fixedRotation: true, // Ammo.js: btBody.setAngularFactor(0, 0, 0);
             mass,
         });
 
@@ -82,7 +84,13 @@ export default class PlayerScript extends GameScript {
         playerBody.position.y = 12;
         playerBody.position.x = 12;
 
-        this.player.setComponent(PhysicsData, playerBody);
+        const body = this.physics.createSphere({
+            mass,
+            pos: new Vec3(12, 12, 0),
+            fixedRotation: true,
+        }, radius);
+
+        this.player.setComponent(PhysicsData, body);
         this.player.setComponent(MovementData, new MovementData(2.25, 0.7));
         this.player.setComponent(KeyboardControlData, {});
 

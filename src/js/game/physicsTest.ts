@@ -12,14 +12,20 @@ export default class PhysicsTestScript extends GameScript {
             const sphere = new Entity();
             const mesh = GraphicsUtils.makeBall(0.5);
             sphere.setComponent(GraphicsData, mesh);
-            const body = this.physics.createSphere(1, 0.5, new Vec3(2, 50, 0));
+            const body = this.physics.createSphere({
+                mass: 1,
+                pos: new Vec3(2, 50, 0),
+            }, 0.5);
             sphere.setComponent(PhysicsData, body);
         }
         {
             const sphere = new Entity();
             const mesh = GraphicsUtils.makeBall(0.5);
             sphere.setComponent(GraphicsData, mesh);
-            const body = this.physics.createSphere(1, 0.5, new Vec3(4, 50, 0));
+            const body = this.physics.createSphere({
+                mass: 1,
+                pos: new Vec3(4, 50, 0),
+            }, 0.5);
             sphere.setComponent(PhysicsData, body);
         }
     }
