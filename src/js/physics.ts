@@ -3,20 +3,13 @@ import {
     Body,
     Box,
     Cylinder,
-    GSSolver,
     PointToPointConstraint,
     Quaternion,
-    Ray,
-    RaycastResult,
-    SAPBroadphase,
     Sphere,
-    SplitSolver,
     Vec3,
-    World,
 } from 'cannon-es';
 
 import Engine from './engine';
-import Entity from './ecs/entity';
 
 export const PhysicsData = Body;
 // eslint-disable-next-line no-redeclare
@@ -33,76 +26,66 @@ export type RigidBodyOptions = {
     fixedRotation?: boolean
 }
 
+export type CollisionCallback = (entity: number) => void;
+
+type RigidBodyID = number;
+
 export class Physics {
-    /** World container which holds all physical bodies */
-    #world = new World();
-
-    #bodyToEntity = new Map<Body, Entity>();
-
     #worker: Worker;
 
-    #bodyId = 0;
+    /** A counter that gets incremented when a new ID needs to be allocated. */
+    #idCounter: RigidBodyID = 0;
 
+    /** Raw buffer containing RigidBody transform data. */
     #tbuffer = new SharedArrayBuffer(4 * 16 * 1024);
 
     #tview = new Float32Array(this.#tbuffer);
 
-    #idToBody = new Map<number, Body>();
+    #idToBody = new Map<RigidBodyID, Body>();
 
-    #bodyToId = new Map<Body, number>();
+    #bodyToId = new WeakMap<Body, RigidBodyID>();
+
+    /** Map of RigidBody ID's to Entity ID's */
+    #idToEntity = new Map<RigidBodyID, number>();
+
+    #collisionCallbacks = new Map<RigidBodyID, CollisionCallback>();
+
+    constructor() {
+        this.#worker = new Worker(new URL('./physicsworker.ts', import.meta.url));
+    }
 
     async init(engine: Engine) {
-        this.#worker = new Worker(new URL('./physicsworker.ts', import.meta.url));
+        engine.ecs.events.on(`set${PhysicsData.name}Component`, (entityId: number, body: PhysicsData) => {
+            const bodyId = this.#bodyToId.get(body)!;
+            this.#idToEntity.set(bodyId, entityId);
+        });
 
         // Wait until ammo is loaded before telling the worker to init
-        this.#worker.onmessage = ({ data }) => {
-            switch (data.type) {
-            case 'ready': {
-                this.#worker.postMessage({ type: 'init', buffer: this.#tbuffer });
-                break;
-            }
-            default: {
-                throw new Error(`[physics] unknown message type ${data.type}`);
-            }
-            }
-        };
+        return new Promise<void>((resolve) => {
+            this.#worker.onmessage = ({ data }) => {
+                switch (data.type) {
+                case 'ready': {
+                    this.#worker.postMessage({ type: 'init', buffer: this.#tbuffer });
+                    resolve();
+                    break;
+                }
+                case 'collisions': {
+                    const { collisions } = data;
+                    for (let i = 0; i < collisions.length; i += 2) {
+                        const id0 = collisions[i + 0];
+                        const id1 = collisions[i + 1];
 
-        // general world options
-        this.#world.gravity.set(0, -9.8, 0);
-        this.#world.allowSleep = true;
+                        const entityId = this.#idToEntity.get(id1)!;
 
-        // default contact options (disabled friction for character controllers)
-        this.#world.defaultContactMaterial.contactEquationStiffness = 1e9;
-        this.#world.defaultContactMaterial.contactEquationRelaxation = 4;
-        this.#world.defaultContactMaterial.friction = 0.0;
-
-        // provide broadphase
-        this.#world.broadphase = new SAPBroadphase(this.#world);
-        this.#world.broadphase.useBoundingBoxes = true;
-
-        // collision solver
-        const split = true;
-        const solver = new GSSolver();
-        solver.iterations = 7;
-        solver.tolerance = 0.1;
-        this.#world.solver = split ? new SplitSolver(solver) : solver;
-
-        // listen for entity events
-        engine.ecs.events.on(`set${PhysicsData.name}Component`, (id: number, data: PhysicsData) => {
-            // if `data.shapes.length` === 3, it's because it's a capsule
-            // if the body has zero shapes, it's a mock for the new system - don't add to scene
-            if (data.shapes.length) this.#world.addBody(data);
-            this.#bodyToEntity.set(data, new Entity(Entity.defaultManager, id));
-        });
-        engine.ecs.events.on(`set${ConstraintData.name}Component`, (id: number, data: ConstraintData) => {
-            this.#world.addConstraint(data);
-        });
-        engine.ecs.events.on(`delete${PhysicsData.name}Component`, (id: number, data: PhysicsData) => {
-            this.#world.removeBody(data);
-            this.#bodyToEntity.delete(data);
-        });
-        engine.ecs.events.on(`delete${ConstraintData.name}Component`, (id: number, data: ConstraintData) => {
-            this.#world.removeConstraint(data);
+                        this.#collisionCallbacks.get(id0)?.(entityId);
+                    }
+                    break;
+                }
+                default: {
+                    throw new Error(`[physics] unknown message type ${data.type}`);
+                }
+                }
+            };
         });
     }
 
@@ -113,39 +96,72 @@ export class Physics {
             body.position.y = this.#tview[offset + 1];
             body.position.z = this.#tview[offset + 2];
         }
-        this.#world.step(1 / 60, Math.min(delta, 1 / 30), 10);
     }
 
-    getEntityFromBody(body: Body) {
-        return this.#bodyToEntity.get(body);
+    registerCollisionCallback(body: Body, cb: CollisionCallback) {
+        const id = this.#bodyToId.get(body)!;
+        this.#collisionCallbacks.set(id, cb);
+    }
+
+    removeCollisionCallback(body: Body) {
+        const id = this.#bodyToId.get(body)!;
+        this.#collisionCallbacks.delete(id);
     }
 
     addVelocity(body: Body, velocity: Vec3) {
-        if (body.shapes.length === 0) {
-            this.#worker.postMessage({
-                type: 'addVelocity',
-                id: this.#bodyToId.get(body),
-                x: velocity.x,
-                y: velocity.y,
-                z: velocity.z,
-            });
-        } else {
-            body.velocity.x += velocity.x;
-            body.velocity.y += velocity.y;
-            body.velocity.z += velocity.z;
-        }
+        this.#worker.postMessage({
+            type: 'addVelocity',
+            id: this.#bodyToId.get(body),
+            x: velocity.x,
+            y: velocity.y,
+            z: velocity.z,
+        });
     }
 
-    createConcave(opts: RigidBodyOptions, geometry: BufferGeometry) {
-        const id = this.#bodyId;
-        this.#bodyId += 1;
+    /** Adds velocity to a RigidBody ONLY if raycast returns a hit */
+    addVelocityConditionalRaycast(body: Body, velocity: Vec3, from: Vec3, to: Vec3) {
+        this.#worker.postMessage({
+            type: 'addVelocityConditionalRaycast',
+            id: this.#bodyToId.get(body),
+            vx: velocity.x,
+            vy: velocity.y,
+            vz: velocity.z,
+            fx: from.x,
+            fy: from.y,
+            fz: from.z,
+            tx: to.x,
+            ty: to.y,
+            tz: to.z,
+        });
+    }
 
-        const nonIndexedGeo = geometry.toNonIndexed();
-        const triangles = nonIndexedGeo.getAttribute('position').array;
+    removeBody(body: Body) {
+        const id = this.#bodyToId.get(body)!;
 
         this.#worker.postMessage({
-            type: 'createConcave',
-            triangles,
+            type: 'removeBody',
+            id,
+        });
+
+        // TODO - recycle ID's, like in `graphics/graphics.ts`
+        this.#bodyToId.delete(body);
+        this.#idToBody.delete(id);
+    }
+
+    createTrimesh(opts: RigidBodyOptions, geometry: BufferGeometry) {
+        const id = this.#idCounter;
+        this.#idCounter += 1;
+
+        // optimization: extract underlying buffer from the ThreeJS BufferAttribute
+        // so that it can be moved to the worker thread, instead of copied.
+
+        const nonIndexedGeo = geometry.toNonIndexed();
+        const triangles = nonIndexedGeo.getAttribute('position').array as Float32Array;
+        const triangleBuffer = triangles.buffer;
+
+        this.#worker.postMessage({
+            type: 'createTrimesh',
+            triangleBuffer,
             x: opts.pos?.x ?? 0,
             y: opts.pos?.y ?? 0,
             z: opts.pos?.z ?? 0,
@@ -157,7 +173,7 @@ export class Physics {
             qz: opts.quat?.z ?? 0,
             qw: opts.quat?.w ?? 1,
             id,
-        });
+        }, [triangleBuffer]);
 
         const mock = new Body();
         this.#idToBody.set(id, mock);
@@ -167,8 +183,8 @@ export class Physics {
     }
 
     createSphere(opts: RigidBodyOptions, radius: number) {
-        const id = this.#bodyId;
-        this.#bodyId += 1;
+        const id = this.#idCounter;
+        this.#idCounter += 1;
 
         this.#worker.postMessage({
             type: 'createSphere',
@@ -195,23 +211,40 @@ export class Physics {
         return mock;
     }
 
-    /**
-     * Returns true if a body exists on the provided line.
-     * @note only detects bodies in collisionFilterGroup 1
-     */
-    raycast(from: Vec3, to: Vec3) {
-        const ray = new Ray(from, to);
-        const result = new RaycastResult();
+    createCube(opts: RigidBodyOptions, length: number) {
+        const id = this.#idCounter;
+        this.#idCounter += 1;
 
-        ray.intersectWorld(this.#world, { result, collisionFilterMask: 1 });
+        this.#worker.postMessage({
+            type: 'createCube',
+            length,
+            mass: opts.mass,
+            x: opts.pos?.x ?? 0,
+            y: opts.pos?.y ?? 0,
+            z: opts.pos?.z ?? 0,
+            sx: opts.scale?.x ?? 1,
+            sy: opts.scale?.y ?? 1,
+            sz: opts.scale?.z ?? 1,
+            qx: opts.quat?.x ?? 0,
+            qy: opts.quat?.y ?? 0,
+            qz: opts.quat?.z ?? 0,
+            qw: opts.quat?.w ?? 1,
+            fixedRotation: opts.fixedRotation ?? false,
+            id,
+        });
 
-        return result.hasHit;
+        const mock = new Body();
+        this.#idToBody.set(id, mock);
+        this.#bodyToId.set(mock, id);
+
+        return mock;
     }
 
     // ======================================
-    // Utility methods for making RigidBodies
+    // Utility methods for making RigidBodies (deprecated)
     // ======================================
 
+    /** @deprecated */
     static makeCube(mass: number, size: number) {
         const shape = new Box(new Vec3(size, size, size));
         const body = new Body({ mass });
@@ -220,6 +253,7 @@ export class Physics {
         return body;
     }
 
+    /** @deprecated */
     static makeBall(mass: number, radius: number) {
         const shape = new Sphere(radius);
         const body = new Body({ mass });
@@ -228,6 +262,7 @@ export class Physics {
         return body;
     }
 
+    /** @deprecated */
     static makeCylinder(mass: number, radius: number, height: number) {
         const shape = new Cylinder(radius, radius, height);
         const body = new Body({ mass });
@@ -236,6 +271,7 @@ export class Physics {
         return body;
     }
 
+    /** @deprecated */
     static makeCapsule(mass: number, radius: number, height: number) {
         const shape = new Sphere(radius);
         const body = new Body({ mass });

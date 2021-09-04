@@ -9,11 +9,11 @@ import AssetLoader from './load';
 import Entity from './ecs/entity';
 import EntityManager from './ecs/entity-manager';
 import GameScript from './script';
+import { Graphics, GraphicsData } from './graphics/graphics';
+import { Physics, PhysicsData } from './physics';
 
 import gameScripts from './game/_scripts.json';
 import maps from './json/maps.json';
-import { Graphics, GraphicsData } from './graphics/graphics';
-import { Physics, PhysicsData } from './physics';
 
 export default class Engine {
     readonly events = new EventEmitter();
@@ -49,37 +49,29 @@ export default class Engine {
     async init() {
         Entity.defaultManager = this.ecs;
 
-        // initialize engine systems
-        this.graphics.init(this);
-        this.physics.init(this);
-        this.assetLoader.init();
-
-        // TODO - replace this with `await this.physics.init(this);`
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        // set up engine events
         this.events.on('startLoop', () => { this.#running = true; });
         this.events.on('stopLoop', () => { this.#running = false; });
 
-        // dynamically load game scripts
+        this.graphics.init(this);
+        await this.physics.init(this);
+        this.assetLoader.init();
+
         const scriptModules: any[] = [];
         for (const scriptName of gameScripts.scripts) {
             scriptModules.push(import(`./game/${scriptName}`));
         }
-
-        // init game scripts
         for (const scriptModule of await Promise.all(scriptModules)) {
-            // eslint-disable-next-line new-cap
             const script: GameScript = new scriptModule.default(this);
             this.#gameScripts.push(script);
             script.init();
         }
 
         // load the map
-        const map = maps['skjar-isles'];
-        for (const path of map.objects) {
-            const mesh = await this.assetLoader.loadModel(path);
-            mesh.traverse((node) => {
+        {
+            const map = maps.newMap;
+            const meshPromise = this.assetLoader.loadModel(map.path);
+            const physicsMesh = await this.assetLoader.loadModel(map.physicsPath);
+            physicsMesh.traverse((node) => {
                 if (node instanceof Mesh) {
                     const worldPos = new Vector3();
                     const worldScale = new Vector3();
@@ -87,21 +79,22 @@ export default class Engine {
                     node.getWorldPosition(worldPos);
                     node.getWorldScale(worldScale);
                     node.getWorldQuaternion(worldQuat);
-                    this.physics.createConcave({
+                    const body = this.physics.createTrimesh({
                         pos: new Vec3(worldPos.x, worldPos.y, worldPos.z),
                         scale: new Vec3(worldScale.x, worldScale.y, worldScale.z),
                         quat: new CQuaternion(worldQuat.x, worldQuat.y, worldQuat.z, worldQuat.w),
-                    },
-                    node.geometry);
+                    }, node.geometry);
 
-                    const body = AssetLoader.loadPhysicsModel(node, 0);
-                    new Entity()
-                        .setComponent(PhysicsData, body);
+                    const f = new Entity();
+                    f.setComponent(PhysicsData, body);
                 }
             });
-
-            new Entity()
-                .setComponent(GraphicsData, mesh);
+            (await meshPromise).traverse((node) => {
+                if (node instanceof Mesh) {
+                    const f = new Entity();
+                    f.setComponent(GraphicsData, node);
+                }
+            });
         }
 
         // between the game scripts and the map, we probably just created a bunch of renderables.

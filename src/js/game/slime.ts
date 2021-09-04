@@ -1,7 +1,9 @@
+import { Vec3 } from 'cannon-es';
+
 import Entity from '../ecs/entity';
 import GameScript from '../script';
 import { GraphicsData } from '../graphics/graphics';
-import { Physics, PhysicsData } from '../physics';
+import { PhysicsData } from '../physics';
 
 export default class SlimeScript extends GameScript {
     init() {
@@ -20,9 +22,11 @@ export default class SlimeScript extends GameScript {
 
         const randomPos = () => Math.random() * 150 - 75;
 
-        const body = Physics.makeCube(100, 1.39);
-        body.allowSleep = false;
-        body.position.set(randomPos(), 30, randomPos());
+        const pos = new Vec3(randomPos(), 60, randomPos());
+        const body = this.physics.createCube({
+            mass: 1,
+            pos,
+        }, 1.39 * 2);
         slime.setComponent(PhysicsData, body);
     }
 }

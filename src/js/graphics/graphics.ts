@@ -306,15 +306,18 @@ export class Graphics {
         if (object.parent) object.parent.add(object);
         else this.#scene.add(object);
 
+        if (object.userData.poop) return;
+
         const id = this.assignIdToObject(object);
         object.userData.entityId = entityId;
 
         object.traverse((node) => {
-            // send object's texture data to backend
             if (node instanceof Mesh || node instanceof Sprite) {
                 if (node.material instanceof Material) {
+                    // object only has one material
                     this.extractMaterialTextures(node.material);
                 } else {
+                    // object has several materials
                     for (const material of node.material) {
                         this.extractMaterialTextures(material);
                     }

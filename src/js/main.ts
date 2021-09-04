@@ -22,6 +22,14 @@ import Engine from './engine';
  * using the modern Grove engine!!  I'm SO down!
  */
 
+/**
+ * TODO 9/2/2021
+ * =============
+ * [X] Delete physics bodies
+ * [ ] Procedural terrain
+ *
+ */
+
 const engine = new Engine();
 
 engine.init();

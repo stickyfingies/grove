@@ -70,12 +70,15 @@
 <head>
     <title>The Grove | Play</title>
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <!-- <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval'"> -->
+    <meta http-equiv="Cross-Origin-Resource-Policy" content="same-origin">
+    <meta http-equiv="Cross-Origin-Embedder-Policy-Report-Only" content="require-corp">
+    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
     <link rel="icon" href="/img/favicon(1).ico">
 </head>
 
 <body>
-    <div id="main"></div>
-
     <div id="blocker">
         <div id="load">
             <img id="spinner" src="/img/loading.svg"><br>

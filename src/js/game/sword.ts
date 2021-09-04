@@ -5,7 +5,7 @@ import GameScript from '../script';
 import { CAMERA_TAG, CameraData, GraphicsData } from '../graphics/graphics';
 
 export default class SwordScript extends GameScript {
-    sword: Entity;
+    sword!: Entity;
 
     // eslint-disable-next-line class-methods-use-this
     init() {

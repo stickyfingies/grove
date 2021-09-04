@@ -66,7 +66,7 @@ export default class MovementScript extends GameScript {
             // walkVector = direction * speed
             const walkVector = mvmt.direction.normalize();
             walkVector.multiplyScalar(mvmt.walkVelocity);
-            walkVector.multiplyScalar(mvmt.sprinting ? 2 : 1);
+            walkVector.multiplyScalar(mvmt.sprinting ? 5 : 1);
 
             // walk
             const walkVelocity = new Vec3(walkVector.x, 0, walkVector.z);
@@ -80,11 +80,19 @@ export default class MovementScript extends GameScript {
             body.velocity.z = clamp(body.velocity.z, -walkVector.z, walkVector.z);
 
             // try to jump
-            if (mvmt.wantsToJump) {
-                const raycastDst = new Vec3(body.position.x, body.position.y - 2, body.position.z);
-                const canJump = this.physics.raycast(body.position, raycastDst);
+            // if (mvmt.wantsToJump) {
+            //     const raycastDst = new Vec3(body.position.x, body.position.y - 2, body.position.z);
+            //     const canJump = this.physics.raycast(body.position, raycastDst);
 
-                if (canJump) body.velocity.y += mvmt.jumpVelocity;
+            //     if (canJump) body.velocity.y += mvmt.jumpVelocity;
+            // }
+            if (mvmt.wantsToJump) {
+                this.physics.addVelocityConditionalRaycast(
+                    body,
+                    new Vec3(0, mvmt.jumpVelocity, 0),
+                    body.position,
+                    new Vec3(body.position.x, body.position.y - 1.5, body.position.z),
+                );
             }
         });
     }

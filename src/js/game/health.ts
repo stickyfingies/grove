@@ -6,10 +6,10 @@ import GameScript from '../script';
  */
 export class HealthData {
     /** current hp value */
-    hp: number;
+    hp: number = 1;
 
     /** maximum hp value */
-    max: number;
+    max: number = 1;
 }
 
 export default class HealthScript extends GameScript {

@@ -36,6 +36,9 @@
         "new-cap": [
             "error",
             {
+                "newIsCapExceptions": [
+                    "default"
+                ],
                 "newIsCapExceptionPattern": "^Ammo\\..",
                 "capIsNewExceptions": [
                     "Ammo"

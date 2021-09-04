@@ -1,5 +1,5 @@
 import {
-    Body, ContactEquation, Sphere, Vec3,
+    Vec3,
 } from 'cannon-es';
 import {
     CanvasTexture,
@@ -32,18 +32,18 @@ const getCameraDir = () => {
 };
 
 export default class PlayerScript extends GameScript {
-    player: Entity;
+    player!: Entity;
 
-    hud: Entity;
+    hud!: Entity;
 
-    hudCanvas: HTMLCanvasElement;
+    hudCanvas!: HTMLCanvasElement;
 
-    hudCtx: CanvasRenderingContext2D;
+    hudCtx!: CanvasRenderingContext2D;
 
     init() {
         const shootTowardsCrosshair = (e: MouseEvent) => {
             if (e.button !== 2) return;
-            shoot(Entity.getTag(PLAYER_TAG), getCameraDir());
+            shoot(this.physics, Entity.getTag(PLAYER_TAG), getCameraDir());
         };
 
         this.engine.events.on('startLoop', () => {
@@ -57,8 +57,8 @@ export default class PlayerScript extends GameScript {
         this.hudCanvas = canvas;
         this.hudCtx = ctx;
 
-        this.player = new Entity()
-            .addTag(PLAYER_TAG);
+        this.player = new Entity();
+        this.player.addTag(PLAYER_TAG);
 
         this.player.setComponent(HealthData, {
             hp: 100,
@@ -72,26 +72,15 @@ export default class PlayerScript extends GameScript {
         // create physics body
         const mass = 100;
         const radius = 1;
-        const shape = new Sphere(radius);
-        const playerBody = new Body({
-            collisionFilterGroup: 2, // separate collision filter for raycasts
-            allowSleep: false,
-            fixedRotation: true, // Ammo.js: btBody.setAngularFactor(0, 0, 0);
-            mass,
-        });
-
-        playerBody.addShape(shape);
-        playerBody.position.y = 12;
-        playerBody.position.x = 12;
 
         const body = this.physics.createSphere({
             mass,
-            pos: new Vec3(12, 12, 0),
+            pos: new Vec3(12, 120, 0),
             fixedRotation: true,
         }, radius);
 
         this.player.setComponent(PhysicsData, body);
-        this.player.setComponent(MovementData, new MovementData(2.25, 0.7));
+        this.player.setComponent(MovementData, new MovementData(5, 0.7));
         this.player.setComponent(KeyboardControlData, {});
 
         this.hud = new Entity();
@@ -105,15 +94,15 @@ export default class PlayerScript extends GameScript {
         this.drawHUD();
 
         // handle impact damage
-        playerBody.addEventListener('collide', ({ contact }: { contact: ContactEquation }) => {
-            const health = this.player.getComponent(HealthData);
-            const impact = contact.getImpactVelocityAlongNormal();
+        // playerBody.addEventListener('collide', ({ contact }: { contact: ContactEquation }) => {
+        //     const health = this.player.getComponent(HealthData);
+        //     const impact = contact.getImpactVelocityAlongNormal();
 
-            if (Math.abs(impact) >= 15) {
-                health.hp -= Math.floor(Math.abs(impact) / 10);
-                this.drawHUD();
-            }
-        });
+        //     if (Math.abs(impact) >= 15) {
+        //         health.hp -= Math.floor(Math.abs(impact) / 10);
+        //         this.drawHUD();
+        //     }
+        // });
 
         // handle enemy deaths
         this.ecs.events.on('enemyDied', () => {
@@ -141,9 +130,9 @@ export default class PlayerScript extends GameScript {
         });
 
         // attach data to debug GUI
-        this.gui.add(playerBody.interpolatedPosition, 'x').listen();
-        this.gui.add(playerBody.interpolatedPosition, 'y').listen();
-        this.gui.add(playerBody.interpolatedPosition, 'z').listen();
+        this.gui.add(body.position, 'x').listen();
+        this.gui.add(body.position, 'y').listen();
+        this.gui.add(body.position, 'z').listen();
     }
 
     drawHUD() {

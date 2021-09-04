@@ -13,12 +13,11 @@ import Entity from '../ecs/entity';
 import GameScript from '../script';
 import entities from '../json/entities.json';
 import { CAMERA_TAG, CameraData, GraphicsData } from '../graphics/graphics';
-import { Physics, PhysicsData } from '../physics';
 
 export default class SceneSetupScript extends GameScript {
-    skybox: Entity;
+    skybox!: Entity;
 
-    person: Entity;
+    person!: Entity;
 
     init() {
         this.skybox = new Entity();
@@ -52,37 +51,10 @@ export default class SceneSetupScript extends GameScript {
         }
 
         for (const entity of entities.spawn) {
-            console.log(entity.name);
             const e = new Entity();
-            if ('PhysicsData' in entity) {
-                const physicsData = entity.PhysicsData!;
-                switch (physicsData.type) {
-                case 'capsule': {
-                    const { mass, radius, height } = physicsData;
-                    const body = Physics.makeCapsule(mass, radius, height);
-                    body.allowSleep = false;
-                    body.position.y = 18;
-                    body.position.x = -6;
-                    body.fixedRotation = true;
-                    body.linearDamping = 0.9;
-                    body.updateMassProperties();
-                    e.setComponent(PhysicsData, body);
-                    break;
-                }
-                default:
-                    throw new Error(`Unable to parse PhysicsData type ${physicsData.type}`);
-                }
-            }
             if ('GraphicsData' in entity) {
                 const graphicsData = entity.GraphicsData;
                 switch (graphicsData.type) {
-                case 'model': {
-                    this.assetLoader.loadModel(graphicsData.path!)
-                        .then((mesh) => {
-                            e.setComponent(GraphicsData, mesh);
-                        });
-                    break;
-                }
                 case 'light:directional': {
                     const light = new DirectionalLight(graphicsData.color, graphicsData.intensity);
                     const { x, y, z } = graphicsData.position!;

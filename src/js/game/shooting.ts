@@ -1,3 +1,4 @@
+import { Vec3 } from 'cannon-es';
 import { Vector3 } from 'three';
 
 import Entity from '../ecs/entity';
@@ -6,7 +7,7 @@ import GraphicsUtils from '../graphics/utils';
 import { Physics, PhysicsData } from '../physics';
 
 /** Shoots a ball outwards from an entity in an indicated direction */
-const shoot = (origin: Entity, shootDir: Vector3) => {
+const shoot = (physics: Physics, origin: Entity, shootDir: Vector3) => {
     const ball = new Entity();
 
     const { x: px, y: py, z: pz } = origin.getComponent(PhysicsData).position;
@@ -18,28 +19,36 @@ const shoot = (origin: Entity, shootDir: Vector3) => {
     const shootVelo = 40;
     const distanceFromOrigin = 2;
 
-    const body = Physics.makeBall(mass, radius);
-    body.velocity.set(
+    const velocity = new Vec3(
         vx + sdx * shootVelo,
         vy + sdy * shootVelo,
         vz + sdz * shootVelo,
     );
-    body.position.set(
+    const position = new Vec3(
         px + sdx * distanceFromOrigin,
         py + sdy * distanceFromOrigin,
         pz + sdz * distanceFromOrigin,
     );
+
+    const body = physics.createSphere({
+        mass,
+        pos: position,
+    }, radius);
+    physics.addVelocity(body, velocity);
     ball.setComponent(PhysicsData, body);
 
     const mesh = GraphicsUtils.makeBall(radius);
     ball.setComponent(GraphicsData, mesh);
 
     const collideCb = () => {
-        body.removeEventListener('collide', collideCb);
-        setTimeout(ball.delete, 1500);
+        physics.removeCollisionCallback(body);
+        setTimeout(() => {
+            physics.removeBody(body);
+            ball.delete();
+        }, 1500);
     };
 
-    body.addEventListener('collide', collideCb);
+    physics.registerCollisionCallback(body, collideCb);
 
     return ball;
 };

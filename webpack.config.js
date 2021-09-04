@@ -34,7 +34,6 @@ import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 const commonConfig = {
     mode: 'development',
     name: 'js',
-    devtool: 'eval-cheap-source-map',
     output: {
         filename: '[name].cjs',
         chunkFilename: '[id].js',

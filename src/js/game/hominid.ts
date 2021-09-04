@@ -33,16 +33,16 @@ import { ConstraintData, Physics, PhysicsData } from '../physics';
  */
 class HominidData {
     // personal space bubble around the player at which hominids will stop approaching
-    bubble: number;
+    bubble: number = 10;
 
     // the torso entity (which this component should be attached to)
-    torso: Entity;
+    torso!: Entity;
 
     // the head entity
-    head: Entity;
+    head!: Entity;
 
     // ui element floating above the hominid's head
-    halo: Entity;
+    halo!: Entity;
 }
 
 export default class HominidScript extends GameScript {
@@ -148,7 +148,7 @@ export default class HominidScript extends GameScript {
             // shoot at player
             if (hominidPos.distanceTo(playerPos) <= bubble + 3 && Math.random() < 0.01) {
                 const shootDir = hominidPos.subVectors(playerPos, hominidPos).normalize();
-                const ball = shoot(hominid, shootDir);
+                const ball = shoot(this.physics, hominid, shootDir);
                 ((ball.getComponent(GraphicsData) as Mesh).material as MeshPhongMaterial).color = new Color('#EE5A24');
                 this.graphics.updateMaterial(ball.getComponent(GraphicsData) as Mesh);
             }

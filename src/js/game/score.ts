@@ -1,3 +1,3 @@
 export default class ScoreData {
-    score: number
+    score: number = 0
 }

@@ -10,6 +10,9 @@ const createWindow = () => {
     const win = new BrowserWindow({
         width: 1280,
         height: 720,
+        webPreferences: {
+            sandbox: true,
+        },
     });
 
     win.removeMenu();

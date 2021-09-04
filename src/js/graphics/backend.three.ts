@@ -5,7 +5,7 @@
 import {
     BoxGeometry,
     DataTexture,
-    GridHelper,
+    // GridHelper,
     LinearFilter,
     LinearMipMapLinearFilter,
     MaterialLoader,
@@ -60,7 +60,7 @@ export default class GraphicsBackend {
     #uiscene = new Scene();
 
     /** ThreeJS WebGL renderer instance */
-    #renderer: WebGLRenderer;
+    #renderer!: WebGLRenderer;
 
     /** map of mesh IDs to mesh instances */
     #idToObject = new Map<number, Object3D>();
@@ -109,13 +109,13 @@ export default class GraphicsBackend {
         this.#uiscene.add(crosshair);
 
         // grid
-        const grid = new GridHelper(100, 100);
-        grid.position.y = 1;
-        // grid.rotateX(Math.PI / 2);
-        this.#scene.add(grid);
-        const grid1 = new GridHelper(99, 50, 0xff00ff, 0xff0000);
-        grid1.position.y = 1.1;
-        this.#scene.add(grid1);
+        // const grid = new GridHelper(100, 100);
+        // grid.position.y = 1;
+        // // grid.rotateX(Math.PI / 2);
+        // this.#scene.add(grid);
+        // const grid1 = new GridHelper(99, 50, 0xff00ff, 0xff0000);
+        // grid1.position.y = 1.1;
+        // this.#scene.add(grid1);
 
         // graphics thread render loop
         const render = () => {
@@ -192,6 +192,8 @@ export default class GraphicsBackend {
 
         const object = new ObjectLoader().parse(data);
 
+        // if (object.children.length > 0) console.log(object);
+
         // if (object.children.length) console.log(data);
 
         object.traverse((node) => {
@@ -222,7 +224,7 @@ export default class GraphicsBackend {
 
     /** Resizes the render target */
     resize({ width, height, pixelRatio }: GraphicsResizeCmd) {
-        console.log(`resize ${width} x ${height} @ ${pixelRatio}x scaling`);
+        // console.log(`resize ${width} x ${height} @ ${pixelRatio}x scaling`);
 
         this.#camera.aspect = width / height;
         this.#camera.updateProjectionMatrix();
@@ -264,7 +266,6 @@ export default class GraphicsBackend {
 
         // assign textures
         if (map) mat.map = this.#textureCache.get(map)!;
-        if (map && !this.#textureCache.has(map)) console.error('foo');
         if (alphaMap) mat.alphaMap = this.#textureCache.get(alphaMap)!;
         if (normalMap) mat.normalMap = this.#textureCache.get(normalMap)!;
         if (specularMap) mat.specularMap = this.#textureCache.get(specularMap)!;

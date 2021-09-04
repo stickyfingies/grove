@@ -9,7 +9,7 @@ import {
 import Entity from '../ecs/entity';
 import GameScript from '../script';
 import { GraphicsData } from '../graphics/graphics';
-// import { PLAYER_TAG } from './player';
+import { PLAYER_TAG } from './player';
 import { PhysicsData } from '../physics';
 
 /**
@@ -47,6 +47,12 @@ export default class UpgradeScript extends GameScript {
             //         setTimeout(upgrade.delete, 40);
             //     }
             // };
+
+            this.physics.registerCollisionCallback(upgradeBody, (entity) => {
+                if (entity === this.ecs.getTag(PLAYER_TAG)) {
+                    this.ecs.events.emit('healPlayer', 15);
+                }
+            });
 
             // upgradeBody.addEventListener('collide', collideCb);
         };

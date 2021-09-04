@@ -11,6 +11,8 @@ export default class MeshTransformScript extends GameScript {
             const body = entity.getComponent(PhysicsData);
             const mesh = entity.getComponent(GraphicsData);
 
+            if (mesh.userData.poop) return;
+
             const { x: px, y: py, z: pz } = body.position;
             const {
                 x: qx, y: qy, z: qz, w: qw,
