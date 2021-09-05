@@ -3,7 +3,6 @@
  */
 
 import {
-    BoxGeometry,
     DataTexture,
     // GridHelper,
     LinearFilter,
@@ -96,13 +95,6 @@ export default class GraphicsBackend {
         this.#uicamera.matrixAutoUpdate = false;
         this.#uicamera.position.z = 10;
 
-        // test cube
-        const cube = new Mesh(new BoxGeometry(6, 6, 6), new MeshPhongMaterial({
-            color: 0xff0000,
-        }));
-        cube.position.y = 30;
-        this.#scene.add(cube);
-
         const crosshair = new Sprite(new SpriteMaterial({ color: 'black' }));
         crosshair.scale.set(10, 10, 1);
         crosshair.position.set(0, 0, -1);
@@ -119,8 +111,6 @@ export default class GraphicsBackend {
 
         // graphics thread render loop
         const render = () => {
-            cube.rotateY(0.01);
-
             this.readTransformsFromArray(transformArray);
 
             this.#renderer.clear();

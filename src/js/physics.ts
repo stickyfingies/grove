@@ -173,7 +173,7 @@ export class Physics {
             qz: opts.quat?.z ?? 0,
             qw: opts.quat?.w ?? 1,
             id,
-        }, [triangleBuffer]);
+        }, []);
 
         const mock = new Body();
         this.#idToBody.set(id, mock);

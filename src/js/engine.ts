@@ -67,35 +67,36 @@ export default class Engine {
         }
 
         // load the map
-        {
-            const map = maps.newMap;
-            const meshPromise = this.assetLoader.loadModel(map.path);
-            const physicsMesh = await this.assetLoader.loadModel(map.physicsPath);
-            physicsMesh.traverse((node) => {
-                if (node instanceof Mesh) {
-                    const worldPos = new Vector3();
-                    const worldScale = new Vector3();
-                    const worldQuat = new Quaternion();
-                    node.getWorldPosition(worldPos);
-                    node.getWorldScale(worldScale);
-                    node.getWorldQuaternion(worldQuat);
-                    const body = this.physics.createTrimesh({
-                        pos: new Vec3(worldPos.x, worldPos.y, worldPos.z),
-                        scale: new Vec3(worldScale.x, worldScale.y, worldScale.z),
-                        quat: new CQuaternion(worldQuat.x, worldQuat.y, worldQuat.z, worldQuat.w),
-                    }, node.geometry);
+        // {
+        //     const map = maps.newMap;
+        //     const meshPromise = this.assetLoader.loadModel(map.path);
+        //     const physicsMesh = await this.assetLoader.loadModel(map.physicsPath);
+        //     physicsMesh.traverse((node) => {
+        //         if (node instanceof Mesh) {
+        //             const worldPos = new Vector3();
+        //             const worldScale = new Vector3();
+        //             const worldQuat = new Quaternion();
+        //             node.getWorldPosition(worldPos);
+        //             node.getWorldScale(worldScale);
+        //             node.getWorldQuaternion(worldQuat);
+        //             const body = this.physics.createTrimesh({
+        //                 pos: new Vec3(worldPos.x, worldPos.y, worldPos.z),
+        //                 scale: new Vec3(worldScale.x, worldScale.y, worldScale.z),
+        //                 quat: new CQuaternion(worldQuat.x, worldQuat.y, worldQuat.z, worldQuat.w),
+        //             }, node.geometry);
 
-                    const f = new Entity();
-                    f.setComponent(PhysicsData, body);
-                }
-            });
-            (await meshPromise).traverse((node) => {
-                if (node instanceof Mesh) {
-                    const f = new Entity();
-                    f.setComponent(GraphicsData, node);
-                }
-            });
-        }
+        //             const f = new Entity();
+        //             f.setComponent(PhysicsData, body);
+        //             f.setComponent(GraphicsData, node);
+        //         }
+        //     });
+        //     // (await meshPromise).traverse((node) => {
+        //     //     if (node instanceof Mesh) {
+        //     //         const f = new Entity();
+        //     //         f.setComponent(GraphicsData, node);
+        //     //     }
+        //     // });
+        // }
 
         // between the game scripts and the map, we probably just created a bunch of renderables.
         // run backend work now, so it isn't being done right when the first frame starts rendering.

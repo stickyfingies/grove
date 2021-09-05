@@ -47,7 +47,7 @@ export default class SceneSetupScript extends GameScript {
 
             // graphics component can't be added until all textures have finished loading
             // TODO use progress callbacks instead of timeouts.  this is hacky as fuck.
-            setTimeout(() => this.skybox.setComponent(GraphicsData, skyboxMesh), 600);
+            setTimeout(() => this.skybox.setComponent(GraphicsData, skyboxMesh), 1000);
         }
 
         for (const entity of entities.spawn) {

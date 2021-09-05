@@ -1,6 +1,7 @@
 {
     "scripts": [
         "loadingScreen",
+        "terrain",
         "scene",
         "physicsTest",
         "keyboardControls",
