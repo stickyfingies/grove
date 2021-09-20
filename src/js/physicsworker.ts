@@ -353,6 +353,27 @@ Ammo().then(() => {
 
             break;
         }
+        case 'raycast': {
+            const {
+                id, fx, fy, fz, tx, ty, tz,
+            } = data;
+
+            const src = new Ammo.btVector3(fx, fy, fz);
+            const dst = new Ammo.btVector3(tx, ty, tz);
+            const res = new Ammo.ClosestRayResultCallback(src, dst);
+            dynamicsWorld.rayTest(src, dst, res);
+            Ammo.destroy(dst);
+            Ammo.destroy(src);
+
+            if (!res.hasHit()) {
+                postMessage({ type: 'raycastResult', raycastId: id, bodyId: -1 });
+                return;
+            }
+
+            const body = Ammo.btRigidBody.prototype.upcast(res.get_m_collisionObject());
+            postMessage({ type: 'raycastResult', raycastId: id, bodyId: body.getUserIndex() });
+            break;
+        }
         default: {
             throw new Error(`[physics worker]: ${type} is not a valid command`);
         }

@@ -1,9 +1,10 @@
 import SimplexNoise from 'simplex-noise';
 import { Quaternion as CQuaternion, Vec3 } from 'cannon-es';
 import {
+    DoubleSide,
     Mesh,
     MeshPhongMaterial,
-    PlaneGeometry,
+    PlaneBufferGeometry,
     Quaternion,
     Vector3,
 } from 'three';
@@ -26,7 +27,7 @@ const createChunk = (physics: Physics, noise: SimplexNoise, options: ChunkOption
         size, resolution, posX, posZ, color,
     } = options;
 
-    const geometry = new PlaneGeometry(size, size, resolution, resolution);
+    const geometry = new PlaneBufferGeometry(size, size, resolution, resolution);
     const nonIndexed = geometry.toNonIndexed();
     const positionAttrib = nonIndexed.getAttribute('position');
 
@@ -34,13 +35,9 @@ const createChunk = (physics: Physics, noise: SimplexNoise, options: ChunkOption
     for (let i = 0; i < positionAttrib.count; i++) {
         const x = positionAttrib.getX(i) + posX * size;
         const y = positionAttrib.getY(i) + posZ * size;
-        const ex = 0.3;
-        const v = (noise.noise2D(x / 100, y / 100)
-            + (noise.noise2D((x + 200) / 50, y / 50) * (ex ** 1))
-            + (noise.noise2D((x + 400) / 25, y / 25) * (ex ** 2))
-            + (noise.noise2D((x + 600) / 12.5, y / 12.5) * (ex ** 3))
-            + +(noise.noise2D((x + 800) / 6.25, y / 6.25) * (ex ** 4))
-        ) / 0.125;
+        const v = (1.0 * noise.noise2D(1 * x, 1 * y))
+                + (0.5 * noise.noise2D(2 * x, 2 * y))
+                + (0.25 * noise.noise2D(4 * x, 4 * y));
         positionAttrib.setZ(i, v);
     }
 
@@ -49,10 +46,11 @@ const createChunk = (physics: Physics, noise: SimplexNoise, options: ChunkOption
 
     const plane = new Mesh(nonIndexed, new MeshPhongMaterial({
         color: color ?? 0x228822,
+        side: DoubleSide,
     }));
     plane.translateX(posX * size);
     plane.translateZ(posZ * size);
-    plane.rotateX(-Math.PI / 2);
+    plane.rotateX(Math.PI / 2);
 
     const worldPos = new Vector3();
     const worldScale = new Vector3();
@@ -76,23 +74,20 @@ const createChunk = (physics: Physics, noise: SimplexNoise, options: ChunkOption
 export default class TerrainScript extends GameScript {
     // eslint-disable-next-line
     init() {
-        const noise = new SimplexNoise(3);
+        const noise = new SimplexNoise(Math.random());
 
         const chunkSize = 128;
-        const chunkResolution = 64;
+        const chunkResolution = 42;
 
-        createChunk(this.physics, noise, {
-            size: chunkSize,
-            resolution: chunkResolution,
-            posX: 0,
-            posZ: 0,
-        });
-        createChunk(this.physics, noise, {
-            size: chunkSize,
-            resolution: chunkResolution,
-            posX: 1,
-            posZ: 0,
-            color: 0x882222,
-        });
+        for (let x = -3; x < 3; x++) {
+            for (let y = -3; y < 3; y++) {
+                createChunk(this.physics, noise, {
+                    size: chunkSize,
+                    resolution: chunkResolution,
+                    posX: x,
+                    posZ: y,
+                });
+            }
+        }
     }
 }

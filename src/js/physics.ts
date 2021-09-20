@@ -36,6 +36,8 @@ export class Physics {
     /** A counter that gets incremented when a new ID needs to be allocated. */
     #idCounter: RigidBodyID = 0;
 
+    #raycastIdCounter = 0;
+
     /** Raw buffer containing RigidBody transform data. */
     #tbuffer = new SharedArrayBuffer(4 * 16 * 1024);
 
@@ -49,6 +51,8 @@ export class Physics {
     #idToEntity = new Map<RigidBodyID, number>();
 
     #collisionCallbacks = new Map<RigidBodyID, CollisionCallback>();
+
+    #raycastCallbacks = new Map<number, Function>();
 
     constructor() {
         this.#worker = new Worker(new URL('./physicsworker.ts', import.meta.url));
@@ -79,6 +83,12 @@ export class Physics {
 
                         this.#collisionCallbacks.get(id0)?.(entityId);
                     }
+                    break;
+                }
+                case 'raycastResult': {
+                    const { raycastId, bodyId } = data;
+                    const entityId = this.#idToEntity.get(bodyId);
+                    this.#raycastCallbacks.get(raycastId)!(entityId);
                     break;
                 }
                 default: {
@@ -135,6 +145,27 @@ export class Physics {
         });
     }
 
+    /** Casts a ray, and returns either the entity ID that got hit or undefined. */
+    raycast(from: Vec3, to: Vec3) {
+        return new Promise<number | undefined>((resolve) => {
+            const id = this.#raycastIdCounter;
+            this.#raycastIdCounter += 1;
+
+            this.#raycastCallbacks.set(id, resolve);
+
+            this.#worker.postMessage({
+                type: 'raycast',
+                id,
+                fx: from.x,
+                fy: from.y,
+                fz: from.z,
+                tx: to.x,
+                ty: to.y,
+                tz: to.z,
+            });
+        });
+    }
+
     removeBody(body: Body) {
         const id = this.#bodyToId.get(body)!;
 
@@ -155,7 +186,7 @@ export class Physics {
         // optimization: extract underlying buffer from the ThreeJS BufferAttribute
         // so that it can be moved to the worker thread, instead of copied.
 
-        const nonIndexedGeo = geometry.toNonIndexed();
+        const nonIndexedGeo = geometry.index ? geometry.toNonIndexed() : geometry;
         const triangles = nonIndexedGeo.getAttribute('position').array as Float32Array;
         const triangleBuffer = triangles.buffer;
 

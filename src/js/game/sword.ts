@@ -1,14 +1,17 @@
 import anime from 'animejs';
 
+import { Vector3 } from 'three';
+import { Vec3 } from 'cannon-es';
 import Entity from '../ecs/entity';
 import GameScript from '../script';
 import { CAMERA_TAG, CameraData, GraphicsData } from '../graphics/graphics';
+import { PLAYER_TAG } from './player';
 
 export default class SwordScript extends GameScript {
     sword!: Entity;
 
     // eslint-disable-next-line class-methods-use-this
-    init() {
+    async init() {
         this.sword = new Entity();
         const camera = Entity.getTag(CAMERA_TAG);
 
@@ -22,7 +25,7 @@ export default class SwordScript extends GameScript {
                 this.sword.setComponent(GraphicsData, mesh);
             });
 
-        document.addEventListener('mousedown', (e) => {
+        document.addEventListener('mousedown', async (e) => {
             if (e.button !== 0) return;
 
             // 0.5 second upswing and downswing
@@ -36,12 +39,21 @@ export default class SwordScript extends GameScript {
                 easing: 'linear',
             });
 
-            const hit = this.graphics.raycast()[0];
-            if (hit && hit.distance < 10) {
-                this.ecs.events.emit('dealDamage', hit.object.userData.entityId);
-            }
+            // 1) Raycast forwards from camera
+            const camData = camera.getComponent(CameraData);
+            const camDir = new Vector3();
+            camData.getWorldDirection(camDir);
+            camDir.multiplyScalar(99);
+            const from = new Vec3(camData.position.x, camData.position.y, camData.position.z);
+            const to = new Vec3(from.x + camDir.x, from.y + camDir.y, from.z + camDir.z);
+            const result = await this.physics.raycast(from, to);
 
-            // TODO: apply impact force
+            // 2) If the raycast hit something, deal damage to that entity
+            if (result !== undefined) {
+                console.log(this.ecs.getTag(PLAYER_TAG));
+                console.log(result);
+                this.ecs.events.emit('dealDamage', result);
+            }
         });
     }
 }
