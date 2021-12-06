@@ -16,11 +16,11 @@ import {
     OrthographicCamera,
     PCFSoftShadowMap,
     PerspectiveCamera,
+    REVISION,
     RGBAFormat,
     RepeatWrapping,
     Scene,
     Sprite,
-    SpriteMaterial,
     WebGLRenderer,
 } from 'three';
 
@@ -87,6 +87,8 @@ export default class GraphicsBackend {
         this.#renderer.shadowMap.enabled = true;
         this.#renderer.shadowMap.type = PCFSoftShadowMap;
 
+        console.log(`ThreeJS backend v.${REVISION}`);
+
         // set up cameras
         this.#camera.matrixAutoUpdate = false;
         this.#scene.add(this.#camera);
@@ -94,11 +96,6 @@ export default class GraphicsBackend {
 
         this.#uicamera.matrixAutoUpdate = false;
         this.#uicamera.position.z = 10;
-
-        const crosshair = new Sprite(new SpriteMaterial({ color: 'black' }));
-        crosshair.scale.set(10, 10, 1);
-        crosshair.position.set(0, 0, -1);
-        this.#uiscene.add(crosshair);
 
         // grid
         // const grid = new GridHelper(100, 100);
@@ -144,13 +141,13 @@ export default class GraphicsBackend {
 
     /** Emplaces raw texture data into a ThreeJS texture object */
     uploadTexture({
-        imageId, imageData, imageWidth, imageHeight,
+        imageId, imageData, imageWidth, imageHeight, ui,
     }: GraphicsUploadTextureCmd) {
         const map = new DataTexture(imageData, imageWidth, imageHeight, RGBAFormat);
         map.wrapS = RepeatWrapping;
         map.wrapT = RepeatWrapping;
         map.magFilter = LinearFilter;
-        map.minFilter = LinearMipMapLinearFilter;
+        map.minFilter = ui ? LinearFilter : LinearMipMapLinearFilter;
         map.generateMipmaps = true;
         map.flipY = true;
         map.needsUpdate = true;
@@ -182,23 +179,19 @@ export default class GraphicsBackend {
 
         const object = new ObjectLoader().parse(data);
 
-        // if (object.children.length > 0) console.log(object);
-
         // if (object.children.length) console.log(data);
 
-        object.traverse((node) => {
-            if (node instanceof Mesh || node instanceof Sprite) {
-                if (node.material.length) {
-                    const matList: MeshPhongMaterial[] = [];
-                    for (const mat of node.material) {
-                        matList.push(matMap.get(mat.uuid)!);
-                    }
-                    node.material = matList;
-                } else {
-                    node.material = matMap.get(node.material.uuid);
+        if (object instanceof Mesh || object instanceof Sprite) {
+            if (object.material.length) {
+                const matList: MeshPhongMaterial[] = [];
+                for (const mat of object.material) {
+                    matList.push(matMap.get(mat.uuid)!);
                 }
+                object.material = matList;
+            } else {
+                object.material = matMap.get(object.material.uuid);
             }
-        });
+        }
 
         object.matrixAutoUpdate = false;
         (ui ? this.#uiscene : this.#scene).add(object);

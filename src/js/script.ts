@@ -23,8 +23,6 @@ import { Physics } from './physics';
  * document.addEventListener('click', this.doSomething); // no need for .bind()
  */
 export default abstract class GameScript {
-    readonly graphics: Graphics;
-
     readonly physics: Physics;
 
     readonly ecs: EntityManager;
@@ -33,12 +31,14 @@ export default abstract class GameScript {
 
     readonly assetLoader: AssetLoader;
 
+    readonly graphics: Graphics;
+
     constructor(protected engine: Engine) {
-        this.graphics = engine.graphics;
         this.physics = engine.physics;
         this.ecs = engine.ecs;
         this.gui = engine.gui;
         this.assetLoader = engine.assetLoader;
+        this.graphics = engine.graphics;
         autoBind(this);
     }
 

@@ -65,14 +65,14 @@ export default class HominidScript extends GameScript {
         // and spawn more every 45 seconds
         // setInterval(spawn, 45_000);
 
-        this.ecs.events.on('dealDamage', (id: number) => {
+        this.ecs.events.on('dealDamage', (id: number, dmg: number) => {
             const entity = new Entity(Entity.defaultManager, id);
             if (!entity.hasComponent(HominidData)) return;
 
             const { torso } = entity.getComponent(HominidData);
             const health = torso.getComponent(HealthData);
             if (!health) return;
-            health.hp -= 999999;
+            health.hp -= dmg;
         });
 
         // when something dies...

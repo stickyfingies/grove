@@ -1,7 +1,5 @@
 import { Vec3 } from 'cannon-es';
 
-import EcsView from '../ecs/view';
-import Entity from '../ecs/entity';
 import GameScript from '../script';
 import { GraphicsData } from '../graphics/graphics';
 import { HealthData } from './health';
@@ -9,84 +7,142 @@ import { PLAYER_TAG } from './player';
 import { PhysicsData } from '../physics';
 
 /** Basically tags entities as being slimes */
-class SlimeData {}
+class SlimeData {
+    speed = 0.75;
+
+    lastHop = performance.now();
+}
 
 export default class SlimeScript extends GameScript {
-    slimeView = new EcsView(this.ecs, new Set([SlimeData]))
-
     init() {
-        for (let i = 0; i < 6; i++) {
-            this.createSlime();
-        }
+        setInterval(this.createSlime, 1200);
 
-        this.ecs.events.on(`delete${HealthData.name}Component`, (id: number) => {
-            // make sure it's really a hominid (this is a generic death event)
-            const entity = new Entity(Entity.defaultManager, id);
-            if (!entity.hasComponent(SlimeData)) return;
+        this.ecs.events.on(`delete${HealthData.name}Component`, (entity: number) => {
+            // make sure it's really a slime (this is a generic death event)
+            if (!this.ecs.hasComponent(entity, SlimeData)) return;
 
-            const body = entity.getComponent(PhysicsData);
-            this.physics.removeBody(body);
-            entity.delete();
+            this.ecs.events.emit('enemyDied');
+
+            this.ecs.deleteEntity(entity);
         });
 
-        // make the sword raycast in the physics realm
+        this.ecs.events.on('collision', ({ id0, id1 }) => {
+            if (this.ecs.hasComponent(id0, SlimeData) && id1 === this.ecs.getTag(PLAYER_TAG)) {
+                this.ecs.events.emit('dealDamage', id1, 3);
+            }
+        });
 
-        this.ecs.events.on('dealDamage', (id: number) => {
-            const entity = new Entity(Entity.defaultManager, id);
-            if (!entity.hasComponent(SlimeData)) return;
+        this.ecs.events.on('dealDamage', (entity: number, dmg: number) => {
+            if (!this.ecs.hasComponent(entity, SlimeData)) return;
 
-            console.log('fuck mate, i got hurt');
-
-            const health = entity.getComponent(HealthData);
+            const health = this.ecs.getComponent(entity, HealthData);
             if (!health) return;
-            health.hp -= 999999;
+            health.hp -= dmg;
         });
     }
 
     update(dt: number) {
-        const player = Entity.getTag(PLAYER_TAG);
-        const playerBody = player.getComponent(PhysicsData);
+        const player = this.ecs.getTag(PLAYER_TAG);
+        const playerBody = this.ecs.getComponent(player, PhysicsData);
 
-        this.slimeView.iterateView((slime) => {
-            const slimeBody = slime.getComponent(PhysicsData);
+        const slimes = this.ecs.submitQuery(new Set([SlimeData]));
+
+        slimes.forEach((slime) => {
+            const slimeBody = this.ecs.getComponent(slime, PhysicsData);
 
             const distanceToPlayer = playerBody.position.distanceTo(slimeBody.position);
             const vectorToPlayer = playerBody.position.vsub(slimeBody.position);
 
-            const speed = 0.75;
+            const { speed, lastHop } = this.ecs.getComponent(slime, SlimeData);
 
+            let targets = 0;
+            let slimesInVicinity = 0;
+            const accumulatedVelocity = new Vec3(0, 0, 0);
+
+            // The player is a valid target if they are closeby.
             if (distanceToPlayer < 20) {
-                const velocity = vectorToPlayer.scale(speed);
-                this.physics.addVelocity(slimeBody, new Vec3(velocity.x, 0, velocity.z));
+                const velocity = vectorToPlayer.scale(speed * 5);
+
+                // The player should be weighted as a higher priority target than other slimes.
+                // Multiplying everything by 20 biases the final average towards the player.
+                accumulatedVelocity.x += velocity.x * 20;
+                accumulatedVelocity.z += velocity.z * 20;
+                targets += 20;
+            }
+            // Other slimes are also valid targets; this causes their 'clumping' behavior.
+            if (Math.random() <= 0.02) {
+                slimes.forEach((other) => {
+                    if (other === slime) return;
+
+                    const otherBody = this.ecs.getComponent(other, PhysicsData);
+
+                    const distanceToOther = otherBody.position.distanceTo(slimeBody.position);
+                    const vectorToOther = otherBody.position.vsub(slimeBody.position);
+
+                    if (distanceToOther < 20) {
+                        slimesInVicinity += 1;
+                        targets += 1;
+                        const velocity = vectorToOther.scale(speed * 3);
+                        accumulatedVelocity.x += velocity.x;
+                        accumulatedVelocity.y += velocity.y;
+                        accumulatedVelocity.z += velocity.z;
+                    }
+                });
+            }
+
+            if (slimesInVicinity > 0) {
+                const slimeMesh = this.ecs.getComponent(slime, GraphicsData);
+                const blueness = Math.max(Math.min(slimesInVicinity / 12, 1), 0.02738276869058609);
+                // @ts-ignore
+                slimeMesh.children[0].material.color.b = blueness;
+                // @ts-ignore
+                this.graphics.updateMaterial(slimeMesh);
+            }
+
+            // Hop towards the average target position
+            if (targets && (performance.now() - lastHop) > 1125) {
+                this.ecs.getComponent(slime, SlimeData).lastHop = performance.now();
+
+                // Find the average velocity target
+                accumulatedVelocity.x /= targets;
+                accumulatedVelocity.z /= targets;
+
+                // Add a hop force if the slime is standing on something
+                this.physics.addForceConditionalRaycast(
+                    slimeBody,
+                    new Vec3(accumulatedVelocity.x, 30, accumulatedVelocity.z),
+                    slimeBody.position,
+                    new Vec3(
+                        slimeBody.position.x,
+                        slimeBody.position.y - 1.5,
+                        slimeBody.position.z,
+                    ),
+                );
             }
         });
     }
 
     async createSlime() {
-        const slime = new Entity();
+        const slime = this.ecs.createEntity();
 
-        slime.setComponent(SlimeData, {});
+        this.ecs.setComponent(slime, SlimeData, { speed: 0.75, lastHop: performance.now() });
 
-        slime.setComponent(HealthData, { hp: 5, max: 5 });
+        this.ecs.setComponent(slime, HealthData, { hp: 5, max: 5 });
 
         const mesh = await this.assetLoader.loadModel('/models/slime/slime.glb');
-        mesh.name = 'Slime';
-        // mesh.scale.set(5, 5, 5);
-        slime.setComponent(GraphicsData, mesh);
+        // @ts-ignore
+        mesh.children[1].material = mesh.children[1].material.clone();
+        mesh.scale.set(0.7, 0.7, 0.7);
+        this.ecs.setComponent(slime, GraphicsData, mesh);
 
         const randomPos = () => Math.random() * 150 - 75;
 
         const pos = new Vec3(randomPos(), 60, randomPos());
         const body = this.physics.createSphere({
-            mass: 1,
+            mass: 10,
             pos,
             fixedRotation: true,
         }, 1.39 / 2);
-        slime.setComponent(PhysicsData, body);
-
-        this.physics.registerCollisionCallback(body, (id) => {
-            const health = slime.getComponent(HealthData);
-            health.hp -= 1;
-        });
+        this.ecs.setComponent(slime, PhysicsData, body);
     }
 }

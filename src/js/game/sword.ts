@@ -1,17 +1,17 @@
+import { Vec3 } from 'cannon-es';
+import { Vector3 } from 'three';
 import anime from 'animejs';
 
-import { Vector3 } from 'three';
-import { Vec3 } from 'cannon-es';
 import Entity from '../ecs/entity';
 import GameScript from '../script';
 import { CAMERA_TAG, CameraData, GraphicsData } from '../graphics/graphics';
-import { PLAYER_TAG } from './player';
 
 export default class SwordScript extends GameScript {
     sword!: Entity;
 
-    // eslint-disable-next-line class-methods-use-this
-    async init() {
+    lastSwung = performance.now();
+
+    init() {
         this.sword = new Entity();
         const camera = Entity.getTag(CAMERA_TAG);
 
@@ -27,6 +27,11 @@ export default class SwordScript extends GameScript {
 
         document.addEventListener('mousedown', async (e) => {
             if (e.button !== 0) return;
+
+            // wait 3/4 of a second between swings
+            if (performance.now() - this.lastSwung < 750) return;
+
+            this.lastSwung = performance.now();
 
             // 0.5 second upswing and downswing
             anime({
@@ -46,13 +51,12 @@ export default class SwordScript extends GameScript {
             camDir.multiplyScalar(99);
             const from = new Vec3(camData.position.x, camData.position.y, camData.position.z);
             const to = new Vec3(from.x + camDir.x, from.y + camDir.y, from.z + camDir.z);
-            const result = await this.physics.raycast(from, to);
+            const raycastInfo = await this.physics.raycast(from, to);
 
             // 2) If the raycast hit something, deal damage to that entity
-            if (result !== undefined) {
-                console.log(this.ecs.getTag(PLAYER_TAG));
-                console.log(result);
-                this.ecs.events.emit('dealDamage', result);
+            if (raycastInfo) {
+                const { entityID, hitPoint } = raycastInfo;
+                if (hitPoint.distanceTo(from) < 3.0) this.ecs.events.emit('dealDamage', entityID, 10);
             }
         });
     }

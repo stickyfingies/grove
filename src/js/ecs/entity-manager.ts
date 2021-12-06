@@ -115,7 +115,6 @@ export default class EntityManager {
 
     /** Set a component for an entity */
     setComponent<T>(id: number, type: DataType<T>, data: T) {
-        if (id === 21) console.log(data);
         // assign to new entity archetype
         const signature = new Set(this.#idToArchetype.get(id)?.signature);
         signature.add(type);

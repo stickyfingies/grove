@@ -7,12 +7,12 @@ import GraphicsUtils from '../graphics/utils';
 import { Physics, PhysicsData } from '../physics';
 
 /** Shoots a ball outwards from an entity in an indicated direction */
-const shoot = (physics: Physics, origin: Entity, shootDir: Vector3) => {
+const shoot = (physics: Physics, origin: Entity, shootDir: Vector3, cb?: (e: number) => void) => {
     const ball = new Entity();
 
     const { x: px, y: py, z: pz } = origin.getComponent(PhysicsData).position;
     const { x: vx, y: vy, z: vz } = origin.getComponent(PhysicsData).velocity;
-    const { x: sdx, y: sdy, z: sdz } = shootDir;
+    const { x: sdx, y: sdy, z: sdz } = shootDir.normalize();
 
     const radius = 0.3;
     const mass = 10;
@@ -40,8 +40,9 @@ const shoot = (physics: Physics, origin: Entity, shootDir: Vector3) => {
     const mesh = GraphicsUtils.makeBall(radius);
     ball.setComponent(GraphicsData, mesh);
 
-    const collideCb = () => {
+    const collideCb = (entity: number) => {
         physics.removeCollisionCallback(body);
+        cb?.(entity);
         setTimeout(() => {
             physics.removeBody(body);
             ball.delete();

@@ -15,15 +15,14 @@
  */
 
 import {
+    Light,
     Material,
     Mesh,
     Object3D,
     PerspectiveCamera,
-    Raycaster,
     Scene,
     Sprite,
     Texture,
-    Vector2,
 } from 'three';
 
 import Engine from '../engine';
@@ -46,6 +45,10 @@ export const UiData = Sprite;
  * @example Entity.getTag(CAMERA_TAG)
  */
 export const CAMERA_TAG = Symbol('camera');
+
+export class UpdateMaterial {
+    object: Mesh | Sprite;
+}
 
 export class Graphics {
     /** Tree-like graph of renderable game objects */
@@ -119,6 +122,7 @@ export class Graphics {
             .addTag(CAMERA_TAG)
             .setComponent(CameraData, this.#camera);
         this.assignIdToObject(this.#camera);
+        this.#scene.add(this.#camera);
 
         // TODO too implicit: { entity.setComponent() => [event blackbox] => addObjectToScene() }
         // TODO prefer: { mesh = graphics.makeObject(); entity.setComponent(mesh); }
@@ -179,22 +183,20 @@ export class Graphics {
     /**
      * Changes to material properties made by game code are not automatically mirrored by
      * the backend, so materials need to be manually flushed after updates
+     * @note Broken for groups
      */
-    updateMaterial(object: Mesh | Sprite) {
-        this.extractMaterialTextures(object.material as Material);
+    updateMaterial(object: Mesh | Sprite, ui = false) {
+        object.traverse((node) => {
+            if (node instanceof Mesh || node instanceof Sprite) {
+                this.extractMaterialTextures(node.material as Material, ui);
 
-        this.submitCommand({
-            type: 'updateMaterial',
-            material: (object.material as Material).toJSON(),
-            id: object.userData.meshId,
+                this.submitCommand({
+                    type: 'updateMaterial',
+                    material: (node.material as Material).toJSON(),
+                    id: node.userData.meshId,
+                });
+            }
         });
-    }
-
-    raycast() {
-        const raycaster = new Raycaster();
-        raycaster.setFromCamera(new Vector2(), this.#camera);
-
-        return raycaster.intersectObjects(Array.from(this.#idToObject.values()));
     }
 
     /**
@@ -210,30 +212,35 @@ export class Graphics {
     }
 
     private removeFromScene(object: Object3D) {
-        const id = object.userData.meshId;
+        object.traverse((node) => {
+            if (node.userData.meshId) {
+                const id = node.userData.meshId;
 
-        // inform the graphics backend
-        this.submitCommand({
-            type: 'removeObject',
-            id,
+                // inform the graphics backend
+                this.submitCommand({
+                    type: 'removeObject',
+                    id,
+                });
+
+                // recycle ID
+                this.#idToObject.delete(id);
+                this.#availableObjectIds.push(id);
+            }
         });
-
-        // recycle ID
-        this.#idToObject.delete(id);
-        this.#availableObjectIds.push(id);
     }
 
     /**
      * Flush all renderable objects' transforms to the shared transform buffer
      */
     private writeTransformsToArray() {
+        this.#scene.updateMatrixWorld();
+
         // for every renderable...
         for (const [id, object] of this.#idToObject) {
             // calculate offset into array given mesh ID
             const offset = id * this.#elementsPerTransform;
 
             // copy world matrix into transform buffer
-            object.updateMatrixWorld();
             for (let i = 0; i < this.#elementsPerTransform; i++) {
                 this.#array[offset + i] = object.matrixWorld.elements[i];
             }
@@ -267,7 +274,7 @@ export class Graphics {
     /**
      * Ship a texture to the graphics backend, but only if the texture has not already been uploaded
      */
-    private uploadTexture(map: Texture) {
+    private uploadTexture(map: Texture, ui: boolean) {
         if (this.#textureCache.has(map.uuid)) return; // image is already cached
 
         const { image, uuid } = map;
@@ -286,14 +293,15 @@ export class Graphics {
             imageData: imageData.data,
             imageWidth: width,
             imageHeight: height,
+            ui,
         });
     }
 
-    private extractMaterialTextures(material: Material) {
+    private extractMaterialTextures(material: Material, ui: boolean) {
         // @ts-ignore - properties may not exist, but I check for that
         const { map, alphaMap } = material;
-        if (map) this.uploadTexture(map);
-        if (alphaMap) this.uploadTexture(alphaMap);
+        if (map) this.uploadTexture(map, ui);
+        if (alphaMap) this.uploadTexture(alphaMap, ui);
     }
 
     /**
@@ -306,31 +314,31 @@ export class Graphics {
         if (object.parent) object.parent.add(object);
         else this.#scene.add(object);
 
-        if (object.userData.poop) return;
-
-        const id = this.assignIdToObject(object);
-        object.userData.entityId = entityId;
-
         object.traverse((node) => {
-            if (node instanceof Mesh || node instanceof Sprite) {
-                if (node.material instanceof Material) {
-                    // object only has one material
-                    this.extractMaterialTextures(node.material);
-                } else {
-                    // object has several materials
-                    for (const material of node.material) {
-                        this.extractMaterialTextures(material);
+            if (node instanceof Mesh || node instanceof Sprite || node instanceof Light) {
+                const id = this.assignIdToObject(node);
+                node.userData.entityId = entityId;
+
+                if ('material' in node) {
+                    if (node.material instanceof Material) {
+                        // object only has one material
+                        this.extractMaterialTextures(node.material, ui);
+                    } else {
+                        // object has several materials
+                        for (const material of node.material) {
+                            this.extractMaterialTextures(material, ui);
+                        }
                     }
                 }
-            }
-        });
 
-        // send that bitch to the backend
-        this.submitCommand({
-            type: 'addObject',
-            data: object.toJSON(),
-            id,
-            ui,
+                // send that bitch to the backend
+                this.submitCommand({
+                    type: 'addObject',
+                    data: node.toJSON(),
+                    id,
+                    ui,
+                });
+            }
         });
     }
 }

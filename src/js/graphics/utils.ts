@@ -23,6 +23,23 @@ export default class GraphicsUtils {
         return mesh;
     }
 
+    static makeCapsule(radius: number, height: number) {
+        const material = new MeshPhongMaterial({ color: 0x00CCFF });
+
+        const cGeometry = new CylinderBufferGeometry(radius, radius, height, 32);
+        const sGeometry = new SphereBufferGeometry(radius, 32, 32);
+
+        const cMesh = new Mesh(cGeometry, material);
+        const stMesh = new Mesh(sGeometry, material);
+        const sbMesh = new Mesh(sGeometry, material);
+        stMesh.position.y = height / 2;
+        sbMesh.position.y = -height / 2;
+        cMesh.add(stMesh);
+        cMesh.add(sbMesh);
+
+        return cMesh;
+    }
+
     static makeCylinder(radius: number, height: number) {
         const geometry = new CylinderBufferGeometry(radius, radius, height);
         const material = new MeshPhongMaterial({ color: 0x00CCFF });

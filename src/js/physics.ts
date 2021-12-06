@@ -18,6 +18,11 @@ export const ConstraintData = PointToPointConstraint;
 // eslint-disable-next-line no-redeclare
 export type ConstraintData = PointToPointConstraint;
 
+export type RaycastInfo = {
+    entityID: number, // the entity hit by the raycast
+    hitPoint: Vec3 // hitpoint lcoation in worldspace
+}
+
 export type RigidBodyOptions = {
     pos?: Vec3,
     scale?: Vec3,
@@ -26,7 +31,25 @@ export type RigidBodyOptions = {
     fixedRotation?: boolean
 }
 
+export class CollisionEvent {
+    id0!: number;
+
+    id1!: number;
+}
+
+export class AddForceConditionalRaycast {
+    body!: Body;
+
+    force!: Vec3;
+
+    from!: Vec3;
+
+    to!: Vec3;
+}
+
 export type CollisionCallback = (entity: number) => void;
+
+type RaycastCallback = (i: RaycastInfo) => void;
 
 type RigidBodyID = number;
 
@@ -52,7 +75,7 @@ export class Physics {
 
     #collisionCallbacks = new Map<RigidBodyID, CollisionCallback>();
 
-    #raycastCallbacks = new Map<number, Function>();
+    #raycastCallbacks = new Map<number, RaycastCallback>();
 
     constructor() {
         this.#worker = new Worker(new URL('./physicsworker.ts', import.meta.url));
@@ -63,32 +86,43 @@ export class Physics {
             const bodyId = this.#bodyToId.get(body)!;
             this.#idToEntity.set(bodyId, entityId);
         });
+        engine.ecs.events.on(`delete${PhysicsData.name}Component`, (entityId: number, body: PhysicsData) => {
+            this.removeBody(body);
+        });
 
-        // Wait until ammo is loaded before telling the worker to init
         return new Promise<void>((resolve) => {
             this.#worker.onmessage = ({ data }) => {
                 switch (data.type) {
                 case 'ready': {
+                    // This is the backend saying, "libraries loaded and ready to go!"
                     this.#worker.postMessage({ type: 'init', buffer: this.#tbuffer });
                     resolve();
                     break;
                 }
                 case 'collisions': {
+                    // List of collisions that take place every tick
                     const { collisions } = data;
                     for (let i = 0; i < collisions.length; i += 2) {
-                        const id0 = collisions[i + 0];
-                        const id1 = collisions[i + 1];
+                        const rbId0 = collisions[i + 0];
+                        const rbId1 = collisions[i + 1];
 
-                        const entityId = this.#idToEntity.get(id1)!;
+                        const id0 = this.#idToEntity.get(rbId0)!;
+                        const id1 = this.#idToEntity.get(rbId1)!;
 
-                        this.#collisionCallbacks.get(id0)?.(entityId);
+                        engine.ecs.events.emit('collision', { id0, id1 });
+                        this.#collisionCallbacks.get(rbId0)?.(id1);
                     }
                     break;
                 }
                 case 'raycastResult': {
-                    const { raycastId, bodyId } = data;
-                    const entityId = this.#idToEntity.get(bodyId);
-                    this.#raycastCallbacks.get(raycastId)!(entityId);
+                    // Results from a raycast request
+                    const { raycastId, bodyId, hitPoint } = data;
+                    const entityID = this.#idToEntity.get(bodyId)!;
+                    const { x, y, z } = hitPoint;
+                    this.#raycastCallbacks.get(raycastId)!({
+                        entityID,
+                        hitPoint: new Vec3(x, y, z),
+                    });
                     break;
                 }
                 default: {
@@ -116,6 +150,32 @@ export class Physics {
     removeCollisionCallback(body: Body) {
         const id = this.#bodyToId.get(body)!;
         this.#collisionCallbacks.delete(id);
+    }
+
+    addForce(body: Body, force: Vec3) {
+        this.#worker.postMessage({
+            type: 'addForce',
+            id: this.#bodyToId.get(body),
+            x: force.x,
+            y: force.y,
+            z: force.z,
+        });
+    }
+
+    addForceConditionalRaycast(body: Body, force: Vec3, from: Vec3, to: Vec3) {
+        this.#worker.postMessage({
+            type: 'addForceConditionalRaycast',
+            id: this.#bodyToId.get(body),
+            x: force.x,
+            y: force.y,
+            z: force.z,
+            fx: from.x,
+            fy: from.y,
+            fz: from.z,
+            tx: to.x,
+            ty: to.y,
+            tz: to.z,
+        });
     }
 
     addVelocity(body: Body, velocity: Vec3) {
@@ -147,7 +207,7 @@ export class Physics {
 
     /** Casts a ray, and returns either the entity ID that got hit or undefined. */
     raycast(from: Vec3, to: Vec3) {
-        return new Promise<number | undefined>((resolve) => {
+        return new Promise<RaycastInfo | undefined>((resolve) => {
             const id = this.#raycastIdCounter;
             this.#raycastIdCounter += 1;
 
@@ -242,13 +302,14 @@ export class Physics {
         return mock;
     }
 
-    createCube(opts: RigidBodyOptions, length: number) {
+    createCapsule(opts: RigidBodyOptions, radius: number, height: number) {
         const id = this.#idCounter;
         this.#idCounter += 1;
 
         this.#worker.postMessage({
-            type: 'createCube',
-            length,
+            type: 'createCapsule',
+            radius,
+            height,
             mass: opts.mass,
             x: opts.pos?.x ?? 0,
             y: opts.pos?.y ?? 0,

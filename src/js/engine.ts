@@ -52,9 +52,30 @@ export default class Engine {
         this.events.on('startLoop', () => { this.#running = true; });
         this.events.on('stopLoop', () => { this.#running = false; });
 
+        console.groupCollapsed('Initializing');
+
         this.graphics.init(this);
         await this.physics.init(this);
         this.assetLoader.init();
+
+        // schedule A
+        // schedule B
+        // schedule C, which runs after awaiting A and B
+        // schedule D, which runs every time E runs
+        // schedule E
+        // schedule D (because E was scheduled)
+
+        // jobsys.alwaysAfter(dependencies, job);
+        // jobsys.after(dependencies, job);
+
+        // A graph is JUST a graph, with node and edge data included.  Graphs could be inserted
+        // straight into the scheduler, like a frame execution graph just having its commands
+        // executed in order; OR, it could be dropped in starting from any particular "start" node,
+        // like with events.
+
+        // static built graphs for reusability
+        // ^ that way: don't need to store GameScripts!  Give their `init` a graph, they'll
+        // ^ schedule work within that graph and it can later be executed each frame.
 
         const scriptModules: any[] = [];
         for (const scriptName of gameScripts.scripts) {
@@ -65,6 +86,9 @@ export default class Engine {
             this.#gameScripts.push(script);
             script.init();
         }
+
+        // build graph
+        // execute graph
 
         // load the map
         {
@@ -103,7 +127,7 @@ export default class Engine {
         this.graphics.update();
 
         // show performance statistics
-        this.#stats.showPanel(1);
+        this.#stats.showPanel(2);
         document.body.appendChild(this.#stats.dom);
         this.#physicsStats.showPanel(1);
         this.#physicsStats.dom.style.cssText = 'position:absolute;top:0px;left:100px;';
@@ -114,6 +138,8 @@ export default class Engine {
         this.#graphicsStats.showPanel(1);
         this.#graphicsStats.dom.style.cssText = 'position:absolute;top:0px;left:260px;';
         document.body.appendChild(this.#graphicsStats.dom);
+
+        console.groupEnd();
 
         requestAnimationFrame(this.update);
     }

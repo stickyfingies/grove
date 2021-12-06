@@ -191,9 +191,9 @@ Ammo().then(() => {
 
             break;
         }
-        case 'createCube': {
+        case 'createCapsule': {
             const {
-                mass, fixedRotation, length, x, y, z, sx, sy, sz, qx, qy, qz, qw, id,
+                mass, fixedRotation, radius, height, x, y, z, sx, sy, sz, qx, qy, qz, qw, id,
             } = data;
 
             const origin = new Ammo.btVector3(x, y, z);
@@ -207,7 +207,7 @@ Ammo().then(() => {
             Ammo.destroy(quat);
             Ammo.destroy(origin);
 
-            const shape = new Ammo.btBoxShape(length);
+            const shape = new Ammo.btCapsuleShape(radius, height);
             const localScale = new Ammo.btVector3(sx, sy, sz);
             shape.setLocalScaling(localScale);
             Ammo.destroy(localScale);
@@ -297,6 +297,44 @@ Ammo().then(() => {
 
             break;
         }
+        case 'addForce': {
+            const {
+                id, x, y, z,
+            } = data;
+
+            const body = idToRb.get(id)!;
+            body.activate(true);
+
+            const force = new Ammo.btVector3(x, y, z);
+            body.applyCentralImpulse(force);
+            Ammo.destroy(force);
+
+            break;
+        }
+        case 'addForceConditionalRaycast': {
+            const {
+                id, x, y, z, fx, fy, fz, tx, ty, tz,
+            } = data;
+
+            const src = new Ammo.btVector3(fx, fy, fz);
+            const dst = new Ammo.btVector3(tx, ty, tz);
+            const res = new Ammo.ClosestRayResultCallback(src, dst);
+            dynamicsWorld.rayTest(src, dst, res);
+            Ammo.destroy(dst);
+            Ammo.destroy(src);
+
+            if (!res.hasHit()) return;
+            Ammo.destroy(res);
+
+            const body = idToRb.get(id)!;
+            body.activate(true);
+
+            const force = new Ammo.btVector3(x, y, z);
+            body.applyCentralImpulse(force);
+            Ammo.destroy(force);
+
+            break;
+        }
         case 'addVelocity': {
             const {
                 id, x, y, z,
@@ -371,7 +409,17 @@ Ammo().then(() => {
             }
 
             const body = Ammo.btRigidBody.prototype.upcast(res.get_m_collisionObject());
-            postMessage({ type: 'raycastResult', raycastId: id, bodyId: body.getUserIndex() });
+            const hitPoint = res.get_m_hitPointWorld();
+            postMessage({
+                type: 'raycastResult',
+                raycastId: id,
+                bodyId: body.getUserIndex(),
+                hitPoint: {
+                    x: hitPoint.x(),
+                    y: hitPoint.y(),
+                    z: hitPoint.z(),
+                },
+            });
             break;
         }
         default: {
@@ -380,6 +428,6 @@ Ammo().then(() => {
         }
     };
 
-    // Send an empty message so the physics frontend knows Ammo is loaded
+    // Tell the frontend that libraries are loaded and we're ready to roll
     globalThis.postMessage({ type: 'ready' });
 });

@@ -1,6 +1,4 @@
-import {
-    Vec3,
-} from 'cannon-es';
+import { Vec3 } from 'cannon-es';
 import {
     CanvasTexture,
     Sprite,
@@ -41,6 +39,14 @@ export default class PlayerScript extends GameScript {
     hudCtx!: CanvasRenderingContext2D;
 
     init() {
+        const crosshair = new Entity();
+        {
+            const crosshairSprite = new Sprite(new SpriteMaterial({ color: 'black' }));
+            crosshairSprite.scale.set(10, 10, 1);
+            crosshairSprite.position.set(0, 0, -1);
+            crosshair.setComponent(UiData, crosshairSprite);
+        }
+
         const shootTowardsCrosshair = (e: MouseEvent) => {
             if (e.button !== 2) return;
             shoot(this.physics, Entity.getTag(PLAYER_TAG), getCameraDir());
@@ -87,8 +93,8 @@ export default class PlayerScript extends GameScript {
 
         const hudSprite = new Sprite();
         hudSprite.material = new SpriteMaterial();
-        hudSprite.position.set(0, -200, -1);
-        hudSprite.scale.set(80, 80, 1);
+        hudSprite.position.set(0, -window.innerHeight / 2 + this.hudCanvas.height / 2, -1);
+        hudSprite.scale.set(256, 256, 1);
         this.hud.setComponent(UiData, hudSprite);
 
         this.drawHUD();
@@ -108,6 +114,7 @@ export default class PlayerScript extends GameScript {
         this.ecs.events.on('enemyDied', () => {
             const score = this.player.getComponent(ScoreData);
             score.score += 1;
+            this.ecs.events.emit('updateScore', score);
             this.drawHUD();
         });
 
@@ -115,6 +122,13 @@ export default class PlayerScript extends GameScript {
         this.ecs.events.on('healPlayer', (amount: number) => {
             const health = this.player.getComponent(HealthData);
             health.hp += amount;
+            this.drawHUD();
+        });
+
+        this.ecs.events.on('dealDamage', (id: number, dmg: number) => {
+            if (id !== this.player.id) return;
+
+            this.player.getComponent(HealthData).hp -= dmg;
             this.drawHUD();
         });
 
@@ -144,10 +158,10 @@ export default class PlayerScript extends GameScript {
         this.hudCtx.font = '52px Arial';
         this.hudCtx.fillStyle = 'red';
         this.hudCtx.textAlign = 'center';
-        this.hudCtx.fillText(`${health.hp}/${health.max}HP`, this.hudCanvas.width / 2, 54);
-        this.hudCtx.fillText(`${score.score} points`, this.hudCanvas.width / 2, 108);
+        this.hudCtx.fillText(`${health.hp}/${health.max}HP`, this.hudCanvas.width / 2, this.hudCanvas.height - 62);
+        this.hudCtx.fillText(`${score.score} points`, this.hudCanvas.width / 2, this.hudCanvas.height - 10);
 
         hudSprite.material.map = new CanvasTexture(this.hudCanvas);
-        this.graphics.updateMaterial(hudSprite);
+        this.graphics.updateMaterial(hudSprite, true);
     }
 }

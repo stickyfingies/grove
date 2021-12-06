@@ -10,6 +10,7 @@ export type GraphicsUploadTextureCmd = {
     imageWidth: number,
     imageHeight: number,
     imageData: ArrayBufferView,
+    ui: boolean
 }
 
 export type GraphicsAddObjectCmd = {
