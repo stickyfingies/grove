@@ -128,13 +128,13 @@ export class Graphics {
         // TODO prefer: { mesh = graphics.makeObject(); entity.setComponent(mesh); }
         // listen to component events
         engine.ecs.events.on(`set${GraphicsData.name}Component`, (entityId: number, object: GraphicsData) => {
-            this.addObjectToScene(entityId, object, false);
+            this.addObjectToScene(object, false);
         });
         engine.ecs.events.on(`delete${GraphicsData.name}Component`, (id: number, object: GraphicsData) => {
             this.removeFromScene(object);
         });
         engine.ecs.events.on(`set${UiData.name}Component`, (entityId: number, object: UiData) => {
-            this.addObjectToScene(entityId, object, true);
+            this.addObjectToScene(object, true);
         });
         engine.ecs.events.on(`delete${UiData.name}Component`, (id: number, object: UiData) => {
             this.removeFromScene(object);
@@ -203,7 +203,7 @@ export class Graphics {
      * Submit a command to the backend.  Note that unless `immediate` is set to true, the commands
      * will actually be queued until the next call to `flushCommands()`.
      */
-    private submitCommand(cmd: IGraphicsCommand, immediate = true, transfer?: OffscreenCanvas) {
+    private submitCommand(cmd: IGraphicsCommand, immediate = false, transfer?: OffscreenCanvas) {
         if (immediate) {
             this.#worker.postMessage(cmd, transfer ? [transfer] : undefined);
         } else {
@@ -310,14 +310,13 @@ export class Graphics {
      *
      * Current supported objects: `Mesh`, `Sprite`, `Light`
      */
-    private addObjectToScene(entityId: number, object: Object3D, ui = false) {
+    private addObjectToScene(object: Object3D, ui = false) {
         if (object.parent) object.parent.add(object);
         else this.#scene.add(object);
 
         object.traverse((node) => {
             if (node instanceof Mesh || node instanceof Sprite || node instanceof Light) {
                 const id = this.assignIdToObject(node);
-                node.userData.entityId = entityId;
 
                 if ('material' in node) {
                     if (node.material instanceof Material) {
