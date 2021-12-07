@@ -4,9 +4,9 @@ import { Vector3 } from 'three';
 
 import Entity from '../ecs/entity';
 import GameScript from '../script';
-import { GraphicsData } from '../graphics/graphics';
 import GraphicsUtils from '../graphics/utils';
 import { HealthData } from './health';
+import { MeshData } from '../graphics/graphics';
 import { PLAYER_TAG } from './player';
 import { PhysicsData } from '../physics';
 import shoot from './shooting';
@@ -23,7 +23,8 @@ export default class GoblinScript extends GameScript {
             fixedRotation: true,
         }, radius, height);
         const capsuleMesh = GraphicsUtils.makeCapsule(radius, height);
-        this.ecs.setComponent(capsule, GraphicsData, capsuleMesh);
+        this.graphics.addObjectToScene(capsuleMesh);
+        this.ecs.setComponent(capsule, MeshData, capsuleMesh);
         this.ecs.setComponent(capsule, PhysicsData, capsuleBody);
         this.ecs.setComponent(capsule, HealthData, {
             hp: 3,
@@ -41,6 +42,7 @@ export default class GoblinScript extends GameScript {
             const { x, y, z } = playerBody.position.vsub(capsuleBody.position);
             shoot(
                 this.physics,
+                this.graphics,
                 new Entity(Entity.defaultManager, capsule),
                 new Vector3(x, y, z),
                 hitCallback,

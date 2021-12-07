@@ -4,7 +4,7 @@ import anime from 'animejs';
 
 import Entity from '../ecs/entity';
 import GameScript from '../script';
-import { CAMERA_TAG, CameraData, GraphicsData } from '../graphics/graphics';
+import { CAMERA_TAG, CameraData, MeshData } from '../graphics/graphics';
 
 export default class SwordScript extends GameScript {
     sword!: Entity;
@@ -22,7 +22,8 @@ export default class SwordScript extends GameScript {
                 mesh.translateX(0.5);
                 mesh.translateY(-0.7);
                 mesh.translateZ(-1.3);
-                this.sword.setComponent(GraphicsData, mesh);
+                this.graphics.addObjectToScene(mesh);
+                this.sword.setComponent(MeshData, mesh);
             });
 
         document.addEventListener('mousedown', async (e) => {
@@ -35,7 +36,7 @@ export default class SwordScript extends GameScript {
 
             // 0.5 second upswing and downswing
             anime({
-                targets: this.sword.getComponent(GraphicsData).rotation,
+                targets: this.sword.getComponent(MeshData).rotation,
                 keyframes: [
                     { x: -Math.PI / 2 },
                     { x: 0 },

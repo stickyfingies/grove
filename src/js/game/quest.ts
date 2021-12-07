@@ -6,7 +6,7 @@ import Entity from '../ecs/entity';
 import GameScript from '../script';
 import GraphicsUtils from '../graphics/utils';
 import ScoreData from './score';
-import { UiData } from '../graphics/graphics';
+import { SpriteData } from '../graphics/graphics';
 
 const SLIMES_TO_KILL = 60;
 
@@ -18,7 +18,8 @@ export default class QuestScript extends GameScript {
         guiSprite.material = new SpriteMaterial();
         guiSprite.position.set(-window.innerWidth / 2, -window.innerHeight / 2, -1);
         guiSprite.scale.set(256, 256, 1);
-        gui.setComponent(UiData, guiSprite);
+        this.graphics.addObjectToScene(guiSprite, true);
+        gui.setComponent(SpriteData, guiSprite);
 
         const { canvas, ctx } = GraphicsUtils.scratchCanvasContext(256, 256);
 

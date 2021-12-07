@@ -1,8 +1,8 @@
 import { Vec3 } from 'cannon-es';
 
 import GameScript from '../script';
-import { GraphicsData } from '../graphics/graphics';
 import { HealthData } from './health';
+import { MeshData } from '../graphics/graphics';
 import { PLAYER_TAG } from './player';
 import { PhysicsData } from '../physics';
 
@@ -23,6 +23,8 @@ export default class SlimeScript extends GameScript {
 
             this.ecs.events.emit('enemyDied');
 
+            const mesh = this.ecs.getComponent(entity, MeshData);
+            this.graphics.removeObjectFromScene(mesh);
             this.ecs.deleteEntity(entity);
         });
 
@@ -91,7 +93,7 @@ export default class SlimeScript extends GameScript {
             }
 
             if (slimesInVicinity > 0) {
-                const slimeMesh = this.ecs.getComponent(slime, GraphicsData);
+                const slimeMesh = this.ecs.getComponent(slime, MeshData);
                 const blueness = Math.max(Math.min(slimesInVicinity / 12, 1), 0.02738276869058609);
                 // @ts-ignore
                 slimeMesh.children[0].material.color.b = blueness;
@@ -133,7 +135,8 @@ export default class SlimeScript extends GameScript {
         // @ts-ignore
         mesh.children[1].material = mesh.children[1].material.clone();
         mesh.scale.set(0.7, 0.7, 0.7);
-        this.ecs.setComponent(slime, GraphicsData, mesh);
+        this.graphics.addObjectToScene(mesh);
+        this.ecs.setComponent(slime, MeshData, mesh);
 
         const randomPos = () => Math.random() * 150 - 75;
 

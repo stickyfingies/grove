@@ -15,7 +15,7 @@ import { MovementData } from './movement';
 import { PhysicsData } from '../physics';
 import ScoreData from './score';
 import shoot from './shooting';
-import { CAMERA_TAG, CameraData, UiData } from '../graphics/graphics';
+import { CAMERA_TAG, CameraData, SpriteData } from '../graphics/graphics';
 
 /**
  * Entity tag used to retrieve the player
@@ -44,12 +44,13 @@ export default class PlayerScript extends GameScript {
             const crosshairSprite = new Sprite(new SpriteMaterial({ color: 'black' }));
             crosshairSprite.scale.set(10, 10, 1);
             crosshairSprite.position.set(0, 0, -1);
-            crosshair.setComponent(UiData, crosshairSprite);
+            this.graphics.addObjectToScene(crosshairSprite, true);
+            crosshair.setComponent(SpriteData, crosshairSprite);
         }
 
         const shootTowardsCrosshair = (e: MouseEvent) => {
             if (e.button !== 2) return;
-            shoot(this.physics, Entity.getTag(PLAYER_TAG), getCameraDir());
+            shoot(this.physics, this.graphics, Entity.getTag(PLAYER_TAG), getCameraDir());
         };
 
         this.engine.events.on('startLoop', () => {
@@ -95,7 +96,8 @@ export default class PlayerScript extends GameScript {
         hudSprite.material = new SpriteMaterial();
         hudSprite.position.set(0, -window.innerHeight / 2 + this.hudCanvas.height / 2, -1);
         hudSprite.scale.set(256, 256, 1);
-        this.hud.setComponent(UiData, hudSprite);
+        this.graphics.addObjectToScene(hudSprite, true);
+        this.hud.setComponent(SpriteData, hudSprite);
 
         this.drawHUD();
 
@@ -152,7 +154,7 @@ export default class PlayerScript extends GameScript {
     drawHUD() {
         const score = this.player.getComponent(ScoreData);
         const health = this.player.getComponent(HealthData);
-        const hudSprite = this.hud.getComponent(UiData) as Sprite;
+        const hudSprite = this.hud.getComponent(SpriteData) as Sprite;
 
         this.hudCtx.clearRect(0, 0, this.hudCanvas.width, this.hudCanvas.height);
         this.hudCtx.font = '52px Arial';

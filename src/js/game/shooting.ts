@@ -2,12 +2,18 @@ import { Vec3 } from 'cannon-es';
 import { Vector3 } from 'three';
 
 import Entity from '../ecs/entity';
-import { GraphicsData } from '../graphics/graphics';
 import GraphicsUtils from '../graphics/utils';
+import { Graphics, MeshData } from '../graphics/graphics';
 import { Physics, PhysicsData } from '../physics';
 
 /** Shoots a ball outwards from an entity in an indicated direction */
-const shoot = (physics: Physics, origin: Entity, shootDir: Vector3, cb?: (e: number) => void) => {
+const shoot = (
+    physics: Physics,
+    graphics: Graphics,
+    origin: Entity,
+    shootDir: Vector3,
+    cb?: (e: number) => void,
+) => {
     const ball = new Entity();
 
     const { x: px, y: py, z: pz } = origin.getComponent(PhysicsData).position;
@@ -38,13 +44,15 @@ const shoot = (physics: Physics, origin: Entity, shootDir: Vector3, cb?: (e: num
     ball.setComponent(PhysicsData, body);
 
     const mesh = GraphicsUtils.makeBall(radius);
-    ball.setComponent(GraphicsData, mesh);
+    graphics.addObjectToScene(mesh);
+    ball.setComponent(MeshData, mesh);
 
     const collideCb = (entity: number) => {
         physics.removeCollisionCallback(body);
         cb?.(entity);
         setTimeout(() => {
             physics.removeBody(body);
+            graphics.removeObjectFromScene(mesh);
             ball.delete();
         }, 1500);
     };

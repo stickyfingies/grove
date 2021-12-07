@@ -1,15 +1,15 @@
 import EcsView from '../ecs/view';
 import GameScript from '../script';
-import { GraphicsData } from '../graphics/graphics';
+import { MeshData } from '../graphics/graphics';
 import { PhysicsData } from '../physics';
 
 export default class MeshTransformScript extends GameScript {
-    transformView = new EcsView(this.ecs, new Set([GraphicsData, PhysicsData]));
+    transformView = new EcsView(this.ecs, new Set([MeshData, PhysicsData]));
 
     update(dt: number) {
         this.transformView.iterateView((entity) => {
             const body = entity.getComponent(PhysicsData);
-            const mesh = entity.getComponent(GraphicsData);
+            const mesh = entity.getComponent(MeshData);
 
             if (mesh.userData.poop) return;
 

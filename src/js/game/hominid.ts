@@ -19,13 +19,13 @@ import { ContactEquation, Vec3 } from 'cannon-es';
 import EcsView from '../ecs/view';
 import Entity from '../ecs/entity';
 import GameScript from '../script';
-import { GraphicsData } from '../graphics/graphics';
 import GraphicsUtils from '../graphics/utils';
 import { HealthData } from './health';
 import { MovementData } from './movement';
 import { PLAYER_TAG } from './player';
 import shoot from './shooting';
 import { ConstraintData, Physics, PhysicsData } from '../physics';
+import { MeshData, SpriteData } from '../graphics/graphics';
 
 /**
  * This component should be added to the torso of the hominid.
@@ -85,8 +85,8 @@ export default class HominidScript extends GameScript {
             const { torso, head, halo } = entity.getComponent(HominidData);
             const torsoBody = torso.getComponent(PhysicsData);
             const headBody = head.getComponent(PhysicsData);
-            const torsoMesh = torso.getComponent(GraphicsData) as Mesh;
-            // const headMesh = head.getComponent(GraphicsData) as Mesh;
+            const torsoMesh = torso.getComponent(MeshData) as Mesh;
+            // const headMesh = head.getComponent(MeshData) as Mesh;
 
             // increment player score
             this.ecs.events.emit('enemyDied');
@@ -143,14 +143,14 @@ export default class HominidScript extends GameScript {
                 : new Vector3(0, 0, 0);
 
             // look at player, menacingly
-            head.getComponent(GraphicsData).lookAt(playerPos);
+            head.getComponent(MeshData).lookAt(playerPos);
 
             // shoot at player
             if (hominidPos.distanceTo(playerPos) <= bubble + 3 && Math.random() < 0.01) {
                 const shootDir = hominidPos.subVectors(playerPos, hominidPos).normalize();
-                const ball = shoot(this.physics, hominid, shootDir);
-                ((ball.getComponent(GraphicsData) as Mesh).material as MeshPhongMaterial).color = new Color('#EE5A24');
-                this.graphics.updateMaterial(ball.getComponent(GraphicsData) as Mesh);
+                const ball = shoot(this.physics, this.graphics, hominid, shootDir);
+                ((ball.getComponent(MeshData) as Mesh).material as MeshPhongMaterial).color = new Color('#EE5A24');
+                this.graphics.updateMaterial(ball.getComponent(MeshData) as Mesh);
             }
         });
     }
@@ -181,7 +181,8 @@ export default class HominidScript extends GameScript {
         const torsoMesh = GraphicsUtils.makeCylinder(torsoRadius, height + torsoRadius * 2);
         torsoMesh.name = 'Torso';
         torsoMesh.material.color = new Color(color);
-        torso.setComponent(GraphicsData, torsoMesh);
+        this.graphics.addObjectToScene(torsoMesh);
+        torso.setComponent(MeshData, torsoMesh);
 
         torso.setComponent(MovementData, new MovementData(3, 1.5));
 
@@ -208,7 +209,8 @@ export default class HominidScript extends GameScript {
         // @ts-ignore - TODO why was I cloning the material here?
         // headMesh.material = headMesh.material.clone();
         headMesh.userData.norotate = true;
-        head.setComponent(GraphicsData, headMesh);
+        this.graphics.addObjectToScene(headMesh);
+        head.setComponent(MeshData, headMesh);
 
         // ====
         // Neck
@@ -245,8 +247,9 @@ export default class HominidScript extends GameScript {
         haloSprite.scale.set(2, 2, 2);
         haloSprite.position.y += headRadius * 2;
         haloSprite.name = 'Halo';
-        haloSprite.parent = head.getComponent(GraphicsData);
-        halo.setComponent(GraphicsData, haloSprite);
+        haloSprite.parent = head.getComponent(MeshData);
+        this.graphics.addObjectToScene(haloSprite);
+        halo.setComponent(SpriteData, haloSprite);
 
         torso.setComponent(HominidData, {
             bubble: 15,

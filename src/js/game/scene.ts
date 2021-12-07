@@ -12,7 +12,9 @@ import {
 import Entity from '../ecs/entity';
 import GameScript from '../script';
 import entities from '../json/entities.json';
-import { CAMERA_TAG, CameraData, GraphicsData } from '../graphics/graphics';
+import {
+    CAMERA_TAG, CameraData, LightData, MeshData,
+} from '../graphics/graphics';
 
 export default class SceneSetupScript extends GameScript {
     skybox!: Entity;
@@ -47,17 +49,20 @@ export default class SceneSetupScript extends GameScript {
 
             // graphics component can't be added until all textures have finished loading
             // TODO use progress callbacks instead of timeouts.  this is hacky as fuck.
-            setTimeout(() => this.skybox.setComponent(GraphicsData, skyboxMesh), 1000);
+            setTimeout(() => {
+                this.graphics.addObjectToScene(skyboxMesh);
+                this.skybox.setComponent(MeshData, skyboxMesh);
+            }, 1000);
         }
 
         for (const entity of entities.spawn) {
             const e = new Entity();
-            if ('GraphicsData' in entity) {
-                const graphicsData = entity.GraphicsData;
-                switch (graphicsData.type) {
+            if ('MeshData' in entity) {
+                const { MeshData } = entity;
+                switch (MeshData.type) {
                 case 'light:directional': {
-                    const light = new DirectionalLight(graphicsData.color, graphicsData.intensity);
-                    const { x, y, z } = graphicsData.position!;
+                    const light = new DirectionalLight(MeshData.color, MeshData.intensity);
+                    const { x, y, z } = MeshData.position!;
                     light.position.set(x, y, z);
                     light.castShadow = true;
                     const { shadow } = light;
@@ -69,16 +74,18 @@ export default class SceneSetupScript extends GameScript {
                     shadow.camera.bottom = -1024;
                     shadow.mapSize.width = 1024;
                     shadow.mapSize.height = 1024;
-                    e.setComponent(GraphicsData, light);
+                    this.graphics.addObjectToScene(light);
+                    e.setComponent(LightData, light);
                     break;
                 }
                 case 'light:ambient': {
-                    const light = new AmbientLight(graphicsData.color, graphicsData.intensity);
-                    e.setComponent(GraphicsData, light);
+                    const light = new AmbientLight(MeshData.color, MeshData.intensity);
+                    this.graphics.addObjectToScene(light);
+                    e.setComponent(LightData, light);
                     break;
                 }
                 default:
-                    throw new Error(`Unable to parse GraphicsData type ${graphicsData.type}`);
+                    throw new Error(`Unable to parse MeshData type ${MeshData.type}`);
                 }
             }
         }
@@ -87,6 +94,6 @@ export default class SceneSetupScript extends GameScript {
     update(dt: number) {
         // center skybox around camera
         const camera = Entity.getTag(CAMERA_TAG).getComponent(CameraData);
-        this.skybox.getComponent(GraphicsData)?.position.copy(camera.position);
+        this.skybox.getComponent(MeshData)?.position.copy(camera.position);
     }
 }

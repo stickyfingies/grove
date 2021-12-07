@@ -8,9 +8,9 @@ import {
 
 import Entity from '../ecs/entity';
 import GameScript from '../script';
-import { GraphicsData } from '../graphics/graphics';
 import { PLAYER_TAG } from './player';
 import { PhysicsData } from '../physics';
+import { SpriteData } from '../graphics/graphics';
 
 /**
  * Spawns hearts which heal the player for 15 hp each upon contact.
@@ -34,7 +34,8 @@ export default class UpgradeScript extends GameScript {
             sprite.material = new SpriteMaterial();
             sprite.material.color = new Color(0xff00ff);
             sprite.material.map = upgradeTexture;
-            upgrade.setComponent(GraphicsData, sprite);
+            this.graphics.addObjectToScene(sprite);
+            upgrade.setComponent(SpriteData, sprite);
 
             // const collideCb = ({ body }: { body: PhysicsData }) => {
             //     const player = Entity.getTag(PLAYER_TAG);

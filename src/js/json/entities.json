@@ -2,7 +2,7 @@
     "spawn": [
         {
             "name": "Sun Light",
-            "GraphicsData": {
+            "MeshData": {
                 "type": "light:directional",
                 "color": "#ffffff",
                 "position": {
@@ -14,7 +14,7 @@
         },
         {
             "name": "Ambient Light",
-            "GraphicsData": {
+            "MeshData": {
                 "type": "light:ambient",
                 "color": "#ffffff",
                 "intensity": 0.16

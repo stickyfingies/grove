@@ -9,7 +9,9 @@ import AssetLoader from './load';
 import Entity from './ecs/entity';
 import EntityManager from './ecs/entity-manager';
 import GameScript from './script';
-import { Graphics, GraphicsData } from './graphics/graphics';
+import {
+    CAMERA_TAG, CameraData, Graphics, MeshData,
+} from './graphics/graphics';
 import { Physics, PhysicsData } from './physics';
 
 import gameScripts from './game/_scripts.json';
@@ -54,9 +56,14 @@ export default class Engine {
 
         console.groupCollapsed('Initializing');
 
-        this.graphics.init(this);
+        this.graphics.init();
         await this.physics.init(this);
         this.assetLoader.init();
+
+        // make camera accessible through game entity
+        new Entity(this.ecs)
+            .addTag(CAMERA_TAG)
+            .setComponent(CameraData, this.graphics.camera);
 
         // schedule A
         // schedule B
@@ -111,13 +118,16 @@ export default class Engine {
 
                     const f = new Entity();
                     f.setComponent(PhysicsData, body);
-                    setTimeout(() => f.setComponent(GraphicsData, node), 500);
+                    setTimeout(() => {
+                        this.graphics.addObjectToScene(node);
+                        f.setComponent(MeshData, node);
+                    }, 500);
                 }
             });
             // (await meshPromise).traverse((node) => {
             //     if (node instanceof Mesh) {
             //         const f = new Entity();
-            //         f.setComponent(GraphicsData, node);
+            //         f.setComponent(MeshData, node);
             //     }
             // });
         }

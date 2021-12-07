@@ -14,6 +14,7 @@ import Engine from './engine';
 export const PhysicsData = Body;
 // eslint-disable-next-line no-redeclare
 export type PhysicsData = Body;
+
 export const ConstraintData = PointToPointConstraint;
 // eslint-disable-next-line no-redeclare
 export type ConstraintData = PointToPointConstraint;
@@ -29,22 +30,6 @@ export type RigidBodyOptions = {
     quat?: Quaternion,
     mass?: number,
     fixedRotation?: boolean
-}
-
-export class CollisionEvent {
-    id0!: number;
-
-    id1!: number;
-}
-
-export class AddForceConditionalRaycast {
-    body!: Body;
-
-    force!: Vec3;
-
-    from!: Vec3;
-
-    to!: Vec3;
 }
 
 export type CollisionCallback = (entity: number) => void;

@@ -11,8 +11,8 @@ import {
 
 import Entity from '../ecs/entity';
 import GameScript from '../script';
-import { GraphicsData } from '../graphics/graphics';
-import { Physics } from '../physics';
+import { MeshData } from '../graphics/graphics';
+import { Physics, PhysicsData } from '../physics';
 
 type ChunkOptions = {
     posX: number;
@@ -66,9 +66,9 @@ const createChunk = (physics: Physics, noise: SimplexNoise, options: ChunkOption
     }, nonIndexed);
 
     const fuck = new Entity();
-    fuck.setComponent(GraphicsData, plane);
+    fuck.setComponent(MeshData, plane);
     // setTimeout(() => fuck.setComponent(PhysicsData, body), 1500);
-    // fuck.setComponent(PhysicsData, body);
+    fuck.setComponent(PhysicsData, body);
 };
 
 export default class TerrainScript extends GameScript {

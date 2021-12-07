@@ -25,30 +25,30 @@ import {
     Texture,
 } from 'three';
 
-import Engine from '../engine';
-import Entity from '../ecs/entity';
 import GraphicsUtils from './utils';
 import { IGraphicsCommand } from './commands';
 
 export type CameraData = PerspectiveCamera;
 // eslint-disable-next-line no-redeclare
 export const CameraData = PerspectiveCamera;
-export type GraphicsData = Object3D;
+
+export type MeshData = Mesh;
 // eslint-disable-next-line no-redeclare
-export const GraphicsData = Object3D;
-export type UiData = Sprite;
+export const MeshData = Mesh;
+
+export type SpriteData = Sprite;
 // eslint-disable-next-line no-redeclare
-export const UiData = Sprite;
+export const SpriteData = Sprite;
+
+export type LightData = Light;
+// eslint-disable-next-line no-redeclare
+export const LightData = Light;
 
 /**
  * Entity tag used to retrieve the main camera
  * @example Entity.getTag(CAMERA_TAG)
  */
 export const CAMERA_TAG = Symbol('camera');
-
-export class UpdateMaterial {
-    object: Mesh | Sprite;
-}
 
 export class Graphics {
     /** Tree-like graph of renderable game objects */
@@ -72,7 +72,7 @@ export class Graphics {
      * Next available mesh ID
      * @note when assigning ID's, recycle any ID's from `#availableObjectIds` first
      */
-    objectId = 0;
+    #objectId = 0;
 
     /** Set of all texture UUID's that have already been uploaded to the backend */
     #textureCache = new Set<string>();
@@ -105,40 +105,22 @@ export class Graphics {
     readonly #maxEntityCount = 1024;
 
     /** Calculates the size of the transform buffer */
-    get bufferSize() {
+    get #bufferSize() {
         return this.#bytesPerElement * this.#elementsPerTransform * this.#maxEntityCount;
     }
 
+    get camera() {
+        return this.#camera;
+    }
+
     constructor() {
-        this.#buffer = new SharedArrayBuffer(this.bufferSize);
+        this.#buffer = new SharedArrayBuffer(this.#bufferSize);
         this.#array = new Float32Array(this.#buffer);
     }
 
-    init(engine: Engine) {
-        engine.gui.add(this, 'objectId').listen();
-
-        // make camera accessible through game entity
-        new Entity(engine.ecs)
-            .addTag(CAMERA_TAG)
-            .setComponent(CameraData, this.#camera);
+    init() {
         this.assignIdToObject(this.#camera);
         this.#scene.add(this.#camera);
-
-        // TODO too implicit: { entity.setComponent() => [event blackbox] => addObjectToScene() }
-        // TODO prefer: { mesh = graphics.makeObject(); entity.setComponent(mesh); }
-        // listen to component events
-        engine.ecs.events.on(`set${GraphicsData.name}Component`, (entityId: number, object: GraphicsData) => {
-            this.addObjectToScene(object, false);
-        });
-        engine.ecs.events.on(`delete${GraphicsData.name}Component`, (id: number, object: GraphicsData) => {
-            this.removeFromScene(object);
-        });
-        engine.ecs.events.on(`set${UiData.name}Component`, (entityId: number, object: UiData) => {
-            this.addObjectToScene(object, true);
-        });
-        engine.ecs.events.on(`delete${UiData.name}Component`, (id: number, object: UiData) => {
-            this.removeFromScene(object);
-        });
 
         const offscreenCanvas = document.getElementById('main-canvas') as HTMLCanvasElement;
         const offscreen = offscreenCanvas.transferControlToOffscreen();
@@ -211,7 +193,7 @@ export class Graphics {
         }
     }
 
-    private removeFromScene(object: Object3D) {
+    removeObjectFromScene(object: Object3D) {
         object.traverse((node) => {
             if (node.userData.meshId) {
                 const id = node.userData.meshId;
@@ -252,14 +234,14 @@ export class Graphics {
      * objects first, and generating a new ID only if no recyclable ID's exist.
      */
     private assignIdToObject(object: Object3D): number {
-        let id = this.objectId;
+        let id = this.#objectId;
 
         // pick a recycled ID if one is available
         if (this.#availableObjectIds.length > 0) {
             id = this.#availableObjectIds.shift()!;
         } else {
-            this.objectId += 1;
-            if (this.objectId > this.#maxEntityCount) {
+            this.#objectId += 1;
+            if (this.#objectId > this.#maxEntityCount) {
                 throw new Error(`[graphics] exceeded maximum object count: ${this.#maxEntityCount}`);
             }
         }
@@ -310,7 +292,7 @@ export class Graphics {
      *
      * Current supported objects: `Mesh`, `Sprite`, `Light`
      */
-    private addObjectToScene(object: Object3D, ui = false) {
+    addObjectToScene(object: Object3D, ui = false) {
         if (object.parent) object.parent.add(object);
         else this.#scene.add(object);
 
