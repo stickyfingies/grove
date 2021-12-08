@@ -1,3 +1,4 @@
+import Entity from '../ecs/entity';
 import EcsView from '../ecs/view';
 import GameScript from '../script';
 
@@ -16,16 +17,23 @@ export default class HealthScript extends GameScript {
     healthView = new EcsView(this.ecs, new Set([HealthData]));
 
     update() {
+        const entitiesToKill: Entity[] = [];
         this.healthView.iterateView((entity) => {
             const health = entity.getComponent(HealthData);
 
             // cap hp value at max hp value
             health.hp = Math.min(health.hp, health.max);
 
+            if (!health) console.log('fuck');
+
             // this hoe dead
             if (health.hp <= 0) {
-                entity.deleteComponent(HealthData);
+                entitiesToKill.push(entity);
             }
         });
+
+        for (const entity of entitiesToKill) {
+            entity.deleteComponent(HealthData);
+        }
     }
 }

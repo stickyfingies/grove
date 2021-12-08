@@ -70,6 +70,10 @@ class Archetype {
         });
     }
 
+    setComponent<T>(id: number, type: ComponentType<T>, data: T) {
+        this.components.get(type)?.set(id, data);
+    }
+
     /** Check if this archetype has EXACTLY the same component types listed in `signature` */
     matchesSignature(signature: ComponentSignature) {
         return areSetsEqual(this.signature, signature);
@@ -141,22 +145,13 @@ export default class EntityManager {
 
     /** Set a component for an entity */
     setComponent<T>(id: number, type: ComponentType<T>, data: T) {
-        // calclulate new signature for this entity
+        // move entity to a different archetype matching its new signature
         const signature = new Set(this.#idToArchetype.get(id)?.signature);
         signature.add(type);
-
-        // move entity into its new archetype
-        this.updateEntityArchetype(id, signature);
-
-        const archetype = this.#idToArchetype.get(id)!;
-
-        // the new archetype should have a store for the new component type
-        if (!archetype.components.has(type)) {
-            throw new Error('This should never happen.');
-        }
+        const archetype = this.updateEntityArchetype(id, signature);
 
         // set the component (BEFORE event)
-        archetype.components.get(type)?.set(id, data);
+        archetype.setComponent(id, type, data);
 
         // emit a `set` event
         this.events.emit(`set${type.name}Component`, id, data);
@@ -164,18 +159,16 @@ export default class EntityManager {
 
     /** Delete a component for an entity.  Returns whether the component was deleted */
     deleteComponent(id: number, type: ComponentType) {
-        // assign to new entity archetype
-        const signature = new Set(this.#idToArchetype.get(id)?.signature);
-        signature.delete(type);
-        this.updateEntityArchetype(id, signature);
-
-        const archetype = this.#idToArchetype.get(id)!;
-
         // emit a `delete` event
         this.events.emit(`delete${type.name}Component`, id, this.getComponent(id, type));
 
-        // delete the component (AFTER event)
-        return archetype.components.get(type)?.delete(id) ?? false;
+        // assign to new entity archetype
+        const oldArchetype = this.#idToArchetype.get(id);
+        const signature = new Set(oldArchetype?.signature);
+        signature.delete(type);
+        this.updateEntityArchetype(id, signature);
+
+        oldArchetype?.removeEntity(id);
     }
 
     /** Get a component from an entity */
@@ -184,10 +177,11 @@ export default class EntityManager {
 
         // lazily initialize data manager
         if (!archetype.components.has(type)) {
+            console.log(id);
             throw new Error(`component type ${type.name} is not registered`);
         }
 
-        return archetype.components.get(type)?.get(id)!;
+        return archetype.components.get(type)!.get(id)!;
     }
 
     /** Check if an entity has a component */
@@ -199,7 +193,7 @@ export default class EntityManager {
             return false;
         }
 
-        return archetype.components.get(type)?.has(id)!;
+        return archetype.components.get(type)!.has(id)!;
     }
 
     /** Add a tag to an entity.  Entities can later be retrieved using the same tag */
@@ -225,7 +219,11 @@ export default class EntityManager {
             if (arch.containsSignature(query)) entities.push(id);
         }
 
-        return entities!;
+        return entities;
+    }
+
+    getEntityComponentSignature(id: number) {
+        return this.#idToArchetype.get(id)?.signature;
     }
 
     /**
@@ -263,5 +261,7 @@ export default class EntityManager {
             newArchetype!.components.get(type)?.set(id, store.get(id));
         });
         oldArchetype?.removeEntity(id);
+
+        return newArchetype!;
     }
 }
