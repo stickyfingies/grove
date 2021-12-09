@@ -26,6 +26,7 @@ export default class SlimeScript extends GameScript {
             const mesh = this.ecs.getComponent(entity, MeshData);
             this.graphics.removeObjectFromScene(mesh);
             this.ecs.deleteEntity(entity);
+            console.log('f');
         });
 
         this.ecs.events.on('collision', ({ id0, id1 }) => {
@@ -49,7 +50,7 @@ export default class SlimeScript extends GameScript {
 
         const slimes = this.ecs.submitQuery(new Set([SlimeData]));
 
-        slimes.forEach((slime) => {
+        for (const slime of slimes) {
             const slimeBody = this.ecs.getComponent(slime, PhysicsData);
 
             const distanceToPlayer = playerBody.position.distanceTo(slimeBody.position);
@@ -73,7 +74,7 @@ export default class SlimeScript extends GameScript {
             }
             // Other slimes are also valid targets; this causes their 'clumping' behavior.
             if (Math.random() <= 0.02) {
-                slimes.forEach((other) => {
+                for (const other of slimes) {
                     if (other === slime) return;
 
                     const otherBody = this.ecs.getComponent(other, PhysicsData);
@@ -89,7 +90,7 @@ export default class SlimeScript extends GameScript {
                         accumulatedVelocity.y += velocity.y;
                         accumulatedVelocity.z += velocity.z;
                     }
-                });
+                }
             }
 
             if (slimesInVicinity > 0) {
@@ -121,7 +122,7 @@ export default class SlimeScript extends GameScript {
                     ),
                 );
             }
-        });
+        }
     }
 
     async createSlime() {

@@ -8,30 +8,8 @@ export interface ComponentType<T = any> {
 /** A component signature is a set of the types of components something's interested in */
 export type ComponentSignature = Set<ComponentType>;
 
-export type ComponentQuery = ComponentType[];
-
-export type ComponentArgs = [ComponentType] | ComponentType[];
-
-/** See https://dev.t-matix.com/blog/platform/eimplementing-a-type-saf-ecs-with-typescript/ */
-type ComponentArgsFromQuery<T> = {
-    [P in keyof T]: T[P] extends ComponentType
-        ? InstanceType<T[P]>
-        : never
-}
-
 /** Component storage type.  Maps entity id -> component instance */
 type ComponentStore = Map<number, InstanceType<ComponentType>>;
-
-const areSetsEqual = <T>(setA: Set<T>, setB: Set<T>) => {
-    let equal = setA.size === setB.size;
-    for (const value of setA) {
-        if (!setB.has(value)) {
-            equal = false;
-            break;
-        }
-    }
-    return equal;
-};
 
 /**
  * Archetypes store the actual component data for entities.
@@ -76,7 +54,14 @@ class Archetype {
 
     /** Check if this archetype has EXACTLY the same component types listed in `signature` */
     matchesSignature(signature: ComponentSignature) {
-        return areSetsEqual(this.signature, signature);
+        let equal = this.signature.size === signature.size;
+        for (const value of this.signature) {
+            if (!signature.has(value)) {
+                equal = false;
+                break;
+            }
+        }
+        return equal;
     }
 
     /** Check if this archetype contains AT LEAST all the component types listed in `query` */
@@ -135,11 +120,10 @@ export default class EntityManager {
         // emit 'delete' events for every component in this entity
         for (const type of archetype.signature) {
             this.events.emit(`delete${type.name}Component`, id, this.getComponent(id, type));
-            archetype.components.get(type)?.delete(id);
+            // archetype.components.get(type)?.delete(id);
         }
 
         archetype.entities.delete(id);
-
         this.#idToArchetype.delete(id);
     }
 
@@ -159,8 +143,7 @@ export default class EntityManager {
 
     /** Delete a component for an entity.  Returns whether the component was deleted */
     deleteComponent(id: number, type: ComponentType) {
-        // emit a `delete` event
-        this.events.emit(`delete${type.name}Component`, id, this.getComponent(id, type));
+        const data = this.getComponent(id, type);
 
         // assign to new entity archetype
         const oldArchetype = this.#idToArchetype.get(id);
@@ -169,6 +152,9 @@ export default class EntityManager {
         this.updateEntityArchetype(id, signature);
 
         oldArchetype?.removeEntity(id);
+
+        // emit a `delete` event
+        this.events.emit(`delete${type.name}Component`, id, data);
     }
 
     /** Get a component from an entity */
@@ -211,15 +197,13 @@ export default class EntityManager {
     }
 
     /** Get a list of all entity id's which match a component signature */
-    submitQuery(query: ComponentSignature) {
-        const entities: number[] = [];
-
+    * submitQuery(query: ComponentSignature) {
         // add entity ID's from archetypes that match signature
-        for (const [id, arch] of this.#idToArchetype) {
-            if (arch.containsSignature(query)) entities.push(id);
+        for (const archetype of this.#archetypes) {
+            if (archetype.containsSignature(query)) {
+                for (const entity of archetype.entities) yield entity;
+            }
         }
-
-        return entities;
     }
 
     getEntityComponentSignature(id: number) {

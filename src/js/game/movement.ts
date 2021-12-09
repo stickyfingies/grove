@@ -27,11 +27,6 @@ export class MovementData {
      * @internal
      */
     groundNormal = new Vector3();
-
-    constructor(walkVelocity: number, jumpVelocity: number) {
-        this.walkVelocity = walkVelocity;
-        this.jumpVelocity = jumpVelocity;
-    }
 }
 
 export default class MovementScript extends GameScript {
@@ -81,7 +76,8 @@ export default class MovementScript extends GameScript {
 
             // try to jump
             // if (mvmt.wantsToJump) {
-            //     const raycastDst = new Vec3(body.position.x, body.position.y - 2, body.position.z);
+            //     const raycastDst =
+            // new Vec3(body.position.x, body.position.y - 2, body.position.z);
             //     const canJump = this.physics.raycast(body.position, raycastDst);
 
             //     if (canJump) body.velocity.y += mvmt.jumpVelocity;

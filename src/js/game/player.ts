@@ -79,15 +79,17 @@ export default class PlayerScript extends GameScript {
         // create physics body
         const mass = 100;
         const radius = 1;
-
         const body = this.physics.createSphere({
             mass,
             pos: new Vec3(12, 120, 0),
             fixedRotation: true,
         }, radius);
-
         this.player.setComponent(PhysicsData, body);
-        this.player.setComponent(MovementData, new MovementData(5, 0.7));
+
+        const movementData = new MovementData();
+        movementData.jumpVelocity = 0.5;
+        movementData.walkVelocity = 7;
+        this.player.setComponent(MovementData, movementData);
         this.player.setComponent(KeyboardControlData, {});
 
         this.hud = new Entity();

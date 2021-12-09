@@ -5,6 +5,7 @@
  * - Dead hominids dissappear after 3 seconds, regardless if the game is paused
  */
 
+/*
 import {
     CanvasTexture,
     Color,
@@ -27,10 +28,6 @@ import shoot from './shooting';
 import { ConstraintData, Physics, PhysicsData } from '../physics';
 import { MeshData, SpriteData } from '../graphics/graphics';
 
-/**
- * This component should be added to the torso of the hominid.
- * Its primary function is to represent the heirarchy of body parts.
- */
 class HominidData {
     // personal space bubble around the player at which hominids will stop approaching
     bubble: number = 10;
@@ -272,3 +269,4 @@ export default class HominidScript extends GameScript {
         });
     }
 }
+*/
