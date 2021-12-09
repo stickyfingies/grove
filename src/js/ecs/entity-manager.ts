@@ -52,6 +52,23 @@ class Archetype {
         this.components.get(type)?.set(id, data);
     }
 
+    getComponent<T>(id: number, type: ComponentType<T>): T {
+        return this.components.get(type)?.get(id);
+    }
+
+    hasComponent<T>(id: number, type: ComponentType<T>) {
+        return this.signature.has(type) && this.components.get(type)!.has(id);
+    }
+
+    /** Copies entity data from an old archetype -> this archetype */
+    transferEntityFrom(id: number, oldArchetype: Archetype) {
+        oldArchetype.components.forEach((store, type) => {
+            this.components.get(type)?.set(id, store.get(id));
+        });
+        oldArchetype.removeEntity(id);
+        this.addEntity(id);
+    }
+
     /** Check if this archetype has EXACTLY the same component types listed in `signature` */
     matchesSignature(signature: ComponentSignature) {
         let equal = this.signature.size === signature.size;
@@ -151,8 +168,6 @@ export default class EntityManager {
         signature.delete(type);
         this.updateEntityArchetype(id, signature);
 
-        oldArchetype?.removeEntity(id);
-
         // emit a `delete` event
         this.events.emit(`delete${type.name}Component`, id, data);
     }
@@ -162,24 +177,19 @@ export default class EntityManager {
         const archetype = this.#idToArchetype.get(id)!;
 
         // lazily initialize data manager
-        if (!archetype.components.has(type)) {
+        if (!archetype.signature.has(type)) {
             console.log(id);
             throw new Error(`component type ${type.name} is not registered`);
         }
 
-        return archetype.components.get(type)!.get(id)!;
+        return archetype.getComponent(id, type);
     }
 
     /** Check if an entity has a component */
     hasComponent(id: number, type: ComponentType): boolean {
         const archetype = this.#idToArchetype.get(id)!;
 
-        // lazily initialize data manager
-        if (!archetype.components.has(type)) {
-            return false;
-        }
-
-        return archetype.components.get(type)!.has(id)!;
+        return archetype.hasComponent(id, type);
     }
 
     /** Add a tag to an entity.  Entities can later be retrieved using the same tag */
@@ -207,7 +217,8 @@ export default class EntityManager {
     }
 
     getEntityComponentSignature(id: number) {
-        return this.#idToArchetype.get(id)?.signature;
+        return this.#idToArchetype.get(id)?.signature // entity's signature
+            ?? new Set([]); // or an empty signature, if the entity doesn't exist
     }
 
     /**
@@ -227,25 +238,18 @@ export default class EntityManager {
                 newArchetype = arch;
             }
         }
-
         // ...Or create a new one if needed.
         if (!newArchetype) {
             newArchetype = new Archetype(new Set(signature), new Set());
             this.#archetypes.push(newArchetype);
         }
 
+        // Transfer data from old archetype (if it exists), and associate entity with new archetype
         const oldArchetype = this.#idToArchetype.get(id);
+        if (oldArchetype) newArchetype.transferEntityFrom(id, oldArchetype);
+        else newArchetype.addEntity(id);
+        this.#idToArchetype.set(id, newArchetype);
 
-        // associate entity with new archetype
-        this.#idToArchetype.set(id, newArchetype!);
-        newArchetype!.addEntity(id);
-
-        // copy existing component data from old arch -> new arch
-        oldArchetype?.components.forEach((store, type) => {
-            newArchetype!.components.get(type)?.set(id, store.get(id));
-        });
-        oldArchetype?.removeEntity(id);
-
-        return newArchetype!;
+        return newArchetype;
     }
 }
