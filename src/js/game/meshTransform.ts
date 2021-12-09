@@ -7,12 +7,7 @@ export default class MeshTransformScript extends GameScript {
     transformView = new EcsView(this.ecs, new Set([MeshData, PhysicsData]));
 
     update(dt: number) {
-        this.transformView.iterateView((entity) => {
-            const body = entity.getComponent(PhysicsData);
-            const mesh = entity.getComponent(MeshData);
-
-            if (mesh.userData.poop) return;
-
+        this.ecs.executeQuery([PhysicsData, MeshData], ([body, mesh]) => {
             const { x: px, y: py, z: pz } = body.position;
             const {
                 x: qx, y: qy, z: qz, w: qw,

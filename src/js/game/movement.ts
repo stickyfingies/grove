@@ -54,10 +54,7 @@ export default class MovementScript extends GameScript {
     }
 
     update(dt: number) {
-        this.movementView.iterateView((entity) => {
-            const body = entity.getComponent(PhysicsData);
-            const mvmt = entity.getComponent(MovementData);
-
+        this.ecs.executeQuery([PhysicsData, MovementData], ([body, mvmt]) => {
             // walkVector = direction * speed
             const walkVector = mvmt.direction.normalize();
             walkVector.multiplyScalar(mvmt.walkVelocity);
@@ -66,13 +63,6 @@ export default class MovementScript extends GameScript {
             // walk
             const walkVelocity = new Vec3(walkVector.x, 0, walkVector.z);
             this.physics.addVelocity(body, walkVelocity);
-
-            const { max, min } = Math;
-            const clamp = (n: number, a: number, b: number) => max(min(n, max(a, b)), min(a, b));
-
-            // restrict speed
-            body.velocity.x = clamp(body.velocity.x, -walkVector.x, walkVector.x);
-            body.velocity.z = clamp(body.velocity.z, -walkVector.z, walkVector.z);
 
             // try to jump
             // if (mvmt.wantsToJump) {

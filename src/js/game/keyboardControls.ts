@@ -62,10 +62,7 @@ export default class KeyboardControlScript extends GameScript {
     }
 
     update(dt: number) {
-        this.kbControlView.iterateView((entity) => {
-            const body = entity.getComponent(PhysicsData);
-            const mvmt = entity.getComponent(MovementData);
-
+        this.ecs.executeQuery([PhysicsData, MovementData], ([body, mvmt]) => {
             mvmt.direction = new Vector3(0, 0, 0);
 
             if (this.moveForward) {

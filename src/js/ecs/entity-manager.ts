@@ -8,8 +8,18 @@ export interface ComponentType<T = any> {
 /** A component signature is a set of the types of components something's interested in */
 export type ComponentSignature = Set<ComponentType>;
 
-/** Component storage type.  Maps entity id -> component instance */
-type ComponentStore = Map<number, InstanceType<ComponentType>>;
+type ComponentArgs
+    = [ComponentType]
+    | ComponentType[];
+
+// https://dev.t-matix.com/blog/platform/eimplementing-a-type-saf-ecs-with-typescript/
+type ComponentArgsFromQuerySignature<T> = {
+    [P in keyof T]: T[P] extends ComponentType
+        ? InstanceType<T[P]>
+        : never
+}
+
+type ComponentPool = InstanceType<ComponentType>[];
 
 /**
  * Archetypes store the actual component data for entities.
@@ -26,47 +36,93 @@ class Archetype {
 
     entities: Set<number>;
 
-    components = new Map<ComponentType, ComponentStore>();
+    components = new Map<ComponentType, ComponentPool>();
+
+    poolSize = 0;
+
+    entityIdToIndex: number[] = [];
+
+    indexToEntityId: number[] = [];
 
     constructor(signature: ComponentSignature, entities: Set<number>) {
         this.signature = signature;
         this.entities = entities;
 
-        this.signature.forEach((componentType) => {
-            this.components.set(componentType, new Map());
+        this.signature.forEach((type) => {
+            this.components.set(type, []);
         });
     }
 
     addEntity(id: number) {
         this.entities.add(id);
+        this.entityIdToIndex[id] = this.poolSize;
+        this.indexToEntityId[this.poolSize] = id;
+        this.poolSize += 1;
     }
 
     removeEntity(id: number) {
-        this.entities.delete(id);
-        this.components.forEach((store) => {
-            store.delete(id);
-        });
+        const index = this.entityIdToIndex[id];
+        if (id) {
+            this.entities.delete(id);
+            this.poolSize -= 1;
+            if (index === this.poolSize) {
+                delete this.entityIdToIndex[id];
+                delete this.indexToEntityId[index];
+            } else {
+                // Copy last data entry into the deleted entity's entry (keep things contiguous)
+                this.signature.forEach((type) => {
+                    this.components.get(type)![index] = this.components.get(type)![this.poolSize];
+                });
+                this.indexToEntityId[index] = this.indexToEntityId[this.poolSize];
+                this.entityIdToIndex[this.indexToEntityId[index]] = index;
+
+                delete this.entityIdToIndex[id];
+                delete this.indexToEntityId[this.poolSize];
+            }
+        }
     }
 
     setComponent<T>(id: number, type: ComponentType<T>, data: T) {
-        this.components.get(type)?.set(id, data);
+        const index = this.entityIdToIndex[id];
+        this.components.get(type)![index] = data;
     }
 
     getComponent<T>(id: number, type: ComponentType<T>): T {
-        return this.components.get(type)?.get(id);
+        const index = this.entityIdToIndex[id];
+        return this.components.get(type)![index];
     }
 
     hasComponent<T>(id: number, type: ComponentType<T>) {
-        return this.signature.has(type) && this.components.get(type)!.has(id);
+        return this.signature.has(type) && this.entities.has(id);
+    }
+
+    executeQuery<T extends ComponentArgs>(
+        query: T,
+        callback: (c: ComponentArgsFromQuerySignature<T>, id: number) => void,
+    ) {
+        if (this.containsSignature(new Set(query))) {
+            // @ts-ignore - Type magic
+            const proxy: ComponentArgsFromQuerySignature<T> = Array(query.length).fill(null);
+            for (let i = 0; i < this.poolSize; i++) {
+                for (let j = 0; j < query.length; j++) {
+                    proxy[j] = this.components.get(query[j])![i];
+                }
+                callback(proxy, this.indexToEntityId[i]);
+            }
+        }
     }
 
     /** Copies entity data from an old archetype -> this archetype */
     transferEntityFrom(id: number, oldArchetype: Archetype) {
+        this.addEntity(id);
+        const index = this.entityIdToIndex[id];
+        const oldIndex = oldArchetype.entityIdToIndex[id];
         oldArchetype.components.forEach((store, type) => {
-            this.components.get(type)?.set(id, store.get(id));
+            if (this.signature.has(type)) {
+                this.components.get(type)![index] = store[oldIndex];
+            }
         });
         oldArchetype.removeEntity(id);
-        this.addEntity(id);
     }
 
     /** Check if this archetype has EXACTLY the same component types listed in `signature` */
@@ -123,6 +179,11 @@ export default class EntityManager {
      */
     #archetypes: Archetype[] = [];
 
+    constructor() {
+        // @ts-ignore - Useful for debugging
+        window.archetypes = this.#archetypes;
+    }
+
     /** Allocate an ID for a new entity */
     createEntity() {
         const id = this.#entityId;
@@ -140,7 +201,7 @@ export default class EntityManager {
             // archetype.components.get(type)?.delete(id);
         }
 
-        archetype.entities.delete(id);
+        archetype.removeEntity(id);
         this.#idToArchetype.delete(id);
     }
 
@@ -213,6 +274,15 @@ export default class EntityManager {
             if (archetype.containsSignature(query)) {
                 for (const entity of archetype.entities) yield entity;
             }
+        }
+    }
+
+    executeQuery<T extends ComponentArgs>(
+        query: T,
+        callback: (c: ComponentArgsFromQuerySignature<T>, id: number) => void,
+    ) {
+        for (const archetype of this.#archetypes) {
+            archetype.executeQuery(query, callback);
         }
     }
 
