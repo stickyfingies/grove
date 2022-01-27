@@ -40,7 +40,7 @@
 		"socket.io": "^4.0.1",
 		"stats.js": "^0.17.0",
 		"style-loader": "^3.3.1",
-		"three": "^0.135.0"
+		"three": "^0.137.0"
 	},
 	"scripts": {
 		"server": "node -r dotenv/config server/index.js",
