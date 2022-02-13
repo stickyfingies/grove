@@ -30,7 +30,7 @@ const createWindow = () => {
         let url = request.url.substr(8);
         const ext = path.extname(url);
         if (ext !== '.html') {
-            url = path.join(__dirname, '../../dist/', url.substr(3));
+            url = path.join(__dirname, '../../dist/', url.substr(0));
         }
         callback({ path: url });
     });
