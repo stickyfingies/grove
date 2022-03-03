@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+
+<!--
+    -\-                                                     
+    \-- \-                                                  
+     \  - -\                                                
+      \      \\                                             
+       \       \                                            
+        \       \\                                              
+         \        \\                                            
+         \          \\                                        
+         \           \\\                                      
+          \            \\                                                 
+           \            \\                                              
+           \. .          \\                                  
+            \    .       \\                                 
+             \      .    \\                                            
+              \       .  \\                                 
+              \         . \\                                           
+              \            <=)                                         
+              \            <==)                                         
+              \            <=)                                           
+               \           .\\                                           _-
+               \         .   \\                                        _-//
+               \       .     \\                                     _-_/ /
+               \ . . .        \\                                 _--_/ _/
+                \              \\                              _- _/ _/
+                \               \\                      ___-(O) _/ _/ 
+                \                \                  __--  __   /_ /       **********************************
+                \                 \\          ____--__----  /    \_       I AM A PTERODACTYL
+                 \                  \\       -------       /   \_  \_     HERE TO KILL ALL OF YOUR FRIENDS.
+                  \                   \                  //   // \__ \_   **********************************
+                   \                   \\              //   //      \_ \_ 
+                    \                   \\          ///   //          \__- 
+                    \                -   \\/////////    //            
+                    \            -         \_         //              
+                    /        -                      //                
+                   /     -                       ///                  
+                  /   -                       //                      
+             __--/                         ///
+  __________/                            // |               
+//-_________      ___                ////  |                
+        ____\__--/                /////    |                
+   -----______    -/---________////        |                
+     _______/  --/    \                   |                 
+   /_________-/       \                   |                 
+  //                  \                   /                 
+                       \.                 /                 
+                       \     .            /                 
+                        \       .        /                  
+                       \\           .    /                  
+                        \                /                  
+                        \              __|                  
+                        \              ==/                  
+                        /              //                   
+                        /          .  //                    
+                        /   .  .    //                      
+                       /.           /                       
+                      /            //                       
+                      /           /
+                     /          //
+                    /         //
+                 --/         /
+                /          //
+            ////         //
+         ///_________////
+-->
+
+<head>
+    <title>The Grove | Play</title>
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <!-- <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-eval'"> -->
+    <meta http-equiv="Cross-Origin-Resource-Policy" content="same-origin">
+    <meta http-equiv="Cross-Origin-Embedder-Policy-Report-Only" content="require-corp">
+    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
+    <link rel="icon" href="/img/favicon(1).ico">
+</head>
+
+<body>
+    <div id="blocker">
+        <div id="load">
+            <img id="spinner" src="/img/loading.svg"><br>
+            <button id="load-play-btn" class="play-btn btn" style="display:none">Play</button>
+        </div>
+    </div>
+
+    <div id="pause" class="card blue-grey darken-1">
+        <div class="card-content white-text">
+            <span class="card-title">Paused</span>
+            <p>The Grove is currently paused.</p>
+        </div>
+        <div class="card-action">
+            <a href="#" class="play-btn btn waves-effect waves-light light-green z-depth-3">Resume</a>
+            <br><br>
+            <a href="#" onclick="window.close();" class="play-btn btn waves-effect waves-light red z-depth-3">Exit</a>
+        </div>
+    </div>
+
+    <canvas id="main-canvas"></canvas>
+
+    <script type="module" src="/src/main.ts" defer></script>
+</body>
+
+</html>

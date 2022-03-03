@@ -1,0 +1,12 @@
+{
+    "skjarIsles": {
+        "path": "./models/skjar-isles-glb/skjarisles.glb"
+    },
+    "testArena": {
+        "path": "./models/arena/arena.glb"
+    },
+    "newMap": {
+        "path": "./models/new-map/new-map-physics.glb",
+        "physicsPath": "./models/new-map/new-map-physics.glb"
+    }
+}
