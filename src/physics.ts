@@ -39,8 +39,6 @@ type RaycastCallback = (i: RaycastInfo) => void;
 
 type RigidBodyID = number;
 
-const test = './' + 'physicswo' + 'rker.ts';
-
 export class Physics {
     #worker: Worker;
 
@@ -74,7 +72,7 @@ export class Physics {
             const bodyId = this.#bodyToId.get(body)!;
             this.#idToEntity.set(bodyId, entityId);
         });
-        engine.ecs.events.on(`delete${PhysicsData.name}Component`, (entityId: number, body: PhysicsData) => {
+        engine.ecs.events.on(`delete${PhysicsData.name}Component`, (_, body: PhysicsData) => {
             this.removeBody(body);
         });
 
@@ -123,7 +121,7 @@ export class Physics {
         });
     }
 
-    update(delta: number) {
+    update() {
         for (const [id, body] of this.#idToBody) {
             const offset = 3 * id;
             body.position.x = this.#tview[offset + 0];

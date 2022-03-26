@@ -25,5 +25,5 @@
     "resolveJsonModule": true,
     "allowJs": false,
   },
-  "include": ["src"]
+  "include": ["src/**/*.ts"]
 }

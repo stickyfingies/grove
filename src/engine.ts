@@ -168,7 +168,7 @@ export default class Engine {
         if (this.#running) {
             // step physics
             this.#physicsStats.begin();
-            this.physics.update(delta);
+            this.physics.update();
             this.#physicsStats.end();
 
             // run per-frame game tasks

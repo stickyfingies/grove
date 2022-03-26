@@ -1,6 +1,6 @@
 // export default Ammo;
-declare function Ammo<T>(target?: T): Promise<T & typeof Ammo>;
-declare module Ammo {
+export declare function Ammo<T>(target?: T): Promise<T & typeof Ammo>;
+export declare module Ammo {
     function destroy(obj: any): void;
     class btIDebugDraw {
         drawLine(from: btVector3, to: btVector3, color: btVector3): void;

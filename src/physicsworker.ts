@@ -1,14 +1,10 @@
-/* global Ammo */
-
-import './ammo/ammotypes'
+import './ammo/ammotypes';
 import Ammo from './ammo/ammo.js';
 
 Ammo().then((Ammo) => {
-    console.log('Loaded Ammo')
     // I don't plan on freeing any of this memory, since these objects will
     // exist until the program's done executing so V8 will clear the memory
     // for me then anyway.
-    console.log(Ammo.btCollisionDispatcher)
     const collisionConfig = new Ammo.btDefaultCollisionConfiguration();
     const dispatcher = new Ammo.btCollisionDispatcher(collisionConfig);
     const overlappingPairCache = new Ammo.btDbvtBroadphase();

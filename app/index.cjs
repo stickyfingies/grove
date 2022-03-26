@@ -1,4 +1,3 @@
-// app/index.js
 const path = require('path');
 const { app, BrowserWindow } = require('electron');
 
@@ -9,44 +8,36 @@ if (require('electron-squirrel-startup')) {
 
 const isDev = process.env.IS_DEV === 'true';
 
-function createWindow() {
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
+const createWindow = () => {
+  const win = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      nodeIntegration: true,
+      sandbox: true
     },
   });
 
-  // Open the DevTools.
+  win.removeMenu();
+
   if (isDev) {
-    mainWindow.loadURL('http://localhost:3000');
-    mainWindow.webContents.openDevTools();
+    win.loadURL('http://localhost:3000');
+    win.webContents.openDevTools();
   } else {
-    // mainWindow.removeMenu();
-    mainWindow.loadFile(path.join(__dirname, 'build', 'index.html'));
+    win.loadFile(path.join(__dirname, 'build', 'index.html'));
   }
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+app.commandLine.appendSwitch('enable-features', 'SharedArrayBuffer');
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+}).whenReady().then(() => {
   createWindow();
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
-});
-
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
 });
