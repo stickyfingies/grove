@@ -3,8 +3,8 @@ import { Vector3 } from 'three';
 
 import Entity from '../ecs/entity';
 import GraphicsUtils from '../graphics/utils';
-import { Graphics, MeshData } from '../graphics/graphics';
-import { Physics, PhysicsData } from '../physics';
+import { Graphics, MeshData } from '3-AD';
+import { Physics, PhysicsData } from 'firearm';
 
 /** Shoots a ball outwards from an entity in an indicated direction */
 export const shoot = (

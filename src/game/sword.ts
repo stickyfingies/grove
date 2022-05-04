@@ -4,7 +4,7 @@ import anime from 'animejs';
 
 import Entity from '../ecs/entity';
 import GameScript from '../script';
-import { CAMERA_TAG, CameraData, MeshData } from '../graphics/graphics';
+import { CAMERA_TAG, CameraData, MeshData } from '3-AD';
 
 export default class SwordScript extends GameScript {
     sword!: Entity;

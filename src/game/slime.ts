@@ -2,9 +2,12 @@ import { Vec3 } from 'cannon-es';
 
 import GameScript from '../script';
 import { HealthData } from './health';
-import { MeshData } from '../graphics/graphics';
+import { MeshData } from '3-AD';
 import { PLAYER_TAG } from './player';
-import { PhysicsData } from '../physics';
+import { PhysicsData } from 'firearm';
+import LogService from '../log';
+
+const [log] = LogService('slime')
 
 /** Basically tags entities as being slimes */
 class SlimeData {
@@ -26,7 +29,7 @@ export default class SlimeScript extends GameScript {
             const mesh = this.ecs.getComponent(entity, MeshData);
             this.graphics.removeObjectFromScene(mesh);
             this.ecs.deleteEntity(entity);
-            console.log('f');
+            log('death');
         });
 
         this.ecs.events.on('collision', ({ id0, id1 }) => {

@@ -22,7 +22,7 @@ export default class HealthScript extends GameScript {
             // cap hp value at max hp value
             health.hp = Math.min(health.hp, health.max);
 
-            if (!health) console.log('fuck');
+            if (!health) console.error('fuck');
 
             // this hoe dead
             if (health.hp <= 0) {

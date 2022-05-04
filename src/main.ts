@@ -31,4 +31,4 @@ import Engine from './engine';
 
 const engine = new Engine();
 
-engine.init();
+document.addEventListener('DOMContentLoaded', () => engine.init());

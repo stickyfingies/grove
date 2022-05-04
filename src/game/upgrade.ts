@@ -9,8 +9,8 @@ import {
 import Entity from '../ecs/entity';
 import GameScript from '../script';
 import { PLAYER_TAG } from './player';
-import { PhysicsData } from '../physics';
-import { SpriteData } from '../graphics/graphics';
+import { PhysicsData } from 'firearm';
+import { SpriteData } from '3-AD';
 
 /**
  * Spawns hearts which heal the player for 15 hp each upon contact.

@@ -6,9 +6,9 @@ import Entity from '../ecs/entity';
 import GameScript from '../script';
 import GraphicsUtils from '../graphics/utils';
 import { HealthData } from './health';
-import { MeshData } from '../graphics/graphics';
+import { MeshData } from '3-AD';
 import { PLAYER_TAG } from './player';
-import { PhysicsData } from '../physics';
+import { PhysicsData } from 'firearm';
 import { shoot } from './shooting';
 
 export default class GoblinScript extends GameScript {

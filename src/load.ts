@@ -1,6 +1,4 @@
 import EventEmitter from 'events';
-// @ts-ignore
-// import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.129.0/examples/jsm/loaders/GLTFLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import {
     Body,
@@ -18,6 +16,9 @@ import {
     Object3D,
 } from 'three';
 
+type LogFn = (payload: object | string | number) => void;
+let log: LogFn = console.log;
+
 type LoadCallback = (m: Mesh) => void;
 
 export default class AssetLoader {
@@ -34,12 +35,20 @@ export default class AssetLoader {
     #callbacks: Record<string, LoadCallback[]> = {};
 
     // eslint-disable-next-line class-methods-use-this
-    init() {
+    init(logService?: LogFn[]) {
+        if (logService) [log] = logService;
         Cache.enabled = true;
+
+        let itemsLoaded: string[] = [];
+
         DefaultLoadingManager.onProgress = (url, loaded, total) => {
-            // console.log(`${url} (${loaded}/${total})`);
+            itemsLoaded.push(url);
             this.events.emit('assetLoaded', url, loaded, total);
         };
+        DefaultLoadingManager.onLoad = () => {
+            log(itemsLoaded);
+            itemsLoaded = [];
+        }
     }
 
     /** Creates one or more renderable meshes from a model file */

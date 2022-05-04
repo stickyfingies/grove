@@ -14,7 +14,7 @@ import GameScript from '../script';
 import entities from '../json/entities.json';
 import {
     CAMERA_TAG, CameraData, LightData, MeshData,
-} from '../graphics/graphics';
+} from '3-AD';
 
 export default class SceneSetupScript extends GameScript {
     skybox!: Entity;

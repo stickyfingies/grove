@@ -8,11 +8,12 @@ import { Mesh, Quaternion, Vector3 } from 'three';
 import AssetLoader from './load';
 import Entity from './ecs/entity';
 import EntityManager from './ecs/entity-manager';
+import LogService from './log'
 import GameScript from './script';
 import {
     CAMERA_TAG, CameraData, Graphics, MeshData,
-} from './graphics/graphics';
-import { Physics, PhysicsData } from './physics';
+} from '3-AD';
+import { Physics, PhysicsData } from 'firearm';
 
 import maps from './json/maps.json';
 
@@ -21,7 +22,7 @@ export default class Engine {
 
     readonly gui = new GUI();
 
-    readonly graphics = new Graphics();
+    readonly graphics = new Graphics(LogService('graphics'), LogService('graphics:worker'));
 
     readonly physics = new Physics();
 
@@ -48,16 +49,23 @@ export default class Engine {
     }
 
     async init() {
+        const [log, report] = LogService('window');
+        // @ts-ignore - Useful for debugging
+        window.log = log;
+        // @ts-ignore - Useful for debugging
+        window.report = report;
+
         Entity.defaultManager = this.ecs;
+
+        // this.physics.init();
 
         this.events.on('startLoop', () => { this.#running = true; });
         this.events.on('stopLoop', () => { this.#running = false; });
 
-        console.groupCollapsed('Initializing');
-
+        const token = this.physics.init(this.ecs.events, LogService('physics'), LogService('physics:worker'));
         this.graphics.init();
-        await this.physics.init(this);
-        this.assetLoader.init();
+        this.assetLoader.init(LogService('load'));
+        await token;
 
         // make camera accessible through game entity
         new Entity(this.ecs)
@@ -83,8 +91,10 @@ export default class Engine {
         // ^ that way: don't need to store GameScripts!  Give their `init` a graph, they'll
         // ^ schedule work within that graph and it can later be executed each frame.
 
-        const modules = import.meta.glob('./game/*.ts');
+        // @ts-ignore - TSC and Vite aren't playing nice still
+        const modules = import.meta.glob('./game/*.ts'); // @bug - weird Vite shit
         for (const path in modules) {
+            // @ts-ignore - @bug - typeof Module
             modules[path]().then((mod) => {
                 if (!mod.default) return;
                 const script: GameScript = new mod.default(this);
@@ -100,33 +110,27 @@ export default class Engine {
         {
             const map = maps.skjarIsles;
             const meshPromise = await this.assetLoader.loadModel(map.path);
-            console.log(meshPromise);
             // const physicsMesh = await this.assetLoader.loadModel(map.physicsPath);
             meshPromise.traverse((node) => {
-                console.log(node);
                 if (node instanceof Mesh) {
-                    console.log(node);
                     const worldPos = new Vector3();
                     const worldScale = new Vector3();
                     const worldQuat = new Quaternion();
-                    console.log('bargh')
                     node.getWorldPosition(worldPos);
                     node.getWorldScale(worldScale);
                     node.getWorldQuaternion(worldQuat);
-                    console.info('yatttt')
                     const body = this.physics.createTrimesh({
                         pos: new Vec3(worldPos.x, worldPos.y, worldPos.z),
                         scale: new Vec3(worldScale.x, worldScale.y, worldScale.z),
                         quat: new CQuaternion(worldQuat.x, worldQuat.y, worldQuat.z, worldQuat.w),
                     }, node.geometry);
-                    console.info('yeet')
-                    const f = new Entity();
-                    f.setComponent(PhysicsData, body);
-                    console.info('124');
+                    const e = new Entity();
+                    e.setComponent(PhysicsData, body);
                     setTimeout(() => {
-                        console.log('bones')
+                        // @hack - Seeing this block months after writing it.
+                        // Wtf was I smoking when I wrote this code?
                         this.graphics.addObjectToScene(node);
-                        f.setComponent(MeshData, node);
+                        e.setComponent(MeshData, node);
                     }, 500);
                 }
             });
@@ -154,8 +158,6 @@ export default class Engine {
         this.#graphicsStats.showPanel(1);
         this.#graphicsStats.dom.style.cssText = 'position:absolute;top:0px;left:260px;';
         document.body.appendChild(this.#graphicsStats.dom);
-
-        console.groupEnd();
 
         requestAnimationFrame(this.update);
     }

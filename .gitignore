@@ -21,5 +21,11 @@ node_modules
 *.sln
 *.sw?
 
+# Output directories
 out/
 app/build
+
+# Development intermediates
+.yalc/
+.yalc.lock
+$HOME

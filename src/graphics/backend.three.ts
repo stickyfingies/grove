@@ -23,6 +23,7 @@ import {
     Sprite,
     WebGLRenderer,
 } from 'three';
+import LogService from '../log';
 
 import {
     GraphicsAddObjectCmd,
@@ -32,6 +33,8 @@ import {
     GraphicsUpdateMaterialCmd,
     GraphicsUploadTextureCmd,
 } from './commands';
+
+const [log] = LogService('graphics:worker')
 
 /**
  * Graphics backend designed to be ran on a WebWorker
@@ -71,6 +74,7 @@ export default class GraphicsBackend {
     readonly #elementsPerTransform = 16;
 
     init({ canvas, buffer }: GraphicsInitCmd) {
+        log('┕ Init')
         const transformArray = new Float32Array(buffer);
 
         // typecast to WebGL1 context to satisfy ThreeJS' typings
@@ -87,7 +91,7 @@ export default class GraphicsBackend {
         this.#renderer.shadowMap.enabled = true;
         this.#renderer.shadowMap.type = PCFSoftShadowMap;
 
-        console.log(`ThreeJS backend v.${REVISION}`);
+        log(`ThreeJS renderer v.${REVISION}`);
 
         // set up cameras
         this.#camera.matrixAutoUpdate = false;
@@ -120,6 +124,7 @@ export default class GraphicsBackend {
 
         // start rendering
         requestAnimationFrame(render);
+        log('Ready');
     }
 
     /** Copy object transforms into their corresponding ThreeJS renderable */
@@ -206,7 +211,7 @@ export default class GraphicsBackend {
     }
 
     /** Resizes the render target */
-    resize({ width, height, pixelRatio }: GraphicsResizeCmd) {
+    resize({ width, height }: GraphicsResizeCmd) {
         // console.log(`resize ${width} x ${height} @ ${pixelRatio}x scaling`);
 
         this.#camera.aspect = width / height;

@@ -4,7 +4,7 @@ import { ContactEquation, Vec3 } from 'cannon-es';
 import EcsView from '../ecs/view';
 import Entity from '../ecs/entity';
 import GameScript from '../script';
-import { PhysicsData } from '../physics';
+import { PhysicsData } from 'firearm';
 
 export class MovementData {
     /** Direction the entity should walk */

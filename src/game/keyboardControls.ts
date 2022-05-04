@@ -4,8 +4,8 @@ import EcsView from '../ecs/view';
 import Entity from '../ecs/entity';
 import GameScript from '../script';
 import { MovementData } from './movement';
-import { PhysicsData } from '../physics';
-import { CAMERA_TAG, CameraData } from '../graphics/graphics';
+import { PhysicsData } from 'firearm';
+import { CAMERA_TAG, CameraData } from '3-AD';
 
 /**
  * Adding this component to an entity makes its movement controllable via mouse and keyboard

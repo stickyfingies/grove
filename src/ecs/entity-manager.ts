@@ -239,7 +239,6 @@ export default class EntityManager {
 
         // lazily initialize data manager
         if (!archetype.signature.has(type)) {
-            console.log(id);
             throw new Error(`component type ${type.name} is not registered`);
         }
 

@@ -12,6 +12,7 @@ const createWindow = () => {
         height: 720,
         webPreferences: {
             sandbox: true,
+            preload: './preload.ts'
         },
     });
 

@@ -6,7 +6,7 @@ import Entity from '../ecs/entity';
 import GameScript from '../script';
 import GraphicsUtils from '../graphics/utils';
 import { ScoreData } from './score';
-import { SpriteData } from '../graphics/graphics';
+import { SpriteData } from '3-AD';
 
 const SLIMES_TO_KILL = 60;
 

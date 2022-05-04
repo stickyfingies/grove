@@ -12,10 +12,10 @@ import GraphicsUtils from '../graphics/utils';
 import { HealthData } from './health';
 import { KeyboardControlData } from './keyboardControls';
 import { MovementData } from './movement';
-import { PhysicsData } from '../physics';
+import { PhysicsData } from 'firearm';
 import { ScoreData } from './score';
 import { shoot } from './shooting';
-import { CAMERA_TAG, CameraData, SpriteData } from '../graphics/graphics';
+import { CAMERA_TAG, CameraData, SpriteData } from '3-AD';
 
 /**
  * Entity tag used to retrieve the player

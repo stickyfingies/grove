@@ -25,6 +25,7 @@ import {
     Texture,
 } from 'three';
 
+// @ts-ignore - TSC doesn't understand Vite module ?queries
 import Backend from './worker?worker';
 import GraphicsUtils from './utils';
 import { IGraphicsCommand } from './commands';
@@ -50,6 +51,10 @@ export const LightData = Light;
  * @example Entity.getTag(CAMERA_TAG)
  */
 export const CAMERA_TAG = Symbol('camera');
+
+type LogFn = (payload: object | string | number) => void;
+let log: LogFn = console.log;
+let report: LogFn = console.error;
 
 export class Graphics {
     /** Tree-like graph of renderable game objects */
@@ -114,7 +119,11 @@ export class Graphics {
         return this.#camera;
     }
 
-    constructor() {
+    constructor(logService?: LogFn[]) {
+        if (logService) [log, report] = logService;
+        if (typeof SharedArrayBuffer === 'undefined') {
+            report('SharedArrayBuffer not supported');
+        }
         this.#buffer = new SharedArrayBuffer(this.#bufferSize);
         this.#array = new Float32Array(this.#buffer);
     }
@@ -124,6 +133,7 @@ export class Graphics {
         this.#scene.add(this.#camera);
 
         const offscreenCanvas = document.getElementById('main-canvas') as HTMLCanvasElement;
+        // @ts-ignore - Some DOM typing bull-shit
         const offscreen = offscreenCanvas.transferControlToOffscreen();
 
         this.submitCommand({
@@ -148,6 +158,8 @@ export class Graphics {
                 pixelRatio: window.devicePixelRatio,
             });
         });
+
+        log('┍ Init')
     }
 
     update() {
@@ -243,7 +255,8 @@ export class Graphics {
         } else {
             this.#objectId += 1;
             if (this.#objectId > this.#maxEntityCount) {
-                throw new Error(`[graphics] exceeded maximum object count: ${this.#maxEntityCount}`);
+                report(`exceeded maximum object count: ${this.#maxEntityCount}`);
+                debugger;
             }
         }
 

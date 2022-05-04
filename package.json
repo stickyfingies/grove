@@ -4,11 +4,12 @@
   "version": "0.3.0",
   "main": "app/index.cjs",
   "description": "Typescipt RPG",
+  "author": "Seth Traman",
   "license": "MIT",
   "type": "module",
   "scripts": {
     "start": "yarn build && yarn electron:prod",
-    "dev": "concurrently -k 'vite' 'yarn electron:dev'",
+    "dev": "concurrently -k 'vite --force' 'yarn electron:dev'",
     "build": "vite build",
     "preview": "vite preview",
     "electron:prod": "electron-forge start",
@@ -24,6 +25,7 @@
     "@electron-forge/maker-zip": "^6.0.0-beta.63",
     "@types/animejs": "^3.1.4",
     "@types/dat.gui": "^0.7.7",
+    "@types/offscreencanvas": "^2019.6.4",
     "@types/stats.js": "^0.17.0",
     "@types/three": "^0.138.0",
     "concurrently": "^7.0.0",
@@ -32,6 +34,7 @@
     "vite": "^2.8.0"
   },
   "dependencies": {
+    "3-AD": "https://github.com/stickyfingies/3-AD",
     "animejs": "^3.2.1",
     "auto-bind": "^5.0.1",
     "cannon-es": "^0.19.0",
@@ -39,6 +42,7 @@
     "dat.gui": "^0.7.9",
     "electron-squirrel-startup": "^1.0.0",
     "events": "^3.3.0",
+    "firearm": "https://github.com/stickyfingies/firearm",
     "stats.js": "^0.17.0",
     "three": "^0.135.0"
   },

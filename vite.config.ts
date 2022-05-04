@@ -1,9 +1,12 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: process.env.IS_DEV !== 'true' ? './' : './',
+  optimizeDeps: {
+    exclude: ['firearm', '3-AD']
+  },
   build: {
     emptyOutDir: true,
     outDir: 'app/build',
+    target: 'esnext'
   },
 });
