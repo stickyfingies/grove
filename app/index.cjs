@@ -28,7 +28,6 @@ const createWindow = () => {
 }
 
 app.commandLine.appendSwitch('enable-features', 'SharedArrayBuffer');
-
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();

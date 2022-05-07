@@ -1,14 +1,6 @@
 import EventEmitter from 'events';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import {
-    Body,
-    Quaternion as CQuaternion,
-    Material,
-    Trimesh,
-    Vec3,
-} from 'cannon-es';
-import {
-    BufferGeometry,
     Cache,
     DefaultLoadingManager,
     Group,
@@ -91,35 +83,5 @@ export default class AssetLoader {
                 resolve(ctopy);
             }
         });
-    }
-
-    /** Takes a ThreeJS BufferGeometry and produces a CannonJS shape from it */
-    static loadPhysicsShape(geometry: BufferGeometry) {
-        const verts = geometry.getAttribute('position').array as number[];
-        const faces = geometry.index?.array as number[];
-        const shape = new Trimesh(verts, faces);
-        return shape;
-    }
-
-    /** Creates a physics body from a renderable mesh's geometry */
-    static loadPhysicsModel({ geometry, position, quaternion }: Mesh, mass: number) {
-        const shape = this.loadPhysicsShape(geometry);
-        const material = new Material('trimeshMaterial');
-        const body = new Body({
-            mass,
-            material,
-        });
-        body.addShape(shape);
-
-        // copy transform from mesh -> physics body
-        // TODO vector utils would simplify this
-        const { x: px, y: py, z: pz } = position;
-        const {
-            x: qx, y: qy, z: qz, w: qw,
-        } = quaternion;
-        body.position.copy(new Vec3(px, py, pz));
-        body.quaternion.copy(new CQuaternion(qx, qy, qz, qw));
-
-        return body;
     }
 }

@@ -1,13 +1,13 @@
-import { Vec3 } from 'cannon-es';
-
 import GameScript from '../script';
 import { HealthData } from './health';
 import { MeshData } from '3-AD';
 import { PLAYER_TAG } from './player';
 import { PhysicsData } from 'firearm';
 import LogService from '../log';
+import { Vector3 } from 'three';
+import { distance, multiply, subtract } from 'mathjs';
 
-const [log] = LogService('slime')
+const [log] = LogService('slime');
 
 /** Basically tags entities as being slimes */
 class SlimeData {
@@ -47,7 +47,7 @@ export default class SlimeScript extends GameScript {
         });
     }
 
-    update(dt: number) {
+    update() {
         const player = this.ecs.getTag(PLAYER_TAG);
         const playerBody = this.ecs.getComponent(player, PhysicsData);
 
@@ -56,23 +56,26 @@ export default class SlimeScript extends GameScript {
         for (const slime of slimes) {
             const slimeBody = this.ecs.getComponent(slime, PhysicsData);
 
-            const distanceToPlayer = playerBody.position.distanceTo(slimeBody.position);
-            const vectorToPlayer = playerBody.position.vsub(slimeBody.position);
+            const playerPos = this.physics.getBodyPosition(playerBody);
+            const slimePos = this.physics.getBodyPosition(slimeBody);
+
+            const distanceToPlayer = distance(playerPos, slimePos);;
+            const vectorToPlayer = subtract(playerPos, slimePos);
 
             const { speed, lastHop } = this.ecs.getComponent(slime, SlimeData);
 
             let targets = 0;
             let slimesInVicinity = 0;
-            const accumulatedVelocity = new Vec3(0, 0, 0);
+            const accumulatedVelocity = new Vector3(0, 0, 0);
 
             // The player is a valid target if they are closeby.
             if (distanceToPlayer < 20) {
-                const velocity = vectorToPlayer.scale(speed * 5);
+                const velocity = multiply(vectorToPlayer, speed * 5);
 
                 // The player should be weighted as a higher priority target than other slimes.
                 // Multiplying everything by 20 biases the final average towards the player.
-                accumulatedVelocity.x += velocity.x * 20;
-                accumulatedVelocity.z += velocity.z * 20;
+                accumulatedVelocity.x += velocity[0] * 20;
+                accumulatedVelocity.z += velocity[2] * 20;
                 targets += 20;
             }
             // Other slimes are also valid targets; this causes their 'clumping' behavior.
@@ -81,17 +84,18 @@ export default class SlimeScript extends GameScript {
                     if (other === slime) return;
 
                     const otherBody = this.ecs.getComponent(other, PhysicsData);
+                    const otherPos = this.physics.getBodyPosition(otherBody);
 
-                    const distanceToOther = otherBody.position.distanceTo(slimeBody.position);
-                    const vectorToOther = otherBody.position.vsub(slimeBody.position);
+                    const distanceToOther = distance(otherPos, slimePos);
+                    const vectorToOther = subtract(otherPos, slimePos);
 
                     if (distanceToOther < 20) {
                         slimesInVicinity += 1;
                         targets += 1;
-                        const velocity = vectorToOther.scale(speed * 3);
-                        accumulatedVelocity.x += velocity.x;
-                        accumulatedVelocity.y += velocity.y;
-                        accumulatedVelocity.z += velocity.z;
+                        const velocity = multiply(vectorToOther, speed * 3);
+                        accumulatedVelocity.x += velocity[0];
+                        accumulatedVelocity.y += velocity[1];
+                        accumulatedVelocity.z += velocity[2];
                     }
                 }
             }
@@ -116,13 +120,13 @@ export default class SlimeScript extends GameScript {
                 // Add a hop force if the slime is standing on something
                 this.physics.addForceConditionalRaycast(
                     slimeBody,
-                    new Vec3(accumulatedVelocity.x, 30, accumulatedVelocity.z),
-                    slimeBody.position,
-                    new Vec3(
-                        slimeBody.position.x,
-                        slimeBody.position.y - 1.5,
-                        slimeBody.position.z,
-                    ),
+                    [accumulatedVelocity.x, 30, accumulatedVelocity.z],
+                    slimePos,
+                    [
+                        slimePos[0],
+                        slimePos[1] - 1.5,
+                        slimePos[2],
+                    ],
                 );
             }
         }
@@ -144,10 +148,9 @@ export default class SlimeScript extends GameScript {
 
         const randomPos = () => Math.random() * 150 - 75;
 
-        const pos = new Vec3(randomPos(), 60, randomPos());
         const body = this.physics.createSphere({
             mass: 10,
-            pos,
+            pos: [randomPos(), 60, randomPos()],
             fixedRotation: true,
         }, 1.39 / 2);
         this.ecs.setComponent(slime, PhysicsData, body);

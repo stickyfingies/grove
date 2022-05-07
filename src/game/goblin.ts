@@ -1,5 +1,3 @@
-import { Vec3 } from 'cannon-es';
-
 import { Vector3 } from 'three';
 
 import Entity from '../ecs/entity';
@@ -10,6 +8,7 @@ import { MeshData } from '3-AD';
 import { PLAYER_TAG } from './player';
 import { PhysicsData } from 'firearm';
 import { shoot } from './shooting';
+import { subtract } from 'mathjs';
 
 export default class GoblinScript extends GameScript {
     init() {
@@ -19,7 +18,7 @@ export default class GoblinScript extends GameScript {
         const capsule = this.ecs.createEntity();
         const capsuleBody = this.physics.createCapsule({
             mass: 10,
-            pos: new Vec3(10, 50, 0),
+            pos: [10, 50, 0],
             fixedRotation: true,
         }, radius, height);
         const capsuleMesh = GraphicsUtils.makeCapsule(radius, height);
@@ -39,7 +38,9 @@ export default class GoblinScript extends GameScript {
 
         setInterval(() => {
             const playerBody = this.ecs.getComponent(this.ecs.getTag(PLAYER_TAG), PhysicsData);
-            const { x, y, z } = playerBody.position.vsub(capsuleBody.position);
+            const playerPos = this.physics.getBodyPosition(playerBody);
+            const capsulePos = this.physics.getBodyPosition(capsuleBody);
+            const [ x, y, z ] = subtract(playerPos, capsulePos);
             shoot(
                 this.physics,
                 this.graphics,

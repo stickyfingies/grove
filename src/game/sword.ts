@@ -1,4 +1,3 @@
-import { Vec3 } from 'cannon-es';
 import { Vector3 } from 'three';
 import anime from 'animejs';
 
@@ -50,14 +49,14 @@ export default class SwordScript extends GameScript {
             const camDir = new Vector3();
             camData.getWorldDirection(camDir);
             camDir.multiplyScalar(99);
-            const from = new Vec3(camData.position.x, camData.position.y, camData.position.z);
-            const to = new Vec3(from.x + camDir.x, from.y + camDir.y, from.z + camDir.z);
-            const raycastInfo = await this.physics.raycast(from, to);
+            const from = new Vector3(camData.position.x, camData.position.y, camData.position.z);
+            const to = new Vector3(from.x + camDir.x, from.y + camDir.y, from.z + camDir.z);
+            const raycastInfo = await this.physics.raycast(from.toArray(), to.toArray());
 
             // 2) If the raycast hit something, deal damage to that entity
             if (raycastInfo) {
                 const { entityID, hitPoint } = raycastInfo;
-                if (hitPoint.distanceTo(from) < 3.0) this.ecs.events.emit('dealDamage', entityID, 10);
+                if (new Vector3().fromArray(hitPoint).distanceTo(from) < 3.0) this.ecs.events.emit('dealDamage', entityID, 10);
             }
         });
     }

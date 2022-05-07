@@ -1,5 +1,4 @@
 import { Vector3 } from 'three';
-import { ContactEquation, Vec3 } from 'cannon-es';
 
 import EcsView from '../ecs/view';
 import Entity from '../ecs/entity';
@@ -11,10 +10,10 @@ export class MovementData {
     direction = new Vector3();
 
     /** Speed that gets applied for normal movement */
-    walkVelocity: number;
+    walkVelocity = 0;
 
     /** Speed that gets applied in a jump */
-    jumpVelocity: number;
+    jumpVelocity = 0;
 
     /** Flag whether the entity wants to jump or not */
     wantsToJump = false;
@@ -40,8 +39,10 @@ export default class MovementScript extends GameScript {
             // entity movement depends on physics
             if (!entity.hasComponent(PhysicsData)) throw new Error(`Component ${MovementData.name} must be set after ${PhysicsData.name}`);
 
+            /*
             // update ground info when entity collides with something
             body.addEventListener('collide', ({ contact }: { contact: ContactEquation }) => {
+                log('aight');
                 const normal = new Vec3();
 
                 // ensure the contact normal is facing outwards from the object, not the player
@@ -50,10 +51,11 @@ export default class MovementScript extends GameScript {
 
                 mvmt.groundNormal = new Vector3(normal.x, normal.y, normal.z);
             });
+            */
         });
     }
 
-    update(dt: number) {
+    update() {
         this.ecs.executeQuery([PhysicsData, MovementData], ([body, mvmt]) => {
             // walkVector = direction * speed
             const walkVector = mvmt.direction.normalize();
@@ -61,8 +63,10 @@ export default class MovementScript extends GameScript {
             walkVector.multiplyScalar(mvmt.sprinting ? 5 : 1);
 
             // walk
-            const walkVelocity = new Vec3(walkVector.x, 0, walkVector.z);
+            const walkVelocity = [walkVector.x, 0, walkVector.z];
             this.physics.addVelocity(body, walkVelocity);
+
+            const position = this.physics.getBodyPosition(body);
 
             // try to jump
             // if (mvmt.wantsToJump) {
@@ -75,9 +79,9 @@ export default class MovementScript extends GameScript {
             if (mvmt.wantsToJump) {
                 this.physics.addVelocityConditionalRaycast(
                     body,
-                    new Vec3(0, mvmt.jumpVelocity, 0),
-                    body.position,
-                    new Vec3(body.position.x, body.position.y - 1.5, body.position.z),
+                    [0, mvmt.jumpVelocity, 0],
+                    position,
+                    [position[0], position[1] - 1.5, position[2]],
                 );
             }
         });

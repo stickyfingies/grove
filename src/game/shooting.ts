@@ -1,8 +1,8 @@
-import { Vec3 } from 'cannon-es';
 import { Vector3 } from 'three';
 
 import Entity from '../ecs/entity';
 import GraphicsUtils from '../graphics/utils';
+
 import { Graphics, MeshData } from '3-AD';
 import { Physics, PhysicsData } from 'firearm';
 
@@ -16,8 +16,7 @@ export const shoot = (
 ) => {
     const ball = new Entity();
 
-    const { x: px, y: py, z: pz } = origin.getComponent(PhysicsData).position;
-    const { x: vx, y: vy, z: vz } = origin.getComponent(PhysicsData).velocity;
+    const [px, py, pz] = physics.getBodyPosition(origin.getComponent(PhysicsData));
     const { x: sdx, y: sdy, z: sdz } = shootDir.normalize();
 
     const radius = 0.3;
@@ -25,16 +24,16 @@ export const shoot = (
     const shootVelo = 40;
     const distanceFromOrigin = 2;
 
-    const velocity = new Vec3(
-        vx + sdx * shootVelo,
-        vy + sdy * shootVelo,
-        vz + sdz * shootVelo,
-    );
-    const position = new Vec3(
+    const velocity = [
+        sdx * shootVelo,
+        sdy * shootVelo,
+        sdz * shootVelo,
+    ];
+    const position = [
         px + sdx * distanceFromOrigin,
         py + sdy * distanceFromOrigin,
         pz + sdz * distanceFromOrigin,
-    );
+    ];
 
     const body = physics.createSphere({
         mass,

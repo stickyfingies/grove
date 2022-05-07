@@ -91,7 +91,7 @@ export default class SceneSetupScript extends GameScript {
         }
     }
 
-    update(dt: number) {
+    update() {
         // center skybox around camera
         const camera = Entity.getTag(CAMERA_TAG).getComponent(CameraData);
         this.skybox.getComponent(MeshData)?.position.copy(camera.position);

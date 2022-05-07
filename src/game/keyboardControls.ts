@@ -85,7 +85,7 @@ export default class KeyboardControlScript extends GameScript {
             mvmt.direction.applyQuaternion(camera.quaternion);
 
             // TODO this needs to be done AFTER MovementScript updates
-            const { x: px, y: py, z: pz } = body.position;
+            const [px, py, pz] = this.physics.getBodyPosition(body);
             camera.position.copy(new Vector3(px, py + 0.45, pz));
         });
     }

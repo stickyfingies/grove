@@ -1,4 +1,3 @@
-import { Vec3 } from 'cannon-es';
 import {
     CanvasTexture,
     Sprite,
@@ -16,6 +15,9 @@ import { PhysicsData } from 'firearm';
 import { ScoreData } from './score';
 import { shoot } from './shooting';
 import { CAMERA_TAG, CameraData, SpriteData } from '3-AD';
+import LogService from '../log';
+
+const [todo] = LogService('engine:todo');
 
 /**
  * Entity tag used to retrieve the player
@@ -81,7 +83,7 @@ export default class PlayerScript extends GameScript {
         const radius = 1;
         const body = this.physics.createSphere({
             mass,
-            pos: new Vec3(12, 120, 0),
+            pos: [12, 120, 0],
             fixedRotation: true,
         }, radius);
         this.player.setComponent(PhysicsData, body);
@@ -148,9 +150,11 @@ export default class PlayerScript extends GameScript {
         });
 
         // attach data to debug GUI
-        this.gui.add(body.position, 'x').listen();
-        this.gui.add(body.position, 'y').listen();
-        this.gui.add(body.position, 'z').listen();
+
+        todo('imgui: display player position');
+        // this.gui.add(body.position, 'x').listen();
+        // this.gui.add(body.position, 'y').listen();
+        // this.gui.add(body.position, 'z').listen();
     }
 
     drawHUD() {

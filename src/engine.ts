@@ -2,7 +2,6 @@ import EventEmitter from 'events';
 import { GUI } from 'dat.gui';
 import Stats from 'stats.js';
 import autoBind from 'auto-bind';
-import { Quaternion as CQuaternion, Vec3 } from 'cannon-es';
 import { Mesh, Quaternion, Vector3 } from 'three';
 
 import AssetLoader from './load';
@@ -11,7 +10,10 @@ import EntityManager from './ecs/entity-manager';
 import LogService from './log'
 import GameScript from './script';
 import {
-    CAMERA_TAG, CameraData, Graphics, MeshData,
+    CAMERA_TAG,
+    CameraData,
+    Graphics,
+    MeshData,
 } from '3-AD';
 import { Physics, PhysicsData } from 'firearm';
 
@@ -120,9 +122,9 @@ export default class Engine {
                     node.getWorldScale(worldScale);
                     node.getWorldQuaternion(worldQuat);
                     const body = this.physics.createTrimesh({
-                        pos: new Vec3(worldPos.x, worldPos.y, worldPos.z),
-                        scale: new Vec3(worldScale.x, worldScale.y, worldScale.z),
-                        quat: new CQuaternion(worldQuat.x, worldQuat.y, worldQuat.z, worldQuat.w),
+                        pos: worldPos.toArray(),
+                        scale: worldScale.toArray(),
+                        quat: worldQuat.toArray(),
                     }, node.geometry);
                     const e = new Entity();
                     e.setComponent(PhysicsData, body);
