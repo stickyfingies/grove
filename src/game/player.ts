@@ -61,6 +61,7 @@ export default class PlayerScript extends GameScript {
             document.removeEventListener('mousedown', shootTowardsCrosshair);
         });
 
+        // scratch canvas context
         const RESOLUTION = 256;
         const canvas = document.createElement('canvas');
         canvas.width = RESOLUTION;

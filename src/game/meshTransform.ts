@@ -15,6 +15,7 @@ export default class MeshTransformScript extends GameScript {
             // const {
             //     x: qx, y: qy, z: qz, w: qw,
             // } = body.quaternion;
+            // @todo document `mesh.userData.norotate`
             // if (!mesh.userData.norotate) mesh.quaternion.set(qx, qy, qz, qw);
         });
     }

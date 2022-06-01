@@ -61,7 +61,7 @@ export default class KeyboardControlScript extends GameScript {
         });
     }
 
-    update(dt: number) {
+    update(_deltaTime: number) {
         this.ecs.executeQuery([PhysicsData, MovementData], ([body, mvmt]) => {
             mvmt.direction = new Vector3(0, 0, 0);
 
@@ -90,6 +90,9 @@ export default class KeyboardControlScript extends GameScript {
         });
     }
 
+    /**
+     * @event(window, 'mousemove')
+     */
     private onMouseMove({ movementX, movementY }: MouseEvent) {
         // Everything beyond this point contains arcane internet mathematics.
         // Debug at your own peril.
@@ -108,6 +111,9 @@ export default class KeyboardControlScript extends GameScript {
         camera.quaternion.setFromEuler(euler);
     }
 
+    /**
+     * @event(window, 'keydown')
+     */
     private onKeyDown({ key }: KeyboardEvent) {
         switch (key) {
             case 'ArrowUp':
@@ -132,10 +138,16 @@ export default class KeyboardControlScript extends GameScript {
             case 'Shift':
                 this.sprint = true;
                 break;
+            case 'Escape':
+                document.exitPointerLock();
+                break;
             default:
         }
     }
 
+    /**
+     * @event(window, 'keyup')
+     */
     private onKeyUp({ key }: KeyboardEvent) {
         switch (key) {
             case 'ArrowUp':

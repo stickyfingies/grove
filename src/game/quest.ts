@@ -20,6 +20,7 @@ export default class QuestScript extends GameScript {
         this.graphics.addObjectToScene(guiSprite, true);
         gui.setComponent(SpriteData, guiSprite);
 
+        // scratch canvas context
         const RESOLUTION = 256;
         const canvas = document.createElement('canvas');
         canvas.width = RESOLUTION;
