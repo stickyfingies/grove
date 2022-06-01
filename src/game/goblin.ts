@@ -1,8 +1,7 @@
-import { Vector3 } from 'three';
+import { CylinderBufferGeometry, Mesh, MeshPhongMaterial, SphereBufferGeometry, Vector3 } from 'three';
 
 import Entity from '../ecs/entity';
 import GameScript from '../script';
-import GraphicsUtils from '../graphics/utils';
 import { HealthData } from './health';
 import { MeshData } from '3-AD';
 import { PLAYER_TAG } from './player';
@@ -21,7 +20,19 @@ export default class GoblinScript extends GameScript {
             pos: [10, 50, 0],
             fixedRotation: true,
         }, radius, height);
-        const capsuleMesh = GraphicsUtils.makeCapsule(radius, height);
+        const material = new MeshPhongMaterial({ color: 0x00CCFF });
+
+        const cGeometry = new CylinderBufferGeometry(radius, radius, height, 32);
+        const sGeometry = new SphereBufferGeometry(radius, 32, 32);
+
+        const capsuleMesh = new Mesh(cGeometry, material);
+        const sphereTopMesh = new Mesh(sGeometry, material);
+        const sphereBottomMesh = new Mesh(sGeometry, material);
+        sphereTopMesh.position.y = height / 2;
+        sphereBottomMesh.position.y = -height / 2;
+        capsuleMesh.add(sphereTopMesh);
+        capsuleMesh.add(sphereBottomMesh);
+
         this.graphics.addObjectToScene(capsuleMesh);
         this.ecs.setComponent(capsule, MeshData, capsuleMesh);
         this.ecs.setComponent(capsule, PhysicsData, capsuleBody);

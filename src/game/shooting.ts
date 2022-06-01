@@ -1,7 +1,6 @@
-import { Vector3 } from 'three';
+import { Mesh, MeshPhongMaterial, SphereBufferGeometry, Vector3 } from 'three';
 
 import Entity from '../ecs/entity';
-import GraphicsUtils from '../graphics/utils';
 
 import { Graphics, MeshData } from '3-AD';
 import { Physics, PhysicsData } from 'firearm';
@@ -42,7 +41,9 @@ export const shoot = (
     physics.addVelocity(body, velocity);
     ball.setComponent(PhysicsData, body);
 
-    const mesh = GraphicsUtils.makeBall(radius);
+    const geometry = new SphereBufferGeometry(radius, 32, 32);
+    const material = new MeshPhongMaterial({ color: 0x00CCFF });
+    const mesh = new Mesh(geometry, material);
     graphics.addObjectToScene(mesh);
     ball.setComponent(MeshData, mesh);
 

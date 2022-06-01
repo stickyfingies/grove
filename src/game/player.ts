@@ -7,7 +7,6 @@ import {
 
 import Entity from '../ecs/entity';
 import GameScript from '../script';
-import GraphicsUtils from '../graphics/utils';
 import { HealthData } from './health';
 import { KeyboardControlData } from './keyboardControls';
 import { MovementData } from './movement';
@@ -62,7 +61,11 @@ export default class PlayerScript extends GameScript {
             document.removeEventListener('mousedown', shootTowardsCrosshair);
         });
 
-        const { canvas, ctx } = GraphicsUtils.scratchCanvasContext(256, 256);
+        const RESOLUTION = 256;
+        const canvas = document.createElement('canvas');
+        canvas.width = RESOLUTION;
+        canvas.height = RESOLUTION;
+        const ctx = canvas.getContext('2d')!;
         this.hudCanvas = canvas;
         this.hudCtx = ctx;
 

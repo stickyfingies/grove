@@ -4,7 +4,6 @@ import {
 
 import Entity from '../ecs/entity';
 import GameScript from '../script';
-import GraphicsUtils from '../graphics/utils';
 import { ScoreData } from './score';
 import { SpriteData } from '3-AD';
 
@@ -21,7 +20,11 @@ export default class QuestScript extends GameScript {
         this.graphics.addObjectToScene(guiSprite, true);
         gui.setComponent(SpriteData, guiSprite);
 
-        const { canvas, ctx } = GraphicsUtils.scratchCanvasContext(256, 256);
+        const RESOLUTION = 256;
+        const canvas = document.createElement('canvas');
+        canvas.width = RESOLUTION;
+        canvas.height = RESOLUTION;
+        const ctx = canvas.getContext('2d')!;
 
         const updateGui = (text: string) => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);

@@ -3,15 +3,14 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import {
     Cache,
     DefaultLoadingManager,
-    Group,
     Mesh,
     Object3D,
 } from 'three';
 
 type LogFn = (payload: object | string | number) => void;
-let log: LogFn = console.log;
-
 type LoadCallback = (m: Mesh) => void;
+
+let log: LogFn = console.log;
 
 export default class AssetLoader {
     /** Event bus for signalling when assets are loaded */
@@ -29,8 +28,8 @@ export default class AssetLoader {
     // eslint-disable-next-line class-methods-use-this
     init(logService?: LogFn[]) {
         if (logService) [log] = logService;
-        Cache.enabled = true;
 
+        Cache.enabled = true;
         let itemsLoaded: string[] = [];
 
         DefaultLoadingManager.onProgress = (url, loaded, total) => {
@@ -57,7 +56,7 @@ export default class AssetLoader {
             // if this is the first time this resource was requested, load it
             if (this.#accessCount[uri] === 1) {
                 const loader = new GLTFLoader();
-                loader.load(uri, ({ scene: object }: { scene: Group }) => {
+                loader.load(uri, ({ scene: object }) => {
                     this.#models[uri] = object;
                     this.#models[uri].updateMatrixWorld();
 
@@ -78,9 +77,9 @@ export default class AssetLoader {
 
             // load from the model cache if possible
             if (this.#models[uri]) {
-                const ctopy = this.#models[uri].clone() as Mesh;
-                ctopy.updateMatrixWorld();
-                resolve(ctopy);
+                const copy = this.#models[uri].clone() as Mesh;
+                copy.updateMatrixWorld();
+                resolve(copy);
             }
         });
     }
