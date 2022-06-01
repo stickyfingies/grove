@@ -1,4 +1,4 @@
-import { CylinderBufferGeometry, Mesh, MeshPhongMaterial, SphereBufferGeometry, Vector3 } from 'three';
+import { Vector3 } from 'three';
 
 import Entity from '../ecs/entity';
 import GameScript from '../script';
@@ -12,7 +12,7 @@ import { subtract } from 'mathjs';
 class GoblinData { }
 
 export default class GoblinScript extends GameScript {
-    init() {
+    async init() {
         const radius = 0.7;
         const height = 1.7;
 
@@ -22,21 +22,11 @@ export default class GoblinScript extends GameScript {
             pos: [10, 50, 0],
             fixedRotation: true,
         }, radius, height);
-        const material = new MeshPhongMaterial({ color: 0x00CCFF });
 
-        const cGeometry = new CylinderBufferGeometry(radius, radius, height, 32);
-        const sGeometry = new SphereBufferGeometry(radius, 32, 32);
+        const mesh = await this.assetLoader.loadModel('./models/villager-male/villager-male.glb');
 
-        const capsuleMesh = new Mesh(cGeometry, material);
-        const sphereTopMesh = new Mesh(sGeometry, material);
-        const sphereBottomMesh = new Mesh(sGeometry, material);
-        sphereTopMesh.position.y = height / 2;
-        sphereBottomMesh.position.y = -height / 2;
-        capsuleMesh.add(sphereTopMesh);
-        capsuleMesh.add(sphereBottomMesh);
-
-        this.graphics.addObjectToScene(capsuleMesh);
-        this.ecs.setComponent(capsule, MeshData, capsuleMesh);
+        this.graphics.addObjectToScene(mesh);
+        this.ecs.setComponent(capsule, MeshData, mesh);
         this.ecs.setComponent(capsule, PhysicsData, capsuleBody);
         this.ecs.setComponent(capsule, HealthData, {
             hp: 3,
@@ -44,11 +34,13 @@ export default class GoblinScript extends GameScript {
         });
         this.ecs.setComponent(capsule, GoblinData, {});
 
+        const player = this.ecs.getTag(PLAYER_TAG);
         const shootTimer = setInterval(() => {
-            const playerBody = this.ecs.getComponent(this.ecs.getTag(PLAYER_TAG), PhysicsData);
+            const playerBody = this.ecs.getComponent(player, PhysicsData);
             const playerPos = this.physics.getBodyPosition(playerBody);
             const capsulePos = this.physics.getBodyPosition(capsuleBody);
             const [x, y, z] = subtract(playerPos, capsulePos);
+            mesh.lookAt(playerPos[0], capsulePos[1], playerPos[2]);
             shoot(
                 this.physics,
                 this.graphics,
