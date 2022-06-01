@@ -1,0 +1,8 @@
+{
+  "version": "v1",
+  "packages": {
+    "firearm": {
+      "signature": "6073d3b7ac98356d0ac85fba56c09184"
+    }
+  }
+}

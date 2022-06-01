@@ -141,6 +141,9 @@ export default class KeyboardControlScript extends GameScript {
             case 'Escape':
                 document.exitPointerLock();
                 break;
+            case 'Delete':
+                location.reload();
+                break;
             default:
         }
     }

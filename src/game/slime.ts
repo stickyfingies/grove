@@ -18,7 +18,12 @@ class SlimeData {
 
 export default class SlimeScript extends GameScript {
     init() {
-        setInterval(this.createSlime, 1200);
+        window.webApi.onmessage(() => {
+            log('spawn enemy')
+            this.createSlime();
+        });
+
+        // setInterval(this.createSlime, 1200);
 
         this.ecs.events.on(`delete${HealthData.name}Component`, (entity: number) => {
             // make sure it's really a slime (this is a generic death event)

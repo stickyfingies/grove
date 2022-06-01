@@ -1,5 +1,6 @@
 import {
-    Sprite, SpriteMaterial, Texture,
+    CanvasTexture,
+    Sprite, SpriteMaterial,
 } from 'three';
 
 import Entity from '../ecs/entity';
@@ -7,7 +8,7 @@ import GameScript from '../script';
 import { ScoreData } from './score';
 import { SpriteData } from '3-AD';
 
-const SLIMES_TO_KILL = 60;
+const SLIMES_TO_KILL = 20;
 
 export default class QuestScript extends GameScript {
     init() {
@@ -33,7 +34,7 @@ export default class QuestScript extends GameScript {
             ctx.fillStyle = 'white';
             ctx.textAlign = 'left';
             ctx.fillText(text, 2, canvas.height - 24 * 2);
-            guiSprite.material.map = new Texture(canvas);
+            guiSprite.material.map = new CanvasTexture(canvas);
             this.graphics.updateMaterial(guiSprite, true);
         };
 

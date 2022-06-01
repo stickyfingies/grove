@@ -6,13 +6,13 @@ import { Graphics, MeshData } from '3-AD';
 import { Physics, PhysicsData } from 'firearm';
 
 /** Shoots a ball outwards from an entity in an indicated direction */
-export const shoot = (
+export function shoot(
     physics: Physics,
     graphics: Graphics,
     origin: Entity,
     shootDir: Vector3,
     cb?: (e: number) => void,
-) => {
+): Entity {
     const ball = new Entity();
 
     const [px, py, pz] = physics.getBodyPosition(origin.getComponent(PhysicsData));
@@ -41,7 +41,7 @@ export const shoot = (
     physics.addVelocity(body, velocity);
     ball.setComponent(PhysicsData, body);
 
-    const geometry = new SphereBufferGeometry(radius, 32, 32);
+    const geometry = new SphereBufferGeometry(radius, 1, 1);
     const material = new MeshPhongMaterial({ color: 0x00CCFF });
     const mesh = new Mesh(geometry, material);
     graphics.addObjectToScene(mesh);
@@ -50,11 +50,11 @@ export const shoot = (
     const collideCb = (entity: number) => {
         physics.removeCollisionCallback(body);
         cb?.(entity);
-        setTimeout(() => {
+        // setTimeout(() => {
             physics.removeBody(body);
             graphics.removeObjectFromScene(mesh);
             ball.delete();
-        }, 1500);
+        // }, 1500);
     };
 
     physics.registerCollisionCallback(body, collideCb);

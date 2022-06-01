@@ -247,9 +247,9 @@ export default class EntityManager {
 
     /** Check if an entity has a component */
     hasComponent(id: number, type: ComponentType): boolean {
-        const archetype = this.#idToArchetype.get(id)!;
+        const archetype = this.#idToArchetype.get(id);
 
-        return archetype.hasComponent(id, type);
+        return archetype?.hasComponent(id, type) || false;
     }
 
     /** Add a tag to an entity.  Entities can later be retrieved using the same tag */

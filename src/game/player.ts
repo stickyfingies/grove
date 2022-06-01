@@ -51,7 +51,10 @@ export default class PlayerScript extends GameScript {
 
         const shootTowardsCrosshair = (e: MouseEvent) => {
             if (e.button !== 2) return;
-            shoot(this.physics, this.graphics, Entity.getTag(PLAYER_TAG), getCameraDir());
+            const onCollide = (entity: number) => {
+                this.ecs.events.emit('dealDamage', entity, 5);
+            }
+            shoot(this.physics, this.graphics, Entity.getTag(PLAYER_TAG), getCameraDir(), onCollide);
         };
 
         this.engine.events.on('startLoop', () => {
