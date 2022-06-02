@@ -32,12 +32,13 @@ function main() {
 
     // REST API
     const server = http.createServer(async (req, res) => {
-        if (req.url === '/api' && req.method === 'GET') {
+        if (req.url !== '/' && req.method === 'GET') {
+            const endpoint = req.url.split('/')[1];
             res.writeHead(200, { 'Content-Type': 'text/html' });
-            res.write('Hi there, This is a Vanilla Node.js API');
+            res.write(endpoint);
             res.end();
             win.webContents.openDevTools();
-            win.webContents.send('response', { success: true });
+            win.webContents.send(endpoint);
         }
         else {
             res.writeHead(404, { 'Content-Type': 'application/json' });

@@ -20,6 +20,7 @@ These instructions assume you use the Yarn package manager.  If you elect to use
 ### ▻ **Developing the App**
 
 ```sh
+$ yarn                # fetch dependencies (only run once)
 $ yarn dev            # launch Vite dev server and serve electron app
 ```
 

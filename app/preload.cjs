@@ -4,7 +4,7 @@ const {
 } = require('electron');
 
 contextBridge.exposeInMainWorld('webApi', {
-    onmessage: function (func) {
-        ipcRenderer.on('response', (event, ...args) => func(...args));
+    onmessage(endpoint, func) {
+        ipcRenderer.on(endpoint, (event, ...args) => func(...args));
     }
 });

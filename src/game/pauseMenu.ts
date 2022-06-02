@@ -43,7 +43,7 @@ export default class PauseMenuScript extends GameScript {
         document.addEventListener('pointerlockchange', pointerlockchange);
 
         const click = () => {
-            document.body.requestFullscreen();
+            // document.body.requestFullscreen();
             document.body.requestPointerLock();
         };
 

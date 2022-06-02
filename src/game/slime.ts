@@ -18,8 +18,8 @@ class SlimeData {
 
 export default class SlimeScript extends GameScript {
     init() {
-        window.webApi.onmessage(() => {
-            log('spawn enemy')
+        window.webApi.onmessage('slime', () => {
+            log('spawn enemy');
             this.createSlime();
         });
 
@@ -59,6 +59,7 @@ export default class SlimeScript extends GameScript {
         const slimes = this.ecs.submitQuery(new Set([SlimeData]));
 
         for (const slime of slimes) {
+            // console.log(this.ecs.getEntityComponentSignature(slime));
             const slimeBody = this.ecs.getComponent(slime, PhysicsData);
 
             const playerPos = this.physics.getBodyPosition(playerBody);

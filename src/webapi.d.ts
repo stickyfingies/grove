@@ -1,5 +1,5 @@
 export interface IWebAPI {
-    onmessage: (callback: Function) => Promise<void>,
+    onmessage: (endpoint: string, callback: Function) => Promise<void>,
 }
 
 declare global {

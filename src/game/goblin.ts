@@ -8,11 +8,45 @@ import { PLAYER_TAG } from './player';
 import { PhysicsData } from 'firearm';
 import { shoot } from './shooting';
 import { subtract } from 'mathjs';
+import LogService from '../log';
 
-class GoblinData { }
+class GoblinData {
+    shootTimer?: NodeJS.Timer
+}
 
 export default class GoblinScript extends GameScript {
     async init() {
+        const [log] = LogService('goblin');
+
+        window.webApi.onmessage('goblin', () => {
+            log('spawn enemy');
+            this.createGoblin();
+        });
+
+        this.ecs.events.on('dealDamage', (entity: number, dmg: number) => {
+            if (!this.ecs.hasComponent(entity, GoblinData)) return;
+
+            const health = this.ecs.getComponent(entity, HealthData);
+            if (!health) return;
+            health.hp -= dmg;
+        });
+
+        this.ecs.events.on(`delete${HealthData.name}Component`, (entity: number) => {
+            // make sure it's really a slime (this is a generic death event)
+            if (!this.ecs.hasComponent(entity, GoblinData)) return;
+
+            this.ecs.events.emit('enemyDied');
+
+            clearInterval(this.ecs.getComponent(entity, GoblinData).shootTimer);
+            const mesh = this.ecs.getComponent(entity, MeshData);
+            this.graphics.removeObjectFromScene(mesh);
+            this.ecs.deleteEntity(entity);
+        });
+
+        await this.createGoblin();
+    }
+
+    async createGoblin() {
         const radius = 0.7;
         const height = 1.7;
 
@@ -32,7 +66,6 @@ export default class GoblinScript extends GameScript {
             hp: 3,
             max: 3,
         });
-        this.ecs.setComponent(capsule, GoblinData, {});
 
         const player = this.ecs.getTag(PLAYER_TAG);
         const shootTimer = setInterval(() => {
@@ -41,6 +74,9 @@ export default class GoblinScript extends GameScript {
             const capsulePos = this.physics.getBodyPosition(capsuleBody);
             const [x, y, z] = subtract(playerPos, capsulePos);
             mesh.lookAt(playerPos[0], capsulePos[1], playerPos[2]);
+            const hitCallback = (entity: number) => {
+                this.ecs.events.emit('dealDamage', entity, 5);
+            };
             shoot(
                 this.physics,
                 this.graphics,
@@ -49,29 +85,8 @@ export default class GoblinScript extends GameScript {
                 hitCallback,
             );
         }, 1000);
-
-        this.ecs.events.on('dealDamage', (entity: number, dmg: number) => {
-            if (!this.ecs.hasComponent(entity, GoblinData)) return;
-
-            const health = this.ecs.getComponent(entity, HealthData);
-            if (!health) return;
-            health.hp -= dmg;
+        this.ecs.setComponent(capsule, GoblinData, {
+            shootTimer
         });
-
-        this.ecs.events.on(`delete${HealthData.name}Component`, (entity: number) => {
-            // make sure it's really a slime (this is a generic death event)
-            if (!this.ecs.hasComponent(entity, GoblinData)) return;
-
-            this.ecs.events.emit('enemyDied');
-
-            clearInterval(shootTimer);
-            const mesh = this.ecs.getComponent(entity, MeshData);
-            this.graphics.removeObjectFromScene(mesh);
-            this.ecs.deleteEntity(entity);
-        });
-
-        const hitCallback = (entity: number) => {
-            this.ecs.events.emit('dealDamage', entity, 5);
-        };
     }
 }
