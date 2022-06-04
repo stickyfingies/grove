@@ -1,8 +1,7 @@
 import { Vector3 } from 'three';
 
-import Entity from '../ecs/entity';
 import GameScript from '../script';
-import { HealthData } from './health';
+import { DeathData, HealthData } from './health';
 import { MeshData } from '3-AD';
 import { PLAYER_TAG } from './player';
 import { PhysicsData } from 'firearm';
@@ -23,6 +22,7 @@ export default class GoblinScript extends GameScript {
             this.createGoblin();
         });
 
+        // transfer to damage system
         this.ecs.events.on('dealDamage', (entity: number, dmg: number) => {
             if (!this.ecs.hasComponent(entity, GoblinData)) return;
 
@@ -31,19 +31,16 @@ export default class GoblinScript extends GameScript {
             health.hp -= dmg;
         });
 
-        this.ecs.events.on(`delete${HealthData.name}Component`, (entity: number) => {
-            // make sure it's really a slime (this is a generic death event)
-            if (!this.ecs.hasComponent(entity, GoblinData)) return;
+        await this.createGoblin();
+    }
 
+    update() {
+        this.ecs.executeQuery([GoblinData, MeshData, DeathData], ([goblinData, mesh], entity) => {
             this.ecs.events.emit('enemyDied');
-
-            clearInterval(this.ecs.getComponent(entity, GoblinData).shootTimer);
-            const mesh = this.ecs.getComponent(entity, MeshData);
+            clearInterval(goblinData.shootTimer);
             this.graphics.removeObjectFromScene(mesh);
             this.ecs.deleteEntity(entity);
         });
-
-        await this.createGoblin();
     }
 
     async createGoblin() {
@@ -75,12 +72,13 @@ export default class GoblinScript extends GameScript {
             const [x, y, z] = subtract(playerPos, capsulePos);
             mesh.lookAt(playerPos[0], capsulePos[1], playerPos[2]);
             const hitCallback = (entity: number) => {
+                // transfer to damage system
                 this.ecs.events.emit('dealDamage', entity, 5);
             };
             shoot(
                 this.physics,
                 this.graphics,
-                new Entity(Entity.defaultManager, capsule),
+                new Vector3().fromArray(capsulePos),
                 new Vector3(x, y, z),
                 hitCallback,
             );

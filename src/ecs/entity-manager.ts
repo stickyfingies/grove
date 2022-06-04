@@ -1,22 +1,22 @@
 import EventEmitter from 'events';
 
 /** Anything that's a ComponentType is a class */
-export interface ComponentType<T = any> {
-  new(...args: any[]): T;
+export interface ComponentType<T = unknown> {
+    new(...args: any[]): T;
 }
 
 /** A component signature is a set of the types of components something's interested in */
-export type ComponentSignature = Set<ComponentType>;
+export type Signature = Set<ComponentType>;
 
-type ComponentArgs
+type ComponentTypeList
     = [ComponentType]
     | ComponentType[];
 
 // https://dev.t-matix.com/blog/platform/eimplementing-a-type-saf-ecs-with-typescript/
-type ComponentArgsFromQuerySignature<T> = {
+type ComponentDataFromSignature<T> = {
     [P in keyof T]: T[P] extends ComponentType
-        ? InstanceType<T[P]>
-        : never
+    ? InstanceType<T[P]>
+    : never
 }
 
 type ComponentPool = InstanceType<ComponentType>[];
@@ -32,7 +32,7 @@ type ComponentPool = InstanceType<ComponentType>[];
  * will match the signature as well.
  */
 class Archetype {
-    signature: ComponentSignature;
+    signature: Signature;
 
     entities: Set<number>;
 
@@ -44,7 +44,7 @@ class Archetype {
 
     indexToEntityId: number[] = [];
 
-    constructor(signature: ComponentSignature, entities: Set<number>) {
+    constructor(signature: Signature, entities: Set<number>) {
         this.signature = signature;
         this.entities = entities;
 
@@ -89,22 +89,23 @@ class Archetype {
 
     getComponent<T>(id: number, type: ComponentType<T>): T {
         const index = this.entityIdToIndex[id];
-        return this.components.get(type)![index];
+        return this.components.get(type)![index] as T;
     }
 
     hasComponent<T>(id: number, type: ComponentType<T>) {
         return this.signature.has(type) && this.entities.has(id);
     }
 
-    executeQuery<T extends ComponentArgs>(
+    executeQuery<T extends ComponentTypeList>(
         query: T,
-        callback: (c: ComponentArgsFromQuerySignature<T>, id: number) => void,
+        callback: (c: ComponentDataFromSignature<T>, id: number) => void,
     ) {
         if (this.containsSignature(new Set(query))) {
             // @ts-ignore - Type magic
-            const proxy: ComponentArgsFromQuerySignature<T> = Array(query.length).fill(null);
+            const proxy: ComponentDataFromSignature<T> = Array(query.length).fill(null);
             for (let i = 0; i < this.poolSize; i++) {
                 for (let j = 0; j < query.length; j++) {
+                    // @ts-ignore - Type magic
                     proxy[j] = this.components.get(query[j])![i];
                 }
                 callback(proxy, this.indexToEntityId[i]);
@@ -126,7 +127,7 @@ class Archetype {
     }
 
     /** Check if this archetype has EXACTLY the same component types listed in `signature` */
-    matchesSignature(signature: ComponentSignature) {
+    matchesSignature(signature: Signature) {
         let equal = this.signature.size === signature.size;
         for (const value of this.signature) {
             if (!signature.has(value)) {
@@ -138,7 +139,7 @@ class Archetype {
     }
 
     /** Check if this archetype contains AT LEAST all the component types listed in `query` */
-    containsSignature(query: ComponentSignature) {
+    containsSignature(query: Signature) {
         let matches = true;
         for (const type of query) {
             if (!this.signature.has(type)) {
@@ -235,11 +236,14 @@ export default class EntityManager {
 
     /** Get a component from an entity */
     getComponent<T>(id: number, type: ComponentType<T>): T {
-        const archetype = this.#idToArchetype.get(id)!;
+        const archetype = this.#idToArchetype.get(id);
 
-        // lazily initialize data manager
-        if (!archetype.signature.has(type)) {
-            throw new Error(`component type ${type.name} is not registered`);
+        if (!archetype) {
+            throw new Error(`getComponent(id: ${id}, type: ${type.name}): ID does not exist!`)
+        }
+
+        if (!archetype?.signature.has(type)) {
+            throw new Error(`getComponent(id: ${id}, type: ${type.name}): component is not registered!`);
         }
 
         return archetype.getComponent(id, type);
@@ -266,19 +270,38 @@ export default class EntityManager {
         return this.#tagList.get(tag)!;
     }
 
-    /** Get a list of all entity id's which match a component signature */
-    * submitQuery(query: ComponentSignature) {
+    /**
+     * Get a list of all entity id's which match a component signature
+     * @example
+     * ```ts
+     * const frogs = this.ecs.submitQuery([PhysicsData, MeshData, HealthData]);
+     * for (const [[body, mesh, health], entityId] of frogs) {
+     *      // do logic...
+     * }
+     * ```
+     */
+    * submitQuery<T extends ComponentTypeList>(query: T) {
         // add entity ID's from archetypes that match signature
+        const signature = new Set(query);
         for (const archetype of this.#archetypes) {
-            if (archetype.containsSignature(query)) {
-                for (const entity of archetype.entities) yield entity;
+            if (archetype.containsSignature(signature)) {
+                for (const entity of archetype.entities) {
+                    // @ts-ignore - Type magic
+                    const proxy: ComponentDataFromSignature<T> = Array(query.length).fill(null);
+                    for (let i = 0; i < query.length; i++) {
+                        // @ts-ignore - Type magic
+                        proxy[i] = archetype.getComponent(entity, query[i])!;
+                    }
+                    const result: [ComponentDataFromSignature<T>, number] = [proxy, entity]
+                    yield result;
+                }
             }
         }
     }
 
-    executeQuery<T extends ComponentArgs>(
+    executeQuery<T extends ComponentTypeList>(
         query: T,
-        callback: (c: ComponentArgsFromQuerySignature<T>, id: number) => void,
+        callback: (c: ComponentDataFromSignature<T>, id: number) => void,
     ) {
         for (const archetype of this.#archetypes) {
             archetype.executeQuery(query, callback);
@@ -298,7 +321,7 @@ export default class EntityManager {
      * and if none is found, a new archetype will be created.  The entity will then be removed
      * from the old archetype, and its component data will be copied into the new one.
     */
-    private updateEntityArchetype(id: number, signature: ComponentSignature) {
+    private updateEntityArchetype(id: number, signature: Signature) {
         let newArchetype: Archetype | null = null;
 
         // Attempt to find an existing archetype matching the signature...

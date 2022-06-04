@@ -43,10 +43,8 @@ export default abstract class GameScript {
     }
 
     /** @virtual */
-    // eslint-disable-next-line class-methods-use-this, no-empty-function
     init(): void {}
 
     /** @virtual */
-    // eslint-disable-next-line class-methods-use-this, no-empty-function
-    update(dt: number): void {}
+    update(_dt: number): void {}
 }

@@ -1,3 +1,7 @@
+/**
+ * @see /docs/server.md
+ */
+
 export interface IWebAPI {
     onmessage: (endpoint: string, callback: Function) => Promise<void>,
 }

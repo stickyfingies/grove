@@ -12,18 +12,30 @@ function getFontColor(string: string) {
     return `hsl(${stringUniqueHash % 360}, 95%, 35%)`;
 }
 
-export default function LogService(logName: any) {
+/**
+ * Creates a **named, colored** logging channel, such that
+ * all logs coming from the same channel name are outputted with 
+ * the same color.  Useful for debugging, and pretty, too :)
+ * @example
+ * ```
+ * const [log, error] = LogService('channel:name');
+ * // ...
+ * log('heck yeah! strings!!');
+ * error({ code: 0xDEADBEEF, msg: 'objects, too' });
+ * ```
+ */
+export default function LogService(logName: string) {
     const logCategory = logName.split(':')[0];
 
-    const prettyPrinter = (fn: Function) => {
-        return (payload: any) => {
+    const makePrettyPrinter = (fn: Function) => {
+        return (payload: unknown) => {
             if (typeof payload === 'object') { payload = JSON.stringify(payload, undefined, 2); }
             const color = getFontColor(logCategory);
             fn(`%c[${logName}]\n%c${payload}`, `color:${color};font-weight:bold;`, 'color:#333333;font-weight:bold;');
         }
     }
-    const log = prettyPrinter(console.log);
-    const report = prettyPrinter(console.error);
+    const log = makePrettyPrinter(console.log);
+    const report = makePrettyPrinter(console.error);
 
     return [log, report];
 }

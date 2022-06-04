@@ -58,6 +58,10 @@
                 "props": false
             }
         ],
+        "@typescript-eslint/semi": [
+            "error",
+            "always"
+        ],
         "no-unused-vars": [
             "error",
             {

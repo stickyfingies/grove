@@ -1,5 +1,4 @@
 import {
-    CanvasTexture,
     Sprite,
     SpriteMaterial,
     Vector3,
@@ -7,7 +6,7 @@ import {
 
 import Entity from '../ecs/entity';
 import GameScript from '../script';
-import { HealthData } from './health';
+import { DeathData, HealthData } from './health';
 import { KeyboardControlData } from './keyboardControls';
 import { MovementData } from './movement';
 import { PhysicsData } from 'firearm';
@@ -15,6 +14,7 @@ import { ScoreData } from './score';
 import { shoot } from './shooting';
 import { CAMERA_TAG, CameraData, SpriteData } from '3-AD';
 import LogService from '../log';
+import { UserInterfaceData } from './userInterface';
 
 const [todo] = LogService('engine:todo');
 
@@ -33,11 +33,11 @@ const getCameraDir = () => {
 export default class PlayerScript extends GameScript {
     player!: Entity;
 
-    hud!: Entity;
+    // hud!: Entity;
 
-    hudCanvas!: HTMLCanvasElement;
+    // hudCanvas!: HTMLCanvasElement;
 
-    hudCtx!: CanvasRenderingContext2D;
+    // hudCtx!: CanvasRenderingContext2D;
 
     init() {
         const crosshair = new Entity();
@@ -54,7 +54,8 @@ export default class PlayerScript extends GameScript {
             const onCollide = (entity: number) => {
                 this.ecs.events.emit('dealDamage', entity, 5);
             }
-            shoot(this.physics, this.graphics, Entity.getTag(PLAYER_TAG), getCameraDir(), onCollide);
+            const origin = this.physics.getBodyPosition(this.player.getComponent(PhysicsData));
+            shoot(this.physics, this.graphics, new Vector3().fromArray(origin), getCameraDir(), onCollide);
         };
 
         this.engine.events.on('startLoop', () => {
@@ -65,13 +66,13 @@ export default class PlayerScript extends GameScript {
         });
 
         // scratch canvas context
-        const RESOLUTION = 256;
-        const canvas = document.createElement('canvas');
-        canvas.width = RESOLUTION;
-        canvas.height = RESOLUTION;
-        const ctx = canvas.getContext('2d')!;
-        this.hudCanvas = canvas;
-        this.hudCtx = ctx;
+        // const RESOLUTION = 256;
+        // const canvas = document.createElement('canvas');
+        // canvas.width = RESOLUTION;
+        // canvas.height = RESOLUTION;
+        // const ctx = canvas.getContext('2d')!;
+        // this.hudCanvas = canvas;
+        // this.hudCtx = ctx;
 
         this.player = new Entity();
         this.player.addTag(PLAYER_TAG);
@@ -101,14 +102,22 @@ export default class PlayerScript extends GameScript {
         this.player.setComponent(MovementData, movementData);
         this.player.setComponent(KeyboardControlData, {});
 
-        this.hud = new Entity();
+        // this.hud = new Entity();
 
-        const hudSprite = new Sprite();
-        hudSprite.material = new SpriteMaterial();
-        hudSprite.position.set(0, -window.innerHeight / 2 + this.hudCanvas.height / 2, -1);
-        hudSprite.scale.set(256, 256, 1);
-        this.graphics.addObjectToScene(hudSprite, true);
-        this.hud.setComponent(SpriteData, hudSprite);
+        // const hudSprite = new Sprite();
+        // hudSprite.material = new SpriteMaterial();
+        // hudSprite.position.set(0, -window.innerHeight / 2 + this.hudCanvas.height / 2, -1);
+        // hudSprite.scale.set(256, 256, 1);
+        // this.graphics.addObjectToScene(hudSprite, true);
+        // this.hud.setComponent(SpriteData, hudSprite);
+
+        this.player.setComponent(UserInterfaceData, new UserInterfaceData(
+            '50%',
+            '80%',
+            '52px Arial',
+            'red',
+            'lmoa'
+        ));
 
         this.drawHUD();
 
@@ -146,15 +155,16 @@ export default class PlayerScript extends GameScript {
         });
 
         // handle death
-        this.ecs.events.on(`delete${HealthData.name}Component`, (id: number) => {
-            const score = this.player.getComponent(ScoreData);
-            if (id === this.player.id) {
-                document.querySelector('#blocker')?.setAttribute('style', 'display:block');
-                const loadText = document.querySelector('#load')! as HTMLElement;
-                loadText.setAttribute('style', 'display:block');
-                loadText.innerHTML = `<h1>You Have Perished. Score... ${score.score}</h1>`;
-            }
-        });
+        // this.ecs.events.on(`delete${HealthData.name}Component`, (id: number) => {
+        //     const score = this.player.getComponent(ScoreData);
+        //     if (id === this.player.id) {
+        //         document.querySelector('#blocker')?.setAttribute('style', 'display:block');
+        //         const loadText = document.querySelector('#load')! as HTMLElement;
+        //         loadText.setAttribute('style', 'display:block');
+        //         loadText.innerHTML = `<h1>You Have Perished. Score... ${score.score}</h1>`;
+        //         this.ecs.deleteEntity(this.player.id);
+        //     }
+        // });
 
         // attach data to debug GUI
 
@@ -164,19 +174,26 @@ export default class PlayerScript extends GameScript {
         // this.gui.add(body.position, 'z').listen();
     }
 
+    update() {
+        this.ecs.executeQuery([ScoreData, DeathData], ([score]) => {
+            document.querySelector('#blocker')?.setAttribute('style', 'display:block');
+            const loadText = document.querySelector('#load')! as HTMLElement;
+            loadText.setAttribute('style', 'display:block');
+            loadText.innerHTML = `<h1>You Have Perished. Score... ${score.score}</h1>`;
+            this.ecs.deleteEntity(this.player.id);
+        });
+    }
+
     drawHUD() {
         const score = this.player.getComponent(ScoreData);
         const health = this.player.getComponent(HealthData);
-        const hudSprite = this.hud.getComponent(SpriteData) as Sprite;
+        const hud = this.player.getComponent(UserInterfaceData);
+        // this.hudCtx.font = '52px Arial';
+        // this.hudCtx.fillStyle = 'red';
+        // this.hudCtx.textAlign = 'center';
+        // this.hudCtx.fillText(`${health.hp}/${health.max}HP`, this.hudCanvas.width / 2, this.hudCanvas.height - 62);
+        // this.hudCtx.fillText(`${score.score} points`, this.hudCanvas.width / 2, this.hudCanvas.height - 10);
 
-        this.hudCtx.clearRect(0, 0, this.hudCanvas.width, this.hudCanvas.height);
-        this.hudCtx.font = '52px Arial';
-        this.hudCtx.fillStyle = 'red';
-        this.hudCtx.textAlign = 'center';
-        this.hudCtx.fillText(`${health.hp}/${health.max}HP`, this.hudCanvas.width / 2, this.hudCanvas.height - 62);
-        this.hudCtx.fillText(`${score.score} points`, this.hudCanvas.width / 2, this.hudCanvas.height - 10);
-
-        hudSprite.material.map = new CanvasTexture(this.hudCanvas);
-        this.graphics.updateMaterial(hudSprite, true);
+        hud.text = `${health.hp}/${health.max}HP\n${score.score} points`;
     }
 }

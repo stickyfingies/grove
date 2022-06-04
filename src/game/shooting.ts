@@ -9,13 +9,13 @@ import { Physics, PhysicsData } from 'firearm';
 export function shoot(
     physics: Physics,
     graphics: Graphics,
-    origin: Entity,
+    origin: Vector3,
     shootDir: Vector3,
     cb?: (e: number) => void,
 ): Entity {
     const ball = new Entity();
 
-    const [px, py, pz] = physics.getBodyPosition(origin.getComponent(PhysicsData));
+    const [px, py, pz] = origin.toArray();
     const { x: sdx, y: sdy, z: sdz } = shootDir.normalize();
 
     const radius = 0.3;

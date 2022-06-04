@@ -95,14 +95,20 @@ export default class Engine {
 
         // @ts-ignore - TSC and Vite aren't playing nice still
         const modules = import.meta.glob('./game/*.ts'); // @bug - weird Vite shit
+        const modulePromises = [];
         for (const path in modules) {
+            const promise = modules[path]();
+            modulePromises.push(promise);
             // @ts-ignore - @bug - typeof Module
-            modules[path]().then((mod) => {
+            promise.then((mod) => {
                 if (!mod.default) return;
                 const script: GameScript = new mod.default(this);
                 this.#gameScripts.push(script);
-                script.init();
-            })
+            });
+        }
+        await Promise.all(modulePromises);
+        for (const script of this.#gameScripts) {
+            script.init();
         }
 
         // build graph
@@ -129,8 +135,8 @@ export default class Engine {
                     const e = new Entity();
                     e.setComponent(PhysicsData, body);
                     setTimeout(() => {
-                        // @hack - Seeing this block months after writing it.
-                        // Wtf was I smoking when I wrote this code?
+                        // @hack - Wtf was I smoking when I wrote this code?
+                        // removing the timeout breaks the world ... somehow.
                         this.graphics.addObjectToScene(node);
                         e.setComponent(MeshData, node);
                     }, 500);

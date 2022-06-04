@@ -30,7 +30,7 @@ export default class PauseMenuScript extends GameScript {
             if (isLocked) {
                 this.engine.events.emit('startLoop');
             } else {
-                this.engine.events.emit('stopLoop');
+                // this.engine.events.emit('stopLoop');
             }
 
             // toggle pause menu
@@ -43,7 +43,7 @@ export default class PauseMenuScript extends GameScript {
         document.addEventListener('pointerlockchange', pointerlockchange);
 
         const click = () => {
-            // document.body.requestFullscreen();
+            document.body.requestFullscreen();
             document.body.requestPointerLock();
         };
 

@@ -1,6 +1,5 @@
 import { Vector3 } from 'three';
 
-import EcsView from '../ecs/view';
 import Entity from '../ecs/entity';
 import GameScript from '../script';
 import { PhysicsData } from 'firearm';
@@ -29,8 +28,6 @@ export class MovementData {
 }
 
 export default class MovementScript extends GameScript {
-    movementView = new EcsView(this.ecs, new Set([MovementData, PhysicsData]));
-
     init() {
         this.ecs.events.on(`set${MovementData.name}Component`, (id: number, mvmt: MovementData) => {
             const entity = new Entity(Entity.defaultManager, id);
