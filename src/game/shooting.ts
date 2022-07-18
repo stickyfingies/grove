@@ -11,7 +11,7 @@ export function shoot(
     graphics: Graphics,
     origin: Vector3,
     shootDir: Vector3,
-    cb?: (e: number) => void,
+    cb?: (e: number, b: number) => void,
 ): Entity {
     const ball = new Entity();
 
@@ -49,7 +49,7 @@ export function shoot(
 
     const collideCb = (entity: number) => {
         physics.removeCollisionCallback(body);
-        cb?.(entity);
+        cb?.(entity, ball.id);
         // setTimeout(() => {
             physics.removeBody(body);
             graphics.removeObjectFromScene(mesh);

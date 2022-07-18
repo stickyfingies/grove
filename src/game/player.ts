@@ -12,7 +12,7 @@ import { MovementData } from './movement';
 import { PhysicsData } from 'firearm';
 import { ScoreData } from './score';
 import { shoot } from './shooting';
-import { CAMERA_TAG, CameraData, SpriteData } from '3-AD';
+import { CAMERA_TAG, CameraData, SpriteData, MeshData } from '3-AD';
 import LogService from '../log';
 import { UserInterfaceData } from './userInterface';
 import { addDamageCallback, dealDamage } from './damage.system';
@@ -132,7 +132,9 @@ export default class PlayerScript extends GameScript {
         // });
 
         // handle enemy deaths
-        this.ecs.events.on('enemyDied', () => {
+        this.ecs.events.on('enemyDied', (entity: number) => {
+            const position = this.ecs.getComponent(entity, MeshData)!.position;
+            this.graphics.createParticleSystem(position);
             const score = this.player.getComponent(ScoreData);
             score.score += 1;
             this.ecs.events.emit('updateScore', score);

@@ -42,7 +42,7 @@ export default class SlimeScript extends GameScript {
 
         // handle dead slimes
         this.ecs.executeQuery([MeshData, SlimeData, DeathData], ([mesh], entity) => {
-            this.ecs.events.emit('enemyDied');
+            this.ecs.events.emit('enemyDied', entity);
             this.graphics.removeObjectFromScene(mesh);
             this.ecs.deleteEntity(entity);
             log('death');

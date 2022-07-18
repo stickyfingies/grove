@@ -28,7 +28,7 @@ export default class GoblinScript extends GameScript {
 
     update() {
         this.ecs.executeQuery([GoblinData, MeshData, DeathData], ([goblinData, mesh], entity) => {
-            this.ecs.events.emit('enemyDied');
+            this.ecs.events.emit('enemyDied', entity);
             clearInterval(goblinData.shootTimer);
             this.graphics.removeObjectFromScene(mesh);
             this.ecs.deleteEntity(entity);
