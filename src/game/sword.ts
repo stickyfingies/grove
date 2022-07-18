@@ -4,6 +4,7 @@ import anime from 'animejs';
 import Entity from '../ecs/entity';
 import GameScript from '../script';
 import { CAMERA_TAG, CameraData, MeshData } from '3-AD';
+import { dealDamage } from './damage.system';
 
 export default class SwordScript extends GameScript {
     sword!: Entity;
@@ -56,7 +57,9 @@ export default class SwordScript extends GameScript {
             // 2) If the raycast hit something, deal damage to that entity
             if (raycastInfo) {
                 const { entityID, hitPoint } = raycastInfo;
-                if (new Vector3().fromArray(hitPoint).distanceTo(from) < 3.0) this.ecs.events.emit('dealDamage', entityID, 10);
+                if (new Vector3().fromArray(hitPoint).distanceTo(from) < 3.0) {
+                    dealDamage(this.ecs)(entityID)(10);
+                }
             }
         });
     }

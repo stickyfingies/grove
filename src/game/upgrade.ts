@@ -20,13 +20,11 @@ export default class UpgradeScript extends GameScript {
 
         const makeUpgrade = async () => {
             const upgrade = new Entity();
-
-            const randomPos = () => Math.random() * 70 - 35;
             
             const upgradeBody = this.physics.createSphere({
                 mass: 1000,
-                pos: [randomPos(), 30, randomPos()],
-            }, 1);
+                pos: [0, 60, 0],
+            }, 0.7);
             upgrade.setComponent(PhysicsData, upgradeBody);
 
             const sprite = new Sprite();

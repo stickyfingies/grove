@@ -6,6 +6,7 @@ import { PhysicsData } from 'firearm';
 import LogService from '../log';
 import { Vector3 } from 'three';
 import { distance, multiply, subtract } from 'mathjs';
+import { dealDamage } from './damage.system';
 
 const [log] = LogService('slime');
 
@@ -26,18 +27,12 @@ export default class SlimeScript extends GameScript {
 
         // setInterval(this.createSlime, 1200);
 
+        // deal melee damage on contact
+        const player = this.ecs.getTag(PLAYER_TAG);
         this.ecs.events.on('collision', ({ id0, id1 }) => {
-            if (this.ecs.hasComponent(id0, SlimeData) && id1 === this.ecs.getTag(PLAYER_TAG)) {
-                this.ecs.events.emit('dealDamage', id1, 3);
+            if (this.ecs.hasComponent(id0, SlimeData) && id1 === player) {
+                dealDamage(this.ecs)(3)(id1);
             }
-        });
-
-        this.ecs.events.on('dealDamage', (entity: number, dmg: number) => {
-            if (!this.ecs.hasComponent(entity, SlimeData)) return;
-
-            const health = this.ecs.getComponent(entity, HealthData);
-            if (!health) return;
-            health.hp -= dmg;
         });
     }
 

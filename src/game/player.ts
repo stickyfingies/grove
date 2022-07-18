@@ -15,6 +15,7 @@ import { shoot } from './shooting';
 import { CAMERA_TAG, CameraData, SpriteData } from '3-AD';
 import LogService from '../log';
 import { UserInterfaceData } from './userInterface';
+import { addDamageCallback, dealDamage } from './damage.system';
 
 const [todo] = LogService('engine:todo');
 
@@ -51,9 +52,7 @@ export default class PlayerScript extends GameScript {
 
         const shootTowardsCrosshair = (e: MouseEvent) => {
             if (e.button !== 2) return;
-            const onCollide = (entity: number) => {
-                this.ecs.events.emit('dealDamage', entity, 5);
-            }
+            const onCollide = dealDamage(this.ecs)(5);
             const origin = this.physics.getBodyPosition(this.player.getComponent(PhysicsData));
             shoot(this.physics, this.graphics, new Vector3().fromArray(origin), getCameraDir(), onCollide);
         };
@@ -91,13 +90,13 @@ export default class PlayerScript extends GameScript {
         const radius = 1;
         const body = this.physics.createSphere({
             mass,
-            pos: [12, 120, 0],
+            pos: [0, 120, 0],
             fixedRotation: true,
         }, radius);
         this.player.setComponent(PhysicsData, body);
 
         const movementData = new MovementData();
-        movementData.jumpVelocity = 0.5;
+        movementData.jumpVelocity = 5;
         movementData.walkVelocity = 7;
         this.player.setComponent(MovementData, movementData);
         this.player.setComponent(KeyboardControlData, {});
@@ -147,12 +146,8 @@ export default class PlayerScript extends GameScript {
             this.drawHUD();
         });
 
-        this.ecs.events.on('dealDamage', (id: number, dmg: number) => {
-            if (id !== this.player.id) return;
-
-            this.player.getComponent(HealthData).hp -= dmg;
-            this.drawHUD();
-        });
+        // re-draw HUD upon getting hit
+        addDamageCallback(this.player.id, this.drawHUD);
 
         // handle death
         // this.ecs.events.on(`delete${HealthData.name}Component`, (id: number) => {

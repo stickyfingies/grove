@@ -86,7 +86,7 @@ export default class KeyboardControlScript extends GameScript {
 
             // TODO this needs to be done AFTER MovementScript updates
             const [px, py, pz] = this.physics.getBodyPosition(body);
-            camera.position.copy(new Vector3(px, py + 0.45, pz));
+            camera.position.copy(new Vector3(px, py + 1, pz));
         });
     }
 

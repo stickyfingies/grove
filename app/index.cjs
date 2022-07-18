@@ -24,7 +24,7 @@ function main() {
 
     // Launch window
     if (isDev) {
-        win.loadURL('http://localhost:3000');
+        win.loadURL('http://localhost:3000'); // @todo - move to ENV variable
         win.webContents.openDevTools();
     } else {
         win.loadFile(path.join(__dirname, 'build', 'index.html'));

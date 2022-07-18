@@ -2,7 +2,10 @@
   "version": "v1",
   "packages": {
     "firearm": {
-      "signature": "6073d3b7ac98356d0ac85fba56c09184"
+      "signature": "cfd3179295e04ce6c11b43f406811c0b"
+    },
+    "3-AD": {
+      "signature": "15b9efc3807828983a6a62bb6445b007"
     }
   }
 }

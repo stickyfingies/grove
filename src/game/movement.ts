@@ -78,7 +78,7 @@ export default class MovementScript extends GameScript {
                     body,
                     [0, mvmt.jumpVelocity, 0],
                     position,
-                    [position[0], position[1] - 1.5, position[2]],
+                    [position[0], position[1] - 2.5, position[2]],
                 );
             }
         });

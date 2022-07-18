@@ -1,4 +1,7 @@
 {
+    "main": {
+        "path": "./models/sponza.glb"
+    },
     "skjarIsles": {
         "path": "./models/skjar-isles-glb/skjarisles.glb"
     },

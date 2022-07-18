@@ -2,7 +2,6 @@ import EventEmitter from 'events';
 import { GUI } from 'dat.gui';
 import Stats from 'stats.js';
 import autoBind from 'auto-bind';
-import { Mesh, Quaternion, Vector3 } from 'three';
 
 import AssetLoader from './load';
 import Entity from './ecs/entity';
@@ -13,11 +12,8 @@ import {
     CAMERA_TAG,
     CameraData,
     Graphics,
-    MeshData,
 } from '3-AD';
-import { Physics, PhysicsData } from 'firearm';
-
-import maps from './json/maps.json';
+import { Physics } from 'firearm';
 
 export default class Engine {
     readonly events = new EventEmitter();
@@ -69,7 +65,7 @@ export default class Engine {
         this.assetLoader.init(LogService('load'));
         await token;
 
-        // make camera accessible through game entity
+        // create camera
         new Entity(this.ecs)
             .addTag(CAMERA_TAG)
             .setComponent(CameraData, this.graphics.camera);
@@ -94,12 +90,12 @@ export default class Engine {
         // ^ schedule work within that graph and it can later be executed each frame.
 
         // @ts-ignore - TSC and Vite aren't playing nice still
-        const modules = import.meta.glob('./game/*.ts'); // @bug - weird Vite shit
+        const modules = import.meta.glob('./game/*.ts');
         const modulePromises = [];
         for (const path in modules) {
             const promise = modules[path]();
             modulePromises.push(promise);
-            // @ts-ignore - @bug - typeof Module
+            // @ts-ignore - typeof Module
             promise.then((mod) => {
                 if (!mod.default) return;
                 const script: GameScript = new mod.default(this);
@@ -109,45 +105,6 @@ export default class Engine {
         await Promise.all(modulePromises);
         for (const script of this.#gameScripts) {
             script.init();
-        }
-
-        // build graph
-        // execute graph
-
-        // load the map
-        {
-            const map = maps.skjarIsles;
-            const meshPromise = await this.assetLoader.loadModel(map.path);
-            // const physicsMesh = await this.assetLoader.loadModel(map.physicsPath);
-            meshPromise.traverse((node) => {
-                if (node instanceof Mesh) {
-                    const worldPos = new Vector3();
-                    const worldScale = new Vector3();
-                    const worldQuat = new Quaternion();
-                    node.getWorldPosition(worldPos);
-                    node.getWorldScale(worldScale);
-                    node.getWorldQuaternion(worldQuat);
-                    const body = this.physics.createTrimesh({
-                        pos: worldPos.toArray(),
-                        scale: worldScale.toArray(),
-                        quat: worldQuat.toArray(),
-                    }, node.geometry);
-                    const e = new Entity();
-                    e.setComponent(PhysicsData, body);
-                    setTimeout(() => {
-                        // @hack - Wtf was I smoking when I wrote this code?
-                        // removing the timeout breaks the world ... somehow.
-                        this.graphics.addObjectToScene(node);
-                        e.setComponent(MeshData, node);
-                    }, 500);
-                }
-            });
-            // (await meshPromise).traverse((node) => {
-            //     if (node instanceof Mesh) {
-            //         const f = new Entity();
-            //         f.setComponent(MeshData, node);
-            //     }
-            // });
         }
 
         // between the game scripts and the map, we probably just created a bunch of renderables.

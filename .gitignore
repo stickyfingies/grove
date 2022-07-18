@@ -28,4 +28,8 @@ app/build
 # Development intermediates
 .yalc/
 .yalc.lock
+yalc.lock
+
+# If you're reading this, and understand why I might have 
+# a literal "$HOME" directory in this project... email me plz
 $HOME

@@ -19,7 +19,7 @@ type ComponentDataFromSignature<T> = {
     : never
 }
 
-type ComponentPool = InstanceType<ComponentType>[];
+type ComponentList = InstanceType<ComponentType>[];
 
 /**
  * Archetypes store the actual component data for entities.
@@ -36,7 +36,7 @@ class Archetype {
 
     entities: Set<number>;
 
-    components = new Map<ComponentType, ComponentPool>();
+    components = new Map<ComponentType, ComponentList>();
 
     poolSize = 0;
 

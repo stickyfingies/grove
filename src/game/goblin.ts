@@ -8,6 +8,7 @@ import { PhysicsData } from 'firearm';
 import { shoot } from './shooting';
 import { subtract } from 'mathjs';
 import LogService from '../log';
+import { dealDamage } from './damage.system';
 
 class GoblinData {
     shootTimer?: NodeJS.Timer
@@ -20,15 +21,6 @@ export default class GoblinScript extends GameScript {
         window.webApi.onmessage('goblin', () => {
             log('spawn enemy');
             this.createGoblin();
-        });
-
-        // transfer to damage system
-        this.ecs.events.on('dealDamage', (entity: number, dmg: number) => {
-            if (!this.ecs.hasComponent(entity, GoblinData)) return;
-
-            const health = this.ecs.getComponent(entity, HealthData);
-            if (!health) return;
-            health.hp -= dmg;
         });
 
         await this.createGoblin();
@@ -71,10 +63,7 @@ export default class GoblinScript extends GameScript {
             const capsulePos = this.physics.getBodyPosition(capsuleBody);
             const [x, y, z] = subtract(playerPos, capsulePos);
             mesh.lookAt(playerPos[0], capsulePos[1], playerPos[2]);
-            const hitCallback = (entity: number) => {
-                // transfer to damage system
-                this.ecs.events.emit('dealDamage', entity, 5);
-            };
+            const hitCallback = dealDamage(this.ecs)(5);
             shoot(
                 this.physics,
                 this.graphics,

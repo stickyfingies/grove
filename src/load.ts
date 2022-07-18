@@ -56,8 +56,8 @@ export default class AssetLoader {
             // if this is the first time this resource was requested, load it
             if (this.#accessCount[uri] === 1) {
                 const loader = new GLTFLoader();
-                loader.load(uri, ({ scene: object }) => {
-                    this.#models[uri] = object;
+                loader.load(uri, ({ scene }) => {
+                    this.#models[uri] = scene;
                     this.#models[uri].updateMatrixWorld();
 
                     // for each child in object
