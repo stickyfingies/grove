@@ -7,7 +7,7 @@ import AssetLoader from './load';
 import Entity from './ecs/entity';
 import EntityManager from './ecs/entity-manager';
 import LogService from './log'
-import GameScript from './script';
+import { GameSystem } from './script';
 import {
     CAMERA_TAG,
     CameraData,
@@ -15,24 +15,34 @@ import {
 } from '3-AD';
 import { Physics } from 'firearm';
 
+export const gui = new GUI();
+export const graphics = new Graphics(LogService('graphics'), LogService('graphics:worker'));
+export const physics = new Physics();
+export const assetLoader = new AssetLoader();
+
+/// for things that live in the world
+export const world = new EntityManager();
+/// for things that live in the code
+export const codex = new EntityManager();
+
+export const events = new EventEmitter();
+
+export class EngineSystem {
+    static get is_system() { return true; }
+
+    on_load(): void { };
+
+    start(): void { };
+
+    update(): void { };
+}
+
 export default class Engine {
-    readonly events = new EventEmitter();
-
-    readonly gui = new GUI();
-
-    readonly graphics = new Graphics(LogService('graphics'), LogService('graphics:worker'));
-
-    readonly physics = new Physics();
-
-    readonly assetLoader = new AssetLoader();
-
-    readonly ecs = new EntityManager();
-
     #running = false;
 
     #lastFrameTime = 0;
 
-    #gameScripts: GameScript[] = [];
+    #gameScripts: GameSystem[] = [];
 
     #stats = new Stats();
 
@@ -53,22 +63,22 @@ export default class Engine {
         // @ts-ignore - Useful for debugging
         window.report = report;
 
-        Entity.defaultManager = this.ecs;
+        Entity.defaultManager = world;
 
-        // this.physics.init();
+        // physics.init();
 
-        this.events.on('startLoop', () => { this.#running = true; });
-        this.events.on('stopLoop', () => { this.#running = false; });
+        events.on('startLoop', () => { this.#running = true; });
+        events.on('stopLoop', () => { this.#running = false; });
 
-        const token = this.physics.init(this.ecs.events, LogService('physics'), LogService('physics:worker'));
-        this.graphics.init();
-        this.assetLoader.init(LogService('load'));
+        const token = physics.init(world.events, LogService('physics'), LogService('physics:worker'));
+        graphics.init();
+        assetLoader.init(LogService('load'));
         await token;
 
         // create camera
-        new Entity(this.ecs)
+        new Entity(world)
             .addTag(CAMERA_TAG)
-            .setComponent(CameraData, this.graphics.camera);
+            .setComponent(CameraData, graphics.camera);
 
         // schedule A
         // schedule B
@@ -90,26 +100,30 @@ export default class Engine {
         // ^ schedule work within that graph and it can later be executed each frame.
 
         // @ts-ignore - TSC and Vite aren't playing nice still
-        const modules = import.meta.glob('./game/*.ts');
-        const modulePromises = [];
-        for (const path in modules) {
-            const promise = modules[path]();
-            modulePromises.push(promise);
-            // @ts-ignore - typeof Module
-            promise.then((mod) => {
-                if (!mod.default) return;
-                const script: GameScript = new mod.default(this);
-                this.#gameScripts.push(script);
-            });
-        }
-        await Promise.all(modulePromises);
-        for (const script of this.#gameScripts) {
-            script.init();
-        }
+        const modules: Record<string, Function> = import.meta.glob('./game/**/*.ts');
+
+        const module_promises = Object
+            .entries(modules)
+            .map(([_, loadModule]) => loadModule());
+
+        const game_modules = await Promise.all(module_promises) as { [s: string]: any }[];
+
+        const plugins = game_modules
+            .flatMap(module => Object.entries(module))
+            .filter(([_key, val]) => val.is_system)
+            .map(([_a, b]) => new b());
+
+        console.log(plugins);
+
+        this.#gameScripts = game_modules
+            .filter(module => 'default' in module)
+            .map(module => new module.default(this));
+
+        this.#gameScripts.forEach(script => { if ('init' in script) script.init() });
 
         // between the game scripts and the map, we probably just created a bunch of renderables.
         // run backend work now, so it isn't being done right when the first frame starts rendering.
-        this.graphics.update();
+        graphics.update();
 
         // show performance statistics
         this.#stats.showPanel(2);
@@ -133,19 +147,21 @@ export default class Engine {
         this.#stats.begin();
 
         if (this.#running) {
-            // step physics
             this.#physicsStats.begin();
-            this.physics.update();
+            physics.update();
             this.#physicsStats.end();
 
-            // run per-frame game tasks
             this.#scriptStats.begin();
-            for (const script of this.#gameScripts) if (script.update) script.update(delta);
+            for (const script of this.#gameScripts as any[]) {
+                // script is being used as a component
+                if ('update' in script) world.executeQuery([script.constructor], ([instance], e) => instance.update(e));
+                // this is on everything
+                if (script.every_frame) script.every_frame(delta);
+            }
             this.#scriptStats.end();
 
-            // render scene
             this.#graphicsStats.begin();
-            this.graphics.update();
+            graphics.update();
             this.#graphicsStats.end();
         }
 

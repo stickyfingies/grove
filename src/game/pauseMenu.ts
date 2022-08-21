@@ -19,16 +19,16 @@
  * Additionally, the "PauseMenuScript" only has to worry about the literal pause menu.  SOLID FTW!
  */
 
-import GameScript from '../script';
+import { events } from "../engine";
 
-export default class PauseMenuScript extends GameScript {
+export default class PauseMenuScript {
     init() {
         const pointerlockchange = () => {
             const isLocked = (document.pointerLockElement === document.body);
 
             // Start or stop the core engine loop, depending if the window has cursor focus
             if (isLocked) {
-                this.engine.events.emit('startLoop');
+                events.emit('startLoop');
             } else {
                 // this.engine.events.emit('stopLoop');
             }

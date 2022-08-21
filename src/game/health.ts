@@ -1,15 +1,14 @@
-import GameScript from '../script';
+import { world } from '../engine';
 
 /**
  * Anything with a health component is alive.  When `health.hp <= 0`, the
  * HealthData component is removed, and replaced with a DeathData component.
  */
-export class HealthData {
+export interface HealthData {
     /** current hp value */
-    hp: number = 1;
-
+    hp: number;
     /** maximum hp value */
-    max: number = 1;
+    max: number;
 }
 
 /**
@@ -17,7 +16,7 @@ export class HealthData {
  * @example
  * ```ts
  * // query for dead amphibians
- * const deadFrogs = this.ecs.submitQuery(new Set([FrogData, DeathData]));
+ * const deadFrogs = world.submitQuery(new Set([FrogData, DeathData]));
  * for (const corpse of deadFrogs) {
  *      console.log('rip...');
  * }
@@ -25,26 +24,19 @@ export class HealthData {
  */
 export class DeathData { }
 
-export default class HealthScript extends GameScript {
-    update() {
-        /// entities which should be marked as 'dead' this frame
-        const entitiesToKill: number[] = [];
+export default class HealthScript {
+    static bahavior = (hp: number, max: number) => () => new HealthScript(hp, max);
 
-        this.ecs.executeQuery([HealthData], ([health], entity) => {
-            // cap hp value at max hp value
-            health.hp = Math.min(health.hp, health.max);
+    constructor(
+        public hp: number = 1,
+        public max: number = 2
+    ) { }
 
-            if (!health) console.error('fuck');
-
-            // this hoe dead
-            if (health.hp <= 0) {
-                entitiesToKill.push(entity);
-            }
-        });
-
-        for (const entity of entitiesToKill) {
-            this.ecs.deleteComponent(entity, HealthData);
-            this.ecs.setComponent(entity, DeathData, {});
+    update(e: number) {
+        this.hp = Math.min(this.hp, this.max);
+        if (this.hp <= 0) {
+            world.deleteComponent(e, HealthScript);
+            world.setComponent(e, DeathData, {});
         }
     }
 }

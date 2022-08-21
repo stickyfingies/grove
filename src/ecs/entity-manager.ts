@@ -5,8 +5,8 @@ export interface ComponentType<T = unknown> {
     new(...args: any[]): T;
 }
 
-/** A component signature is a set of the types of components something's interested in */
-export type Signature = Set<ComponentType>;
+/** A component signature is a set of component types*/
+export type ComponentSignature = Set<ComponentType>;
 
 type ComponentTypeList
     = [ComponentType]
@@ -32,7 +32,7 @@ type ComponentList = InstanceType<ComponentType>[];
  * will match the signature as well.
  */
 class Archetype {
-    signature: Signature;
+    signature: ComponentSignature;
 
     entities: Set<number>;
 
@@ -44,7 +44,7 @@ class Archetype {
 
     indexToEntityId: number[] = [];
 
-    constructor(signature: Signature, entities: Set<number>) {
+    constructor(signature: ComponentSignature, entities: Set<number>) {
         this.signature = signature;
         this.entities = entities;
 
@@ -65,20 +65,17 @@ class Archetype {
         if (id) {
             this.entities.delete(id);
             this.poolSize -= 1;
-            if (index === this.poolSize) {
-                delete this.entityIdToIndex[id];
-                delete this.indexToEntityId[index];
-            } else {
-                // Copy last data entry into the deleted entity's entry (keep things contiguous)
+            // Swap
+            if (index !== this.poolSize) {
                 this.signature.forEach((type) => {
                     this.components.get(type)![index] = this.components.get(type)![this.poolSize];
                 });
                 this.indexToEntityId[index] = this.indexToEntityId[this.poolSize];
                 this.entityIdToIndex[this.indexToEntityId[index]] = index;
-
-                delete this.entityIdToIndex[id];
-                delete this.indexToEntityId[this.poolSize];
             }
+            // Pop
+            delete this.entityIdToIndex[id];
+            delete this.indexToEntityId[this.poolSize];
         }
     }
 
@@ -113,21 +110,8 @@ class Archetype {
         }
     }
 
-    /** Copies entity data from an old archetype -> this archetype */
-    transferEntityFrom(id: number, oldArchetype: Archetype) {
-        this.addEntity(id);
-        const index = this.entityIdToIndex[id];
-        const oldIndex = oldArchetype.entityIdToIndex[id];
-        oldArchetype.components.forEach((store, type) => {
-            if (this.signature.has(type)) {
-                this.components.get(type)![index] = store[oldIndex];
-            }
-        });
-        oldArchetype.removeEntity(id);
-    }
-
     /** Check if this archetype has EXACTLY the same component types listed in `signature` */
-    matchesSignature(signature: Signature) {
+    matchesSignature(signature: ComponentSignature) {
         let equal = this.signature.size === signature.size;
         for (const value of this.signature) {
             if (!signature.has(value)) {
@@ -139,7 +123,7 @@ class Archetype {
     }
 
     /** Check if this archetype contains AT LEAST all the component types listed in `query` */
-    containsSignature(query: Signature) {
+    containsSignature(query: ComponentSignature) {
         let matches = true;
         for (const type of query) {
             if (!this.signature.has(type)) {
@@ -149,6 +133,19 @@ class Archetype {
         }
         return matches;
     }
+}
+
+/** Copies entity data from an old archetype -> this archetype */
+function transferEntityFrom(id: number, oldArchetype: Archetype, newArchetype: Archetype) {
+    newArchetype.addEntity(id);
+    const index = newArchetype.entityIdToIndex[id];
+    const oldIndex = oldArchetype.entityIdToIndex[id];
+    oldArchetype.components.forEach((store, type) => {
+        if (newArchetype.signature.has(type)) {
+            newArchetype.components.get(type)![index] = store[oldIndex];
+        }
+    });
+    oldArchetype.removeEntity(id);
 }
 
 /**
@@ -192,14 +189,36 @@ export default class EntityManager {
         return id;
     }
 
+    spawn(components: Function[]) {
+        // the component information we'll use
+        const id = this.createEntity();
+        const data = components.map(c => c(id)).filter(d => d);
+        const types = data.map(d => d.constructor);
+        // now, extrapolate further
+        const signature = new Set([...types, ...this.getEntityComponentSignature(id)]);
+        const archetype = this.updateEntityArchetype(id, signature);
+        // install the data
+        for (let i = 0; i < types.length; i++) {
+            archetype.setComponent(id, types[i], data[i]);
+            this.events.emit(`set${types[i].name}Component`, id, data[i]);
+        }
+        //
+        return id;
+    }
+
     /** Delete an entity and all its component data */
     deleteEntity(id: number) {
         const archetype = this.#idToArchetype.get(id)!;
 
+        // this happens sometimes with RigidBody collision callbacks... idk why
+        if (!archetype) {
+            return console.error(`'EntityManager::deleteEntity(${id})' - entity ${id} not found!`);
+        }
         // emit 'delete' events for every component in this entity
         for (const type of archetype.signature) {
-            this.events.emit(`delete${type.name}Component`, id, this.getComponent(id, type));
-            // archetype.components.get(type)?.delete(id);
+            const component = this.getComponent(id, type) as any;
+            this.events.emit(`delete${type.name}Component`, id, component);
+            if ('destroy' in component) component.destroy();
         }
 
         archetype.removeEntity(id);
@@ -222,7 +241,7 @@ export default class EntityManager {
 
     /** Delete a component for an entity.  Returns whether the component was deleted */
     deleteComponent(id: number, type: ComponentType) {
-        const data = this.getComponent(id, type);
+        const data = this.getComponent(id, type) as any;
 
         // assign to new entity archetype
         const oldArchetype = this.#idToArchetype.get(id);
@@ -232,6 +251,7 @@ export default class EntityManager {
 
         // emit a `delete` event
         this.events.emit(`delete${type.name}Component`, id, data);
+        if ('destroy' in data) data.destroy();
     }
 
     /** Get a component from an entity */
@@ -274,7 +294,7 @@ export default class EntityManager {
      * Get a list of all entity id's which match a component signature
      * @example
      * ```ts
-     * const frogs = this.ecs.submitQuery([PhysicsData, MeshData, HealthData]);
+     * const frogs = world.submitQuery([PhysicsData, MeshData, HealthData]);
      * for (const [[body, mesh, health], entityId] of frogs) {
      *      // do logic...
      * }
@@ -321,13 +341,14 @@ export default class EntityManager {
      * and if none is found, a new archetype will be created.  The entity will then be removed
      * from the old archetype, and its component data will be copied into the new one.
     */
-    private updateEntityArchetype(id: number, signature: Signature) {
+    private updateEntityArchetype(id: number, signature: ComponentSignature) {
         let newArchetype: Archetype | null = null;
 
         // Attempt to find an existing archetype matching the signature...
         for (const arch of this.#archetypes) {
             if (arch.matchesSignature(signature)) {
                 newArchetype = arch;
+                break;
             }
         }
         // ...Or create a new one if needed.
@@ -338,7 +359,7 @@ export default class EntityManager {
 
         // Transfer data from old archetype (if it exists), and associate entity with new archetype
         const oldArchetype = this.#idToArchetype.get(id);
-        if (oldArchetype) newArchetype.transferEntityFrom(id, oldArchetype);
+        if (oldArchetype) transferEntityFrom(id, oldArchetype, newArchetype);
         else newArchetype.addEntity(id);
         this.#idToArchetype.set(id, newArchetype);
 

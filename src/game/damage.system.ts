@@ -1,5 +1,5 @@
 import EntityManager from "../ecs/entity-manager";
-import { HealthData } from "./health";
+import HealthScript from "./health";
 
 const callbackMap = new Map<number, Function[]>();
 
@@ -18,9 +18,9 @@ export function addDamageCallback(entity: number, callback: Function) {
  * Call me a functional programmer ;) except I'm dysfunctional :/
  */
 export const dealDamage = (ecs: EntityManager) => (dmg: number) => (entity: number) => {
-    const hasHealth = ecs.hasComponent(entity, HealthData);
+    const hasHealth = ecs.hasComponent(entity, HealthScript);
     if (hasHealth) {
-        const health = ecs.getComponent(entity, HealthData);
+        const health = ecs.getComponent(entity, HealthScript);
         health.hp -= dmg;
         // execute damage callbakcs
         for (const cb of callbackMap.get(entity) ?? []) {

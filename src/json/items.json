@@ -1,0 +1,9 @@
+{
+    "Fist": {
+        "damage": 3
+    },
+    "Fire Sword": {
+        "damage": 9,
+        "ranged": true
+    }
+}

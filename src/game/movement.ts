@@ -1,8 +1,9 @@
 import { Vector3 } from 'three';
 
 import Entity from '../ecs/entity';
-import GameScript from '../script';
+import { GameSystem } from '../script';
 import { PhysicsData } from 'firearm';
+import { physics, world } from '../engine';
 
 export class MovementData {
     /** Direction the entity should walk */
@@ -27,9 +28,9 @@ export class MovementData {
     groundNormal = new Vector3();
 }
 
-export default class MovementScript extends GameScript {
+export default class MovementScript extends GameSystem {
     init() {
-        this.ecs.events.on(`set${MovementData.name}Component`, (id: number, mvmt: MovementData) => {
+        world.events.on(`set${MovementData.name}Component`, (id: number, mvmt: MovementData) => {
             const entity = new Entity(Entity.defaultManager, id);
             const body = entity.getComponent(PhysicsData);
 
@@ -52,8 +53,8 @@ export default class MovementScript extends GameScript {
         });
     }
 
-    update() {
-        this.ecs.executeQuery([PhysicsData, MovementData], ([body, mvmt]) => {
+    every_frame() {
+        world.executeQuery([PhysicsData, MovementData], ([body, mvmt]) => {
             // walkVector = direction * speed
             const walkVector = mvmt.direction.normalize();
             walkVector.multiplyScalar(mvmt.walkVelocity);
@@ -61,20 +62,12 @@ export default class MovementScript extends GameScript {
 
             // walk
             const walkVelocity = [walkVector.x, 0, walkVector.z];
-            this.physics.addVelocity(body, walkVelocity);
+            physics.addVelocity(body, walkVelocity);
 
-            const position = this.physics.getBodyPosition(body);
+            const position = physics.getBodyPosition(body);
 
-            // try to jump
-            // if (mvmt.wantsToJump) {
-            //     const raycastDst =
-            // new Vec3(body.position.x, body.position.y - 2, body.position.z);
-            //     const canJump = this.physics.raycast(body.position, raycastDst);
-
-            //     if (canJump) body.velocity.y += mvmt.jumpVelocity;
-            // }
             if (mvmt.wantsToJump) {
-                this.physics.addVelocityConditionalRaycast(
+                physics.addVelocityConditionalRaycast(
                     body,
                     [0, mvmt.jumpVelocity, 0],
                     position,

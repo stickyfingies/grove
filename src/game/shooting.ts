@@ -3,7 +3,9 @@ import { Mesh, MeshPhongMaterial, SphereBufferGeometry, Vector3 } from 'three';
 import Entity from '../ecs/entity';
 
 import { Graphics, MeshData } from '3-AD';
-import { Physics, PhysicsData } from 'firearm';
+import { Physics, PhysicsData, Vec3 } from 'firearm';
+
+const sound = new Audio('/audio/pop.wav');
 
 /** Shoots a ball outwards from an entity in an indicated direction */
 export function shoot(
@@ -23,12 +25,12 @@ export function shoot(
     const shootVelo = 40;
     const distanceFromOrigin = 2;
 
-    const velocity = [
+    const velocity: Vec3 = [
         sdx * shootVelo,
         sdy * shootVelo,
         sdz * shootVelo,
     ];
-    const position = [
+    const position: Vec3 = [
         px + sdx * distanceFromOrigin,
         py + sdy * distanceFromOrigin,
         pz + sdz * distanceFromOrigin,
@@ -37,7 +39,8 @@ export function shoot(
     const body = physics.createSphere({
         mass,
         pos: position,
-    }, radius);
+        radius
+    });
     physics.addVelocity(body, velocity);
     ball.setComponent(PhysicsData, body);
 
@@ -51,9 +54,11 @@ export function shoot(
         physics.removeCollisionCallback(body);
         cb?.(entity, ball.id);
         // setTimeout(() => {
-            physics.removeBody(body);
-            graphics.removeObjectFromScene(mesh);
-            ball.delete();
+        physics.removeBody(body);
+        graphics.removeObjectFromScene(mesh);
+        ball.delete();
+        sound.currentTime = 0;
+        sound.play();
         // }, 1500);
     };
 

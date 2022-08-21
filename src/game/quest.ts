@@ -1,11 +1,12 @@
 import Entity from '../ecs/entity';
-import GameScript from '../script';
+import { world } from '../engine';
+import { GameSystem } from '../script';
 import { ScoreData } from './score';
 import { UserInterfaceData } from './userInterface';
 
 const SLIMES_TO_KILL = 20;
 
-export default class QuestScript extends GameScript {
+export default class QuestScript extends GameSystem {
     init() {
         // const gui = new Entity();
 
@@ -13,7 +14,7 @@ export default class QuestScript extends GameScript {
         // guiSprite.material = new SpriteMaterial();
         // guiSprite.position.set(-window.innerWidth / 2, -window.innerHeight / 2, -1);
         // guiSprite.scale.set(256, 256, 1);
-        // this.graphics.addObjectToScene(guiSprite, true);
+        // graphics.addObjectToScene(guiSprite, true);
         // gui.setComponent(SpriteData, guiSprite);
 
         // scratch canvas context
@@ -40,12 +41,12 @@ export default class QuestScript extends GameScript {
             // ctx.textAlign = 'left';
             // ctx.fillText(content, 2, canvas.height - 24 * 2);
             // guiSprite.material.map = new CanvasTexture(canvas);
-            // this.graphics.updateMaterial(guiSprite, true);
+            // graphics.updateMaterial(guiSprite, true);
         };
 
         updateGui(`Quest: kill ${SLIMES_TO_KILL} slimes`);
 
-        this.ecs.events.on('updateScore', (score: ScoreData) => {
+        world.events.on('updateScore', (score: ScoreData) => {
             if (score.score >= SLIMES_TO_KILL) {
                 updateGui('QUEST COMPLETE');
             } else {

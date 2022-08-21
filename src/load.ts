@@ -37,7 +37,7 @@ export default class AssetLoader {
             this.events.emit('assetLoaded', url, loaded, total);
         };
         DefaultLoadingManager.onLoad = () => {
-            log(itemsLoaded);
+            log(itemsLoaded.length);
             itemsLoaded = [];
         }
     }
@@ -72,6 +72,7 @@ export default class AssetLoader {
                         copy.updateMatrixWorld();
                         cb(copy);
                     }
+                    this.#callbacks[uri] = []; // this is a HUGE memory saver (i think)
                 });
             }
 
@@ -80,6 +81,7 @@ export default class AssetLoader {
                 const copy = this.#models[uri].clone() as Mesh;
                 copy.updateMatrixWorld();
                 resolve(copy);
+                this.#callbacks[uri] = []; // this is a HUGE memory saver (i think)
             }
         });
     }

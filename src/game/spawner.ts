@@ -1,4 +1,4 @@
-import GameScript from '../script';
+import { GameSystem } from '../script';
 
 // component.clone(); // <-- not possible for cannon body
 // stateComponent, runtimeComponent?
@@ -13,6 +13,6 @@ export class SpawnerData {
     //
 }
 
-export default class SpawnerScript extends GameScript {
+export default class SpawnerScript extends GameSystem {
     //
 }

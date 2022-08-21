@@ -5,23 +5,24 @@ import {
     CanvasTexture,
     DirectionalLight,
     ImageBitmapLoader,
+    LoadingManager,
     Mesh,
     MeshBasicMaterial,
 } from 'three';
 
 import Entity from '../ecs/entity';
-import GameScript from '../script';
 import entities from '../json/entities.json';
 import {
     CAMERA_TAG, CameraData, LightData, MeshData,
 } from '3-AD';
+import { graphics } from '../engine';
 
-export default class SceneSetupScript extends GameScript {
+export default class SceneSetupScript {
     skybox!: Entity;
 
     person!: Entity;
 
-    init() {
+    async init() {
         this.skybox = new Entity();
         {
             // skybox state
@@ -32,7 +33,12 @@ export default class SceneSetupScript extends GameScript {
             const materialArray: MeshBasicMaterial[] = [];
 
             // load skybox images
-            const loader = new ImageBitmapLoader();
+            const loadingManager = new LoadingManager(() => {
+                const skyboxMesh = new Mesh(skyGeometry, materialArray);
+                graphics.addObjectToScene(skyboxMesh);
+                this.skybox.setComponent(MeshData, skyboxMesh);
+            })
+            const loader = new ImageBitmapLoader(loadingManager);
             for (let i = 0; i < 6; i++) {
                 loader.load(imagePrefix + directions[i] + imageSuffix, (image) => {
                     const map = new CanvasTexture(image);
@@ -44,15 +50,6 @@ export default class SceneSetupScript extends GameScript {
                     materialArray[i] = mat;
                 });
             }
-
-            const skyboxMesh = new Mesh(skyGeometry, materialArray);
-
-            // graphics component can't be added until all textures have finished loading
-            // TODO use progress callbacks instead of timeouts.  this is hacky as fuck.
-            setTimeout(() => {
-                this.graphics.addObjectToScene(skyboxMesh);
-                this.skybox.setComponent(MeshData, skyboxMesh);
-            }, 1000);
         }
 
         for (const entity of entities.spawn) {
@@ -74,13 +71,13 @@ export default class SceneSetupScript extends GameScript {
                         shadow.camera.bottom = -1024;
                         shadow.mapSize.width = 1024;
                         shadow.mapSize.height = 1024;
-                        this.graphics.addObjectToScene(light);
+                        graphics.addObjectToScene(light);
                         e.setComponent(LightData, light);
                         break;
                     }
                     case 'light:ambient': {
                         const light = new AmbientLight(MeshData.color, MeshData.intensity);
-                        this.graphics.addObjectToScene(light);
+                        graphics.addObjectToScene(light);
                         e.setComponent(LightData, light);
                         break;
                     }
@@ -91,7 +88,7 @@ export default class SceneSetupScript extends GameScript {
         }
     }
 
-    update() {
+    every_frame() {
         // center skybox around camera
         const camera = Entity.getTag(CAMERA_TAG).getComponent(CameraData);
         this.skybox.getComponent(MeshData)?.position.copy(camera.position);

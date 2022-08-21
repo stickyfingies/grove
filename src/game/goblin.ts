@@ -1,37 +1,30 @@
-import { Vector3 } from 'three';
-
-import GameScript from '../script';
-import { DeathData, HealthData } from './health';
+import { GameSystem } from '../script';
+import HealthScript, { DeathData } from './health';
 import { MeshData } from '3-AD';
-import { PLAYER_TAG } from './player';
 import { PhysicsData } from 'firearm';
-import { shoot } from './shooting';
-import { subtract } from 'mathjs';
-import LogService from '../log';
-import { dealDamage } from './damage.system';
+import { PLAYER_TAG } from './player';
+import { assetLoader, graphics, physics, world } from '../engine';
+import AttackScript from '../components/attack';
 
-class GoblinData {
-    shootTimer?: NodeJS.Timer
-}
+class GoblinData {}
 
-export default class GoblinScript extends GameScript {
+// window.webApi.onmessage('goblin', () => {
+//     log('spawn enemy');
+//     this.createGoblin();
+// });
+
+export default class GoblinScript extends GameSystem {
+    shootTimer?: NodeJS.Timer;
+
     async init() {
-        const [log] = LogService('goblin');
-
-        window.webApi.onmessage('goblin', () => {
-            log('spawn enemy');
-            this.createGoblin();
-        });
-
-        await this.createGoblin();
+        setInterval(this.createGoblin, 7_000);
     }
 
-    update() {
-        this.ecs.executeQuery([GoblinData, MeshData, DeathData], ([goblinData, mesh], entity) => {
-            this.ecs.events.emit('enemyDied', entity);
-            clearInterval(goblinData.shootTimer);
-            this.graphics.removeObjectFromScene(mesh);
-            this.ecs.deleteEntity(entity);
+    every_frame() {
+        world.executeQuery([MeshData, GoblinData, DeathData], ([mesh], entity) => {
+            world.events.emit('enemyDied', entity);
+            graphics.removeObjectFromScene(mesh);
+            world.deleteEntity(entity);
         });
     }
 
@@ -39,41 +32,22 @@ export default class GoblinScript extends GameScript {
         const radius = 0.7;
         const height = 1.7;
 
-        const capsule = this.ecs.createEntity();
-        const capsuleBody = this.physics.createCapsule({
+        const mesh = await assetLoader.loadModel('./models/villager-male/villager-male.glb');
+        graphics.addObjectToScene(mesh);
+
+        const body = physics.createCapsule({
             mass: 10,
             pos: [10, 50, 0],
             fixedRotation: true,
         }, radius, height);
 
-        const mesh = await this.assetLoader.loadModel('./models/villager-male/villager-male.glb');
+        const goblin = world.spawn([
+            HealthScript.bahavior(3, 3),
+            AttackScript.behavior(world.getTag(PLAYER_TAG)),
+        ]);
 
-        this.graphics.addObjectToScene(mesh);
-        this.ecs.setComponent(capsule, MeshData, mesh);
-        this.ecs.setComponent(capsule, PhysicsData, capsuleBody);
-        this.ecs.setComponent(capsule, HealthData, {
-            hp: 3,
-            max: 3,
-        });
-
-        const player = this.ecs.getTag(PLAYER_TAG);
-        const shootTimer = setInterval(() => {
-            const playerBody = this.ecs.getComponent(player, PhysicsData);
-            const playerPos = this.physics.getBodyPosition(playerBody);
-            const capsulePos = this.physics.getBodyPosition(capsuleBody);
-            const [x, y, z] = subtract(playerPos, capsulePos);
-            mesh.lookAt(playerPos[0], capsulePos[1], playerPos[2]);
-            const hitCallback = dealDamage(this.ecs)(5);
-            shoot(
-                this.physics,
-                this.graphics,
-                new Vector3().fromArray(capsulePos),
-                new Vector3(x, y, z),
-                hitCallback,
-            );
-        }, 1000);
-        this.ecs.setComponent(capsule, GoblinData, {
-            shootTimer
-        });
+        world.setComponent(goblin, MeshData, mesh);
+        world.setComponent(goblin, PhysicsData, body);
+        world.setComponent(goblin, GoblinData, {});
     }
 }

@@ -1,11 +1,11 @@
 import { Euler, Vector3 } from 'three';
 
-import EcsView from '../ecs/view';
 import Entity from '../ecs/entity';
-import GameScript from '../script';
+import { GameSystem } from '../script';
 import { MovementData } from './movement';
 import { PhysicsData } from 'firearm';
 import { CAMERA_TAG, CameraData } from '3-AD';
+import { events, physics, world } from '../engine';
 
 /**
  * Adding this component to an entity makes its movement controllable via mouse and keyboard
@@ -16,7 +16,7 @@ export class KeyboardControlData { }
 /**
  * Registers mouse/keyboard input events and maps them to a `Movement` component
  */
-export default class KeyboardControlScript extends GameScript {
+export default class KeyboardControlScript extends GameSystem {
     /** W, UpArrow */
     moveForward = false;
 
@@ -41,28 +41,22 @@ export default class KeyboardControlScript extends GameScript {
     /** Maximum look angle, in radians */
     readonly maxPolarAngle = Math.PI;
 
-    kbControlView = new EcsView(this.ecs, new Set([
-        PhysicsData,
-        MovementData,
-        KeyboardControlData,
-    ]));
-
     init() {
-        this.engine.events.on('startLoop', () => {
+        events.on('startLoop', () => {
             document.addEventListener('mousemove', this.onMouseMove);
             document.addEventListener('keydown', this.onKeyDown);
             document.addEventListener('keyup', this.onKeyUp);
         });
 
-        this.engine.events.on('stopLoop', () => {
+        events.on('stopLoop', () => {
             document.removeEventListener('mousemove', this.onMouseMove);
             document.removeEventListener('keydown', this.onKeyDown);
             document.removeEventListener('keyup', this.onKeyUp);
         });
     }
 
-    update(_deltaTime: number) {
-        this.ecs.executeQuery([PhysicsData, MovementData], ([body, mvmt]) => {
+    every_frame(_deltaTime: number) {
+        world.executeQuery([PhysicsData, MovementData], ([body, mvmt]) => {
             mvmt.direction = new Vector3(0, 0, 0);
 
             if (this.moveForward) {
@@ -85,7 +79,7 @@ export default class KeyboardControlScript extends GameScript {
             mvmt.direction.applyQuaternion(camera.quaternion);
 
             // TODO this needs to be done AFTER MovementScript updates
-            const [px, py, pz] = this.physics.getBodyPosition(body);
+            const [px, py, pz] = physics.getBodyPosition(body);
             camera.position.copy(new Vector3(px, py + 1, pz));
         });
     }

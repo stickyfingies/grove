@@ -1,6 +1,7 @@
 {
-    "main": {
-        "path": "./models/sponza.glb"
+    "sponza": {
+        "path": "./models/sponza.glb",
+        "rigidbody_whitelist": ["mesh_5", "mesh_6", "mesh_8", "mesh_9", "mesh_10", "mesh_19", "mesh_19", "mesh_21", "mesh_22", "mesh_24"]
     },
     "skjarIsles": {
         "path": "./models/skjar-isles-glb/skjarisles.glb"

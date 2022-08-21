@@ -1,5 +1,5 @@
-import GameScript from '../script';
-import { DeathData, HealthData } from './health';
+import { GameSystem } from '../script';
+import HealthScript, { DeathData } from './health';
 import { MeshData } from '3-AD';
 import { PLAYER_TAG } from './player';
 import { PhysicsData } from 'firearm';
@@ -7,6 +7,7 @@ import LogService from '../log';
 import { Vector3 } from 'three';
 import { distance, multiply, subtract } from 'mathjs';
 import { dealDamage } from './damage.system';
+import { assetLoader, graphics, physics, world } from '../engine';
 
 const [log] = LogService('slime');
 
@@ -17,7 +18,7 @@ class SlimeData {
     lastHop = performance.now();
 }
 
-export default class SlimeScript extends GameScript {
+export default class SlimeScript extends GameSystem {
     init() {
         window.webApi.onmessage('slime', () => {
             log('spawn enemy');
@@ -25,35 +26,34 @@ export default class SlimeScript extends GameScript {
                 this.createSlime();
         });
 
-        // setInterval(this.createSlime, 1200);
+        setInterval(this.createSlime, 5000);
 
         // deal melee damage on contact
-        const player = this.ecs.getTag(PLAYER_TAG);
-        this.ecs.events.on('collision', ({ id0, id1 }) => {
-            if (this.ecs.hasComponent(id0, SlimeData) && id1 === player) {
-                dealDamage(this.ecs)(3)(id1);
+        const player = world.getTag(PLAYER_TAG);
+        world.events.on('collision', ({ id0, id1 }) => {
+            if (world.hasComponent(id0, SlimeData) && id1 === player) {
+                dealDamage(world)(3)(id1);
             }
         });
     }
 
-    update() {
-        const player = this.ecs.getTag(PLAYER_TAG);
-        const playerBody = this.ecs.getComponent(player, PhysicsData);
+    every_frame() {
+        const player = world.getTag(PLAYER_TAG);
+        const playerBody = world.getComponent(player, PhysicsData);
 
         // handle dead slimes
-        this.ecs.executeQuery([MeshData, SlimeData, DeathData], ([mesh], entity) => {
-            this.ecs.events.emit('enemyDied', entity);
-            this.graphics.removeObjectFromScene(mesh);
-            this.ecs.deleteEntity(entity);
-            log('death');
+        world.executeQuery([MeshData, SlimeData, DeathData], ([mesh], entity) => {
+            world.events.emit('enemyDied', entity);
+            graphics.removeObjectFromScene(mesh);
+            world.deleteEntity(entity);
         });
 
         // handle living slimes (behavior skript)
-        const slimes = this.ecs.submitQuery([PhysicsData, MeshData, SlimeData]);
+        const slimes = world.submitQuery([PhysicsData, MeshData, SlimeData]);
         for (const [[body, mesh, slimeData], entity] of slimes) {
 
-            const playerPos = this.physics.getBodyPosition(playerBody);
-            const slimePos = this.physics.getBodyPosition(body);
+            const playerPos = physics.getBodyPosition(playerBody);
+            const slimePos = physics.getBodyPosition(body);
 
             const distanceToPlayer = distance(playerPos, slimePos);;
             const vectorToPlayer = subtract(playerPos, slimePos);
@@ -79,8 +79,8 @@ export default class SlimeScript extends GameScript {
                 for (const [_, other] of slimes) {
                     if (other === entity) return;
 
-                    const otherBody = this.ecs.getComponent(other, PhysicsData);
-                    const otherPos = this.physics.getBodyPosition(otherBody);
+                    const otherBody = world.getComponent(other, PhysicsData);
+                    const otherPos = physics.getBodyPosition(otherBody);
 
                     const distanceToOther = distance(otherPos, slimePos);
                     const vectorToOther = subtract(otherPos, slimePos);
@@ -101,7 +101,7 @@ export default class SlimeScript extends GameScript {
                 const blueness = Math.max(Math.min(slimesInVicinity / 12, 1), 0.02738276869058609);
                 // @ts-ignore
                 mesh.children[0].material.color.b = blueness;
-                this.graphics.updateMaterial(mesh);
+                graphics.updateMaterial(mesh);
             }
 
             // Hop towards the average target position
@@ -113,7 +113,7 @@ export default class SlimeScript extends GameScript {
                 accumulatedVelocity.z /= targets;
 
                 // Add a hop force if the slime is standing on something
-                this.physics.addForceConditionalRaycast(
+                physics.addForceConditionalRaycast(
                     body,
                     [accumulatedVelocity.x, 30, accumulatedVelocity.z],
                     slimePos,
@@ -128,26 +128,27 @@ export default class SlimeScript extends GameScript {
     }
 
     async createSlime() {
-        const slime = this.ecs.createEntity();
+        const slime = world.createEntity();
 
-        this.ecs.setComponent(slime, SlimeData, { speed: 0.75, lastHop: performance.now() });
+        world.setComponent(slime, SlimeData, { speed: 0.75, lastHop: performance.now() });
 
-        this.ecs.setComponent(slime, HealthData, { hp: 5, max: 5 });
+        world.setComponent(slime, HealthScript, new HealthScript(5, 5));
 
-        const mesh = await this.assetLoader.loadModel('./models/slime/slime.glb');
+        const mesh = await assetLoader.loadModel('./models/slime/slime.glb');
         // @ts-ignore
         mesh.children[1].material = mesh.children[1].material.clone();
         mesh.scale.set(0.7, 0.7, 0.7);
-        this.graphics.addObjectToScene(mesh);
-        this.ecs.setComponent(slime, MeshData, mesh);
+        graphics.addObjectToScene(mesh);
+        world.setComponent(slime, MeshData, mesh);
 
-        const randomPos = () => Math.random() * 150 - 75;
+        const randomPos = () => Math.random() * 50 - 25;
 
-        const body = this.physics.createSphere({
+        const body = physics.createSphere({
             mass: 10,
             pos: [randomPos(), 60, randomPos()],
             fixedRotation: true,
-        }, 1.39 / 2);
-        this.ecs.setComponent(slime, PhysicsData, body);
+            radius: 1.39 / 2
+        });
+        world.setComponent(slime, PhysicsData, body);
     }
 }
