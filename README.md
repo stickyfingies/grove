@@ -7,11 +7,16 @@
 
 This game is the longest hobby project I ever have - and likely ever will - have worked on.  Born in 2017 as a browser-based RPG akin to TESV: Skyrim, the game has been rebuilt from the ground-up several times over the years, and now is a sort of sandbox for testing new web technologies and applying them in a game context.
 
-## **Features**
+## **Packages Included**
 
-- **Composited Entity Model**: All game objects ("entities") and their behaviors are logically represented using the [ECS paradigm](https://en.wikipedia.org/wiki/Entity_component_system).  Yeah, the game runs on Javascript and the performance benefits of this are negligable.  On the flip side, building this system has taught me a lot about cache locality and some of the architectural benefits of composition-over-inheritance.
-- **Multi-threaded Rendering**: This game uses [Three.js](https://github.com/mrdoob/three.js) to both order game objects into a heirarchical scene graph _(main thread)_, and then draw those objects _(render thread)_.  Every frame, the main thread computes individual object transforms, and communicates them to the render thread using [shared memory](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer), where objects are drawn in their correct places.
-- **Multi-threaded Physics**: Similarly to the renderer, ~~a WASM copy of~~ the Bullet physics engine sits on its own thread and churns out object transforms to the main thread using shared memory.  All memory is write-once read-many, so data races _shouldn't_ (!!!) occur.  I really don't know if offloading major systems like this increases performance by any considerable margin; but again, it was fun for a learning excersize.
+- **ECS**: All game objects ("entities") and their behaviors are logically represented using the [ECS paradigm](https://en.wikipedia.org/wiki/Entity_component_system).  Yeah, the game runs on Javascript and the performance benefits of this are negligable.  On the flip side, building this system has taught me a lot about cache locality and some of the architectural benefits of composition-over-inheritance.
+- **Graphics**: This game uses [Three.js](https://github.com/mrdoob/three.js) to both order game objects into a heirarchical scene graph _(main thread)_, and then draw those objects _(render thread)_.  Every frame, the main thread computes individual object transforms, and communicates them to the render thread using [shared memory](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer), which uses WebGL to draw the objects.
+- **Physics**: Similarly to the renderer, ~~a WASM copy of~~ the Bullet physics engine sits on its own thread and churns out object transforms to the main thread using shared memory.  All memory is write-once read-many, so data races _shouldn't_ (!!!) occur.  I really don't know if offloading major systems like this increases performance by any considerable margin; but again, it was fun for a learning excersize.
+- **Engine**: This package wraps together the ECS world, graphics sub-engine, and physics sub-engine, and gets
+them all talking to eachother.  It also includes utilities for logging, asset loading (glTF), scene setup, and more.
+- **Grove**: This is where all the actualy game code lives.  Every entity behavior is represented as a GameScript,
+and so we can use GameScripts to decide what actually happens in the sumulation.  There are GameScripts for the player,
+for the camera, for enemies and health bars, and basically everything which exists in the world.
 
 ## **Building**
 
@@ -31,7 +36,6 @@ The Grove uses the [Vite](https://vitejs.dev/guide/features.html#hot-module-repl
 
 ```sh
 $ yarn build          # bundle source files
-$ yarn electron:build # package electron app + make distributable binaries
 ```
 
 The resulting binaries + distributables will be in the `out/` directory.

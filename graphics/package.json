@@ -1,0 +1,27 @@
+{
+  "name": "@grove/graphics",
+  "version": "1.0.0",
+  "description": "Library: Render three.js scenes in a parallel worker thread",
+  "main": "dist/index.es.js",
+  "typings": "dist/index.d.ts",
+  "repository": "https://github.com/stickyfingies/3-AD",
+  "author": "stickyfingies <sethtraman@gmail.com>",
+  "license": "MPL 2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --mode development --watch",
+    "build": "vite build",
+    "postbuild": "node util/postbuild.js",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@types/node": "^17.0.31",
+    "@types/three": "^0.140.0",
+    "vite": "^2.9.7",
+    "vite-plugin-dts": "^1.1.1"
+  },
+  "dependencies": {
+    "three": "^0.135.0",
+    "three-csm": "^1.1.1"
+  }
+}

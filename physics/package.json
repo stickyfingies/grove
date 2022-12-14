@@ -1,0 +1,26 @@
+{
+  "name": "@grove/physics",
+  "version": "1.0.0",
+  "description": "Library: run AMMO.js physics in parallel worker thread",
+  "main": "dist/index.es.js",
+  "typings": "dist/index.d.ts",
+  "repository": "https://github.com/stickyfingies/firearm",
+  "author": "stickyfingies",
+  "license": "MPL 2.0",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --mode development --watch",
+    "postbuild": "node util/postbuild.js",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@types/node": "^17.0.31",
+    "vite": "^2.9.7",
+    "vite-plugin-dts": "^1.1.1"
+  },
+  "dependencies": {
+    "@types/three": "^0.140.0",
+    "three": "^0.140.0"
+  }
+}
