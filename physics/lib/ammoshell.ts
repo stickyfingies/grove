@@ -1,5 +1,5 @@
 import Ammo from './ammo/ammo';
-import { PhysicsEngine } from './header';
+import { PhysicsEngine, Force, Velocity, Raycast, VelocityRaycast, ForceRaycast } from './header';
 
 type Vector3 = {
     x: number,
@@ -126,6 +126,7 @@ const __Ammo = Ammo;
 export async function start(log: (msg: any) => void): Promise<PhysicsEngine> {
     const Ammo = await __Ammo();
     log(import.meta.url);
+
     // I don't plan on freeing any of this memory, since these objects will
     // exist until the program's done executing so V8 will clear the memory
     // for me then anyway.
@@ -192,7 +193,7 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine> {
             }
         }
 
-        globalThis.postMessage({
+        postMessage({
             type: 'collisions',
             collisions: newCollisions,
         });
@@ -291,9 +292,7 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine> {
     }
 
     const createPlane = (data: ObjectReference & RigidBodyDescription) => {
-        const {
-            id
-        } = data;
+        const { id } = data;
 
         // shape
         const planeNormal = new Ammo.btVector3(0, 1, 0);
@@ -370,126 +369,120 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine> {
         // Memory left to be freed: RigidBody, shapes, motionState
     }
 
-    const addForce = (data: any) => {
-        const {
-            id, x, y, z,
-        } = data;
+    const addForce = (forces: Force[]) => {
+        forces.forEach(({ id, vector: [x, y, z] }: Force) => {
+            const body = idToRb.get(id)!;
+            body.activate(true);
 
-        const body = idToRb.get(id)!;
-        body.activate(true);
-
-        const force = new Ammo.btVector3(x, y, z);
-        body.applyCentralImpulse(force);
-        Ammo.destroy(force);
-    }
-
-    const addForceConditionalRaycast = (data: any) => {
-        const {
-            id, x, y, z, fx, fy, fz, tx, ty, tz,
-        } = data;
-
-        const src = new Ammo.btVector3(fx, fy, fz);
-        const dst = new Ammo.btVector3(tx, ty, tz);
-        const res = new Ammo.ClosestRayResultCallback(src, dst);
-        dynamicsWorld.rayTest(src, dst, res);
-        Ammo.destroy(dst);
-        Ammo.destroy(src);
-
-        if (!res.hasHit()) return;
-        Ammo.destroy(res);
-
-        const body = idToRb.get(id)!;
-        body.activate(true);
-
-        const force = new Ammo.btVector3(x, y, z);
-        body.applyCentralImpulse(force);
-        Ammo.destroy(force);
-    }
-
-    const addVelocity = (data: any) => {
-        const {
-            id, x, y, z,
-        } = data;
-
-        const body = idToRb.get(id)!;
-        body.activate(true);
-
-        // Note that this will also clamp the body's velocity to the velocity you're adding.
-        // If you don't like it, talk to the character controller author!
-
-        const { max, min } = Math;
-        const clamp = (n: number, a: number, b: number) => max(min(n, max(a, b)), min(a, b));
-
-        const velocity = body.getLinearVelocity();
-        const newVelocity = new Ammo.btVector3(
-            velocity.x() + x,
-            velocity.y() + y,
-            velocity.z() + z,
-        );
-        newVelocity.setX(clamp(newVelocity.x(), -x, x));
-        newVelocity.setZ(clamp(newVelocity.z(), -z, z));
-        body.setLinearVelocity(newVelocity);
-        Ammo.destroy(newVelocity);
-    }
-
-    const addVelocityConditionalRaycast = (data: any) => {
-        const {
-            id, vx, vy, vz, fx, fy, fz, tx, ty, tz,
-        } = data;
-
-        const src = new Ammo.btVector3(fx, fy, fz);
-        const dst = new Ammo.btVector3(tx, ty, tz);
-        const res = new Ammo.ClosestRayResultCallback(src, dst);
-        dynamicsWorld.rayTest(src, dst, res);
-        Ammo.destroy(dst);
-        Ammo.destroy(src);
-
-        if (!res.hasHit()) return;
-        Ammo.destroy(res);
-
-        const body = idToRb.get(id)!;
-        body.activate(true);
-
-        const velocity = body.getLinearVelocity();
-        const newVelocity = new Ammo.btVector3(
-            velocity.x() + vx,
-            velocity.y() + vy,
-            velocity.z() + vz,
-        );
-        body.setLinearVelocity(newVelocity);
-        Ammo.destroy(newVelocity);
-    }
-
-    const raycast = (data: any) => {
-        const {
-            id, fx, fy, fz, tx, ty, tz,
-        } = data;
-
-        const src = new Ammo.btVector3(fx, fy, fz);
-        const dst = new Ammo.btVector3(tx, ty, tz);
-        // there's different kinds of callbakcs you can use
-        const res = new Ammo.ClosestRayResultCallback(src, dst);
-        dynamicsWorld.rayTest(src, dst, res);
-        Ammo.destroy(dst);
-        Ammo.destroy(src);
-
-        if (!res.hasHit()) {
-            postMessage({ type: 'raycastResult', raycastId: id, bodyId: -1 });
-            return;
-        }
-
-        const body = Ammo.btRigidBody.prototype.upcast(res.get_m_collisionObject());
-        const hitPoint = res.get_m_hitPointWorld();
-        postMessage({
-            type: 'raycastResult',
-            raycastId: id,
-            bodyId: body.getUserIndex(),
-            hitPoint: {
-                x: hitPoint.x(),
-                y: hitPoint.y(),
-                z: hitPoint.z(),
-            },
+            const force = new Ammo.btVector3(x, y, z);
+            body.applyCentralImpulse(force);
+            Ammo.destroy(force);
         });
+    }
+
+    const addForceConditionalRaycast = (force_raycasts: ForceRaycast[]) => {
+        force_raycasts.forEach(({ force, raycast }: ForceRaycast) => {
+            const src = new Ammo.btVector3(...raycast.from);
+            const dst = new Ammo.btVector3(...raycast.to);
+            const res = new Ammo.ClosestRayResultCallback(src, dst);
+            dynamicsWorld.rayTest(src, dst, res);
+            Ammo.destroy(dst);
+            Ammo.destroy(src);
+
+            if (!res.hasHit()) return;
+            Ammo.destroy(res);
+
+            const body = idToRb.get(force.id)!;
+            body.activate(true);
+
+            const btForce = new Ammo.btVector3(...force.vector);
+            body.applyCentralImpulse(btForce);
+            Ammo.destroy(btForce);
+        });
+    }
+
+    const addVelocity = (velocities: Velocity[]) => {
+        velocities.forEach(({ id, vector: [x, y, z] }: Velocity) => {
+            const body = idToRb.get(id)!;
+            body.activate(true);
+
+            // Note that this will also clamp the body's velocity to the velocity you're adding.
+            // If you don't like it, talk to the character controller author!
+
+            const { max, min } = Math;
+            const clamp = (n: number, a: number, b: number) => max(min(n, max(a, b)), min(a, b));
+
+            const velocity = body.getLinearVelocity();
+            const newVelocity = new Ammo.btVector3(
+                velocity.x() + x,
+                velocity.y() + y,
+                velocity.z() + z,
+            );
+            newVelocity.setX(clamp(newVelocity.x(), -x, x));
+            newVelocity.setZ(clamp(newVelocity.z(), -z, z));
+            body.setLinearVelocity(newVelocity);
+            Ammo.destroy(newVelocity);
+        });
+    }
+
+    const addVelocityConditionalRaycast = (velocity_raycasts: VelocityRaycast[]) => {
+        velocity_raycasts.forEach(({ velocity, raycast }: VelocityRaycast) => {
+            const src = new Ammo.btVector3(...raycast.from);
+            const dst = new Ammo.btVector3(...raycast.to);
+            const res = new Ammo.ClosestRayResultCallback(src, dst);
+            dynamicsWorld.rayTest(src, dst, res);
+            Ammo.destroy(dst);
+            Ammo.destroy(src);
+
+            if (!res.hasHit()) return;
+            Ammo.destroy(res);
+
+            const body = idToRb.get(velocity.id)!;
+            body.activate(true);
+
+            const currentVelocity = body.getLinearVelocity();
+            const newVelocity = new Ammo.btVector3(
+                currentVelocity.x() + velocity.vector[0],
+                currentVelocity.y() + velocity.vector[1],
+                currentVelocity.z() + velocity.vector[2],
+            );
+            body.setLinearVelocity(newVelocity);
+            Ammo.destroy(newVelocity);
+        });
+    }
+
+    const raycast = (raycasts: Raycast[]) => {
+        raycasts.map(({ id, from: [fx, fy, fz], to: [tx, ty, tz] }: Raycast) => {
+            const src = new Ammo.btVector3(fx, fy, fz);
+            const dst = new Ammo.btVector3(tx, ty, tz);
+            // there's different kinds of callbakcs you can use
+            const res = new Ammo.ClosestRayResultCallback(src, dst);
+            dynamicsWorld.rayTest(src, dst, res);
+            Ammo.destroy(dst);
+            Ammo.destroy(src);
+
+            if (!res.hasHit()) {
+                return { raycastId: id, bodyId: -1 };
+            }
+
+            const body = Ammo.btRigidBody.prototype.upcast(res.get_m_collisionObject());
+            const hitPoint = res.get_m_hitPointWorld();
+            return {
+                raycastId: id,
+                bodyId: body.getUserIndex(),
+                hitPoint: {
+                    x: hitPoint.x(),
+                    y: hitPoint.y(),
+                    z: hitPoint.z(),
+                },
+            }
+        })
+            .forEach(({ raycastId, bodyId, hitPoint }: any) => postMessage({
+                type: 'raycastResult',
+                raycastId,
+                bodyId,
+                hitPoint
+            }));
     }
 
     return {

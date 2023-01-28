@@ -1,6 +1,7 @@
 import autoBind from 'auto-bind';
 
-import { EntityManager, ComponentType } from './entity-manager';
+import { EntityManager } from './entity-manager';
+import { ComponentType } from './types';
 
 /**
  * Object-oriented wrapper around an `EntityManager` entity id
@@ -27,17 +28,17 @@ export class Entity {
     }
 
     setComponent<T>(type: ComponentType<T>, data: T) {
-        this.manager.setComponent(this.id, type, data);
+        this.manager.setComponent(this.id, [type], [data]);
         return this;
     }
 
     deleteComponent(type: ComponentType) {
-        this.manager.deleteComponent(this.id, type);
+        this.manager.deleteComponent(this.id, [type]);
         return this;
     }
 
     getComponent<T>(type: ComponentType<T>): T {
-        return this.manager.getComponent(this.id, type);
+        return this.manager.getComponent(this.id, [type])[0];
     }
 
     hasComponent(type: ComponentType): boolean {

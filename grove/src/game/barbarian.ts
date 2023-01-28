@@ -36,11 +36,14 @@ export default class BarbarianScript extends GameSystem {
         });
 
         const mesh = await assetLoader.loadModel('./models/villager-male/villager-male.glb');
-
         graphics.addObjectToScene(mesh);
-        world.setComponent(capsule, MeshData, mesh);
-        world.setComponent(capsule, HealthScript, new HealthScript(1, 1));
-        world.setComponent(capsule, PhysicsData, capsuleBody);
-        world.setComponent(capsule, BarbarianData, {});
+
+        const health = new HealthScript(1, 1);
+        const barbarian = {};
+
+        world.setComponent(capsule,
+            [MeshData, PhysicsData, HealthScript, BarbarianData],
+            [mesh, capsuleBody, health, barbarian]
+        );
     }
 }

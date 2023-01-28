@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
-    "composite": true,
     "declaration": true,
     "declarationDir": "dist",
     "declarationMap": true,
+    "incremental": true,
+    "composite": true,
     "types": [
       "vite/client",
       "node"
@@ -20,7 +21,7 @@
     "moduleResolution": "Node",
     "strict": true,
     "sourceMap": true,
-    "noEmit": true,
+    // "noEmit": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "strictNullChecks": true,
@@ -34,5 +35,5 @@
     "allowJs": false,
     "skipLibCheck": true
   },
-  "include": ["lib/*.ts"]
+  "include": ["lib/*.ts"],
 }

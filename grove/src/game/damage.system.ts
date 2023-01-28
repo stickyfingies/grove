@@ -1,4 +1,4 @@
-import EntityManager from "@grove/ecs-manager";
+import { EntityManager } from "@grove/ecs";
 import HealthScript from "./health";
 
 const callbackMap = new Map<number, Function[]>();
@@ -20,7 +20,7 @@ export function addDamageCallback(entity: number, callback: Function) {
 export const dealDamage = (ecs: EntityManager) => (dmg: number) => (entity: number) => {
     const hasHealth = ecs.hasComponent(entity, HealthScript);
     if (hasHealth) {
-        const health = ecs.getComponent(entity, HealthScript);
+        const [health] = ecs.getComponent(entity, [HealthScript]);
         health.hp -= dmg;
         // execute damage callbakcs
         for (const cb of callbackMap.get(entity) ?? []) {

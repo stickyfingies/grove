@@ -1,6 +1,14 @@
 import { world } from "@grove/engine";
 
-export class UserInterfaceData {
+export type UserInterfaceData = {
+    x: string,
+    y: string,
+    font: string,
+    color: string,
+    text: string
+};
+
+export class UserInterface {
     constructor(
         public x: string = '50%',
         public y: string = '50%',
@@ -12,7 +20,7 @@ export class UserInterfaceData {
     _DOMElement?: HTMLParagraphElement;
 }
 
-function createUIElement(_id: number, data: UserInterfaceData) {
+function createUIElement({ data }: { data: UserInterface }) {
     const div = document.createElement('div');
     const text = document.createElement('p');
 
@@ -31,11 +39,11 @@ function createUIElement(_id: number, data: UserInterfaceData) {
     document.body.appendChild(div);
 }
 
-world.events.on(`set${UserInterfaceData.name}Component`, createUIElement);
+world.events.on(`set${UserInterface.name}Component`, createUIElement);
 
 export default class UserInteraceSystem {
     every_frame() {
-        world.executeQuery([UserInterfaceData], ([uiData]) => {
+        world.executeQuery([UserInterface], ([uiData]) => {
             uiData._DOMElement!.innerText = uiData.text;
         });
     }

@@ -12,7 +12,7 @@ import { assetLoader, graphics, physics, world } from '@grove/engine';
 const [log] = LogService('slime');
 
 /** Basically tags entities as being slimes */
-class SlimeData {
+class Slime {
     speed = 0.75;
 
     lastHop = performance.now();
@@ -31,7 +31,7 @@ export default class SlimeScript extends GameSystem {
         // deal melee damage on contact
         const player = world.getTag(PLAYER_TAG);
         world.events.on('collision', ({ id0, id1 }) => {
-            if (world.hasComponent(id0, SlimeData) && id1 === player) {
+            if (world.hasComponent(id0, Slime) && id1 === player) {
                 dealDamage(world)(3)(id1);
             }
         });
@@ -39,17 +39,17 @@ export default class SlimeScript extends GameSystem {
 
     every_frame() {
         const player = world.getTag(PLAYER_TAG);
-        const playerBody = world.getComponent(player, PhysicsData);
+        const [playerBody] = world.getComponent(player, [PhysicsData]);
 
         // handle dead slimes
-        world.executeQuery([MeshData, SlimeData, DeathData], ([mesh], entity) => {
+        world.executeQuery([MeshData, Slime, DeathData], ([mesh], entity) => {
             world.events.emit('enemyDied', entity);
             graphics.removeObjectFromScene(mesh);
             world.deleteEntity(entity);
         });
 
         // handle living slimes (behavior skript)
-        const slimes = world.submitQuery([PhysicsData, MeshData, SlimeData]);
+        const slimes = world.submitQuery([PhysicsData, MeshData, Slime]);
         for (const [[body, mesh, slimeData], entity] of slimes) {
 
             const playerPos = physics.getBodyPosition(playerBody);
@@ -79,7 +79,7 @@ export default class SlimeScript extends GameSystem {
                 for (const [_, other] of slimes) {
                     if (other === entity) return;
 
-                    const otherBody = world.getComponent(other, PhysicsData);
+                    const [otherBody] = world.getComponent(other, [PhysicsData]);
                     const otherPos = physics.getBodyPosition(otherBody);
 
                     const distanceToOther = distance(otherPos, slimePos);
@@ -130,17 +130,16 @@ export default class SlimeScript extends GameSystem {
     async createSlime() {
         const slime = world.createEntity();
 
-        world.setComponent(slime, SlimeData, { speed: 0.75, lastHop: performance.now() });
-
-        world.setComponent(slime, HealthScript, new HealthScript(5, 5));
+        const slimeData = { speed: 0.75, lastHop: performance.now() };
+        const health = new HealthScript(5, 5);
 
         const mesh = await assetLoader.loadModel('./models/slime/slime.glb');
         mesh.traverse(node => node.userData.entityId = slime); // create relationship between mesh->entity
         // @ts-ignore
         mesh.children[1].material = mesh.children[1].material.clone();
         mesh.scale.set(0.7, 0.7, 0.7);
+        mesh.name = 'Slime';
         graphics.addObjectToScene(mesh);
-        world.setComponent(slime, MeshData, mesh);
 
         const randomPos = () => Math.random() * 50 - 25;
 
@@ -160,6 +159,10 @@ export default class SlimeScript extends GameSystem {
         // physics.registerCollisionCallback(perception, (entity) => {
         //     console.log(world.getEntityComponentSignature(entity));
         // })
-        world.setComponent(slime, PhysicsData, body);
+
+        world.setComponent(slime,
+            [MeshData, PhysicsData, Slime, HealthScript],
+            [mesh, body, slimeData, health]
+        );
     }
 }

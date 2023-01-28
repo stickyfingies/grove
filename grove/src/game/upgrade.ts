@@ -7,7 +7,6 @@ import {
 
 import { PLAYER_TAG } from './player';
 import { PhysicsData } from '@grove/physics';
-import { SpriteData } from '@grove/graphics';
 import { graphics, physics, world } from '@grove/engine';
 
 /**
@@ -25,14 +24,14 @@ export default class UpgradeScript {
                 pos: [0, 60, 0],
                 radius: 0.7
             });
-            world.setComponent(upgrade, PhysicsData, upgradeBody);
 
             const sprite = new Sprite();
             sprite.material = new SpriteMaterial();
             sprite.material.color = new Color(0xff00ff);
             sprite.material.map = upgradeTexture;
             graphics.addObjectToScene(sprite);
-            world.setComponent(upgrade, SpriteData, sprite);
+
+            world.setComponent(upgrade, [PhysicsData, Sprite], [upgradeBody, sprite]);
 
             // const collideCb = ({ body }: { body: PhysicsData }) => {
             //     const player = Entity.getTag(PLAYER_TAG);

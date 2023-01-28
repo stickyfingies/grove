@@ -35,9 +35,9 @@ import Backend from './worker?worker';
 import GraphicsUtils from './utils';
 import { IGraphicsCommand } from './commands';
 
-export type CameraData = PerspectiveCamera;
+export type CameraData = Camera;
 // eslint-disable-next-line no-redeclare
-export const CameraData = PerspectiveCamera;
+export const CameraData = Camera;
 
 export type MeshData = Mesh;
 // eslint-disable-next-line no-redeclare
@@ -227,8 +227,8 @@ export class Graphics {
         this.submitCommand({
             type: 'changeCamera',
             camera_id: camera.userData.meshId
-        })
-        log(camera.userData.meshId)
+        });
+        log(camera.userData.meshId);
     }
 
     /**
@@ -385,7 +385,7 @@ export class Graphics {
      *
      * Current supported objects: `Mesh`, `Sprite`, `Light`
      */
-    addObjectToScene(object: Object3D, ui = false) {
+    addObjectToScene(object: Mesh | Light | Sprite | Group, ui = false) {
         // place object in scene heirarchy
         if (object.parent) object.parent.add(object);
         else this.#scene.add(object);

@@ -1,7 +1,9 @@
 import { BufferGeometry } from 'three';
-import Backend from './physicsworker?worker';
-import { PhysicsEngine } from './header';
+import Backend from './worker?worker';
+import { PhysicsEngine, Vec3, Quat, Workload } from './header';
 import EventEmitter from 'events';
+
+export type { Vec3, Quat } from './header';
 
 /* --------------------------------- TYPES --------------------------------- */
 
@@ -28,12 +30,6 @@ let [workerLog, workerReport]
 
 /* ------------------------------ PUBLIC TYPES ----------------------------- */
 
-export type Vec3
-    = [number, number, number]
-    ;
-export type Quat
-    = [number, number, number, number]
-    ;
 export type RaycastResult
     =
     {
@@ -80,6 +76,8 @@ export class Physics implements PhysicsEngine {
 
     #raycastCallbacks = new Map<number, RaycastCallback>();
 
+    #work = new Workload();
+
     constructor() {
         this.#worker = new Backend();
     }
@@ -93,11 +91,11 @@ export class Physics implements PhysicsEngine {
 
         log(`${import.meta.url}`);
 
-        events.on(`set${PhysicsData.name}Component`, (entityId: number, { id }: PhysicsData) => {
-            this.#idToEntity.set(id, entityId);
+        events.on(`set${PhysicsData.name}Component`, ({ entity_id, data }) => {
+            this.#idToEntity.set(data.id, entity_id);
         });
-        events.on(`delete${PhysicsData.name}Component`, (_, body: PhysicsData) => {
-            this.removeBody(body);
+        events.on(`delete${PhysicsData.name}Component`, ({ data }) => {
+            this.removeBody(data);
         });
 
         return new Promise<void>((resolve) => {
@@ -158,7 +156,14 @@ export class Physics implements PhysicsEngine {
         });
     }
 
-    update(_deltaTime?: number) { }
+    update(_deltaTime?: number) {
+        this.#worker.postMessage({
+            type: 'workload',
+            work: this.#work
+        });
+
+        this.#work = new Workload();
+    }
 
     getBodyPosition({ id }: PhysicsData): Vec3 {
         const offset = 3 * id;
@@ -173,56 +178,32 @@ export class Physics implements PhysicsEngine {
         this.#collisionCallbacks.delete(id);
     }
 
-    addForce({ id }: PhysicsData, force: Vec3) {
-        this.#worker.postMessage({
-            type: 'addForce',
+    addForce({ id }: PhysicsData, vector: Vec3) {
+        this.#work.forces.push({
             id,
-            x: force[0],
-            y: force[1],
-            z: force[2],
+            vector
         });
     }
 
-    addForceConditionalRaycast({ id }: PhysicsData, force: Vec3, from: Vec3, to: Vec3) {
-        this.#worker.postMessage({
-            type: 'addForceConditionalRaycast',
-            id,
-            x: force[0],
-            y: force[1],
-            z: force[2],
-            fx: from[0],
-            fy: from[1],
-            fz: from[2],
-            tx: to[0],
-            ty: to[1],
-            tz: to[2],
+    addForceConditionalRaycast({ id }: PhysicsData, vector: Vec3, from: Vec3, to: Vec3) {
+        this.#work.force_raycasts.push({
+            force: { id, vector },
+            raycast: { id: 0, from, to }
         });
     }
 
-    addVelocity({ id }: PhysicsData, velocity: Vec3) {
-        this.#worker.postMessage({
-            type: 'addVelocity',
+    addVelocity({ id }: PhysicsData, vector: Vec3) {
+        this.#work.velocities.push({
             id,
-            x: velocity[0],
-            y: velocity[1],
-            z: velocity[2],
+            vector
         });
     }
 
     /** Adds velocity to a RigidBody ONLY if raycast returns a hit */
-    addVelocityConditionalRaycast({ id }: PhysicsData, velocity: Vec3, from: Vec3, to: Vec3) {
-        this.#worker.postMessage({
-            type: 'addVelocityConditionalRaycast',
-            id,
-            vx: velocity[0],
-            vy: velocity[1],
-            vz: velocity[2],
-            fx: from[0],
-            fy: from[1],
-            fz: from[2],
-            tx: to[0],
-            ty: to[1],
-            tz: to[2],
+    addVelocityConditionalRaycast({ id }: PhysicsData, vector: Vec3, from: Vec3, to: Vec3) {
+        this.#work.velocity_raycasts.push({
+            velocity: { id, vector },
+            raycast: { id: 0, from, to }
         });
     }
 
@@ -234,16 +215,7 @@ export class Physics implements PhysicsEngine {
 
             this.#raycastCallbacks.set(id, resolve);
 
-            this.#worker.postMessage({
-                type: 'raycast',
-                id,
-                fx: from[0],
-                fy: from[1],
-                fz: from[2],
-                tx: to[0],
-                ty: to[1],
-                tz: to[2],
-            });
+            this.#work.raycasts.push({ id, from, to });
         });
     }
 

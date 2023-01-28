@@ -1,17 +1,19 @@
 const path = require('path');
 const { app, BrowserWindow } = require('electron');
 const http = require('http');
+const { Server } = require('ws');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require('electron-squirrel-startup')) {
-    app.quit();
-}
+if (require('electron-squirrel-startup')) app.quit();
 
 const isDev = process.env.IS_DEV === 'true';
 const REST_PORT = process.env.PORT || 3333;
 
 function main() {
-    // Define window
+    /////////////////
+    // GAME WINDOW //
+    /////////////////
+
     const win = new BrowserWindow({
         width: 800,
         height: 600,
@@ -20,9 +22,9 @@ function main() {
             preload: path.join(__dirname, 'preload.cjs')
         },
     });
+
     win.removeMenu();
 
-    // Launch window
     if (isDev) {
         win.loadURL('http://localhost:3000'); // @todo - move to ENV variable
         win.webContents.openDevTools();
@@ -30,7 +32,10 @@ function main() {
         win.loadFile(path.join(__dirname, 'build', 'index.html'));
     }
 
-    // REST API
+    ///////////////
+    // REST API ///
+    ///////////////
+
     const server = http.createServer(async (req, res) => {
         if (req.url !== '/' && req.method === 'GET') {
             const endpoint = req.url.split('/')[1];
@@ -47,6 +52,48 @@ function main() {
     });
     server.listen(REST_PORT, () => {
         console.log(`server started on port: ${REST_PORT}`);
+    });
+
+    ////////////////////////
+    /// WebSocket Server ///
+    ////////////////////////
+    /**
+     * WebSocket Server Command
+     * + sender: ID
+     * + type: 'do' | 'undo' | 'redo' | 'meta'
+     * + actionType: 'frog' | 'bones'
+     * + args: [{}, {}, ...]
+    */
+
+    const sockserver = new Server({ port: 3334 });
+    sockserver.on('connection', (ws, req) => {
+        const id = req.headers['sec-websocket-key'];
+        console.log(req.url);
+
+        // 'Connection' event
+        const cmd = { sender: id, type: 'meta', action: 'connect', args: { id } };
+        console.log(`${cmd.type} : ${cmd.action}`);
+        Array.from(sockserver.clients)
+            .filter(client => client !== ws)
+            .forEach((client) => client.send(JSON.stringify(cmd), { binary: false }));
+
+        // 'End Connection' event
+        ws.on('close', () => {
+            const cmd = { sender: id, type: 'meta', action: 'disconnect', args: { id } };
+            console.log(`${cmd.type} : ${cmd.action}`);
+            Array.from(sockserver.clients)
+                .filter(client => client !== ws)
+                .forEach((client) => client.send(JSON.stringify(cmd), { binary: false }));
+        });
+
+        // Passthrough, enables peer-to-peer communication
+        ws.on('message', (raw) => {
+            const data = JSON.parse(raw);
+            data.sender = id;
+            Array.from(sockserver.clients)
+                .filter(client => client !== ws)
+                .forEach((client) => client.send(JSON.stringify(data), { binary: false }));
+        });
     });
 }
 

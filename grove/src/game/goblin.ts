@@ -6,7 +6,7 @@ import { PLAYER_TAG } from './player';
 import { assetLoader, graphics, physics, world } from '@grove/engine';
 import AttackScript from '../components/attack';
 
-class GoblinData {}
+class GoblinData { }
 
 // window.webApi.onmessage('goblin', () => {
 //     log('spawn enemy');
@@ -17,14 +17,14 @@ export default class GoblinScript extends GameSystem {
     shootTimer?: NodeJS.Timer;
 
     async init() {
-        setInterval(this.createGoblin, 7_000);
+        // setInterval(this.createGoblin, 30_000);
     }
 
     every_frame() {
-        world.executeQuery([MeshData, GoblinData, DeathData], ([mesh], entity) => {
-            world.events.emit('enemyDied', entity);
+        world.executeQuery([MeshData, GoblinData, DeathData], ([mesh], entity_id) => {
+            world.events.emit('enemyDied', { entity_id });
             graphics.removeObjectFromScene(mesh);
-            world.deleteEntity(entity);
+            world.deleteEntity(entity_id);
         });
     }
 
@@ -46,8 +46,8 @@ export default class GoblinScript extends GameSystem {
             height: 1.7
         });
 
-        world.setComponent(goblin, MeshData, mesh);
-        world.setComponent(goblin, PhysicsData, body);
-        world.setComponent(goblin, GoblinData, {});
+        const gbln = {};
+
+        world.setComponent(goblin, [MeshData, PhysicsData, GoblinData], [mesh, body, gbln]);
     }
 }

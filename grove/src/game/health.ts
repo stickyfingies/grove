@@ -35,8 +35,8 @@ export default class HealthScript {
     update(e: number) {
         this.hp = Math.min(this.hp, this.max);
         if (this.hp <= 0) {
-            world.deleteComponent(e, HealthScript);
-            world.setComponent(e, DeathData, {});
+            world.deleteComponent(e, [HealthScript]);
+            world.setComponent(e, [DeathData], [{}]);
         }
     }
 }

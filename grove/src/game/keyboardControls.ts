@@ -1,17 +1,17 @@
 import { Euler, Vector3 } from 'three';
 
 import { GameSystem } from '@grove/engine';
-import { MovementData } from './movement';
+import { Movement } from './movement';
 import { PhysicsData } from '@grove/physics';
 import { CAMERA_TAG, CameraData, MeshData } from '@grove/graphics';
 import { events, physics, world } from '@grove/engine';
-import { smoothCamera, SmoothCameraData } from './smoothCamera';
+import { smoothCamera, SmoothCamera } from './smoothCamera';
 
 /**
  * Adding this component to an entity makes its movement controllable via mouse and keyboard
  * @note depends on: `PhysicsData`, `MovementData`
  */
-export class KeyboardControlData { }
+export class KeyboardControls { }
 
 /**
  * Registers mouse/keyboard input events and maps them to a `Movement` component
@@ -58,7 +58,7 @@ export default class KeyboardControlScript extends GameSystem {
     }
 
     every_frame(_deltaTime: number) {
-        world.executeQuery([PhysicsData, MovementData, MeshData], ([body, mvmt, mesh]) => {
+        world.executeQuery([PhysicsData, Movement, MeshData], ([body, mvmt, mesh]) => {
             mvmt.direction = new Vector3(0, 0, 0);
             if (this.moveForward) {
                 mvmt.direction.z = -1;
@@ -75,8 +75,8 @@ export default class KeyboardControlScript extends GameSystem {
             mvmt.wantsToJump = this.wantsToJump;
             mvmt.sprinting = this.sprint;
 
-            const {object: camdata, positionStep, quaternionStep, offsetY, offsetZ} = world.getComponent(smoothCamera, SmoothCameraData);
-            const camera = world.getComponent(world.getTag(CAMERA_TAG), CameraData);
+            const [{ object: camdata, positionStep, quaternionStep, offsetY, offsetZ }] = world.getComponent(smoothCamera, [SmoothCamera]);
+            const [camera] = world.getComponent(world.getTag(CAMERA_TAG), [CameraData]);
             mvmt.direction.applyQuaternion(camdata.quaternion);
 
             // TODO this needs to be done AFTER MovementScript updates
@@ -96,7 +96,7 @@ export default class KeyboardControlScript extends GameSystem {
      * @event(window, 'mousemove')
      */
     private onMouseMove({ movementX, movementY }: MouseEvent) {
-        const camdata = world.getComponent(smoothCamera, SmoothCameraData).object;
+        const [{ object: camdata }] = world.getComponent(smoothCamera, [SmoothCamera]);
         this.euler.setFromQuaternion(camdata.quaternion);
 
         const sensitivity = 0.002;

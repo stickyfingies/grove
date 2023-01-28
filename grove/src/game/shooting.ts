@@ -1,7 +1,7 @@
 import { Mesh, MeshPhongMaterial, SphereBufferGeometry, Vector3 } from 'three';
 
-import { Graphics, MeshData } from '@grove/graphics';
-import { Physics, PhysicsData, Vec3 } from '@grove/physics';
+import { Graphics } from '@grove/graphics';
+import { Physics, PhysicsData } from '@grove/physics';
 import { world } from '@grove/engine';
 
 const sound = new Audio('/audio/pop.wav');
@@ -41,13 +41,13 @@ export function shoot(
         radius
     });
     physics.addVelocity(body, velocity);
-    world.setComponent(ball, PhysicsData, body);
 
     const geometry = new SphereBufferGeometry(radius, 1, 1);
     const material = new MeshPhongMaterial({ color: 0x00CCFF });
     const mesh = new Mesh(geometry, material);
+    mesh.name = 'Bullet';
     graphics.addObjectToScene(mesh);
-    world.setComponent(ball, MeshData, mesh);
+    world.setComponent(ball, [Mesh, PhysicsData], [mesh, body]);
 
     const collideCb = (entity: number) => {
         physics.removeCollisionCallback(body);

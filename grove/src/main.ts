@@ -26,28 +26,25 @@ import { Engine } from '@grove/engine';
  * =============
  * [X] Delete physics bodies
  * [ ] Procedural terrain
- *
  */
 
 const engine = new Engine();
 
 document.addEventListener('DOMContentLoaded', async () => {
     await engine.init();
+
     // @ts-ignore - TSC and Vite aren't playing nice still
     const modules: Record<string, Function> = import.meta.glob('./game/**/*.ts');
-
     const module_promises = Object
         .entries(modules)
-        .map(([_, loadModule]) => loadModule());
+        .map(([path, loadModule]) => loadModule().then((module: NodeModule) => {
+            const filename = path.split('/').pop();
+            const name = filename?.split('.')[0]!;
+            return { name, module };
+        }));
 
-    const game_modules = await Promise.all(module_promises) as { [s: string]: any }[];
-
-    const plugins = game_modules
-        .flatMap(module => Object.entries(module))
-        .filter(([_key, val]) => val.is_system)
-        .map(([_a, b]) => new b());
-
-    console.log(plugins);
+    const game_modules = (await Promise.all(module_promises))
+        .filter(({ module }) => 'default' in module)
 
     engine.attachModules(game_modules);
 });

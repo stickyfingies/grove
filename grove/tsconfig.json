@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "composite": true,
     "declaration": true,
     "declarationDir": "lib",
     "declarationMap": true,
@@ -29,6 +28,14 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "allowJs": false,
+    "baseUrl": "node_modules",
+    "paths": {
+      "three": [
+        "three"
+      ]
+    }
   },
-  "include": ["src/**/*.ts"]
+  "include": [
+    "src/**/*.ts"
+  ],
 }

@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "composite": true,
     "declaration": true,
     "declarationDir": "lib",
     "declarationMap": true,
@@ -28,6 +27,7 @@
     "allowJs": false,
   },
   "include": [
-    "src"
+    "src/**/*.ts",
+    "package.json"
   ]
 }

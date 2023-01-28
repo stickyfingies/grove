@@ -20,5 +20,9 @@
   },
   "dependencies": {
     "concurrently": "^7.5.0"
+  },
+  "resolutions": {
+    "@grove/**/three": "0.135.0",
+    "three": "0.135.0"
   }
 }

@@ -2,7 +2,7 @@ import { CameraData, CAMERA_TAG } from '@grove/graphics';
 import { Object3D } from "three";
 import { world } from "@grove/engine";
 
-export class SmoothCameraData {
+export class SmoothCamera {
     object = new Object3D();
     positionStep = 0.1;
     quaternionStep = 0.2;
@@ -10,11 +10,11 @@ export class SmoothCameraData {
     offsetZ = 10;
 
     constructor() {
-        const { position, quaternion } = world.getComponent(world.getTag(CAMERA_TAG), CameraData);
+        const [{ position, quaternion }] = world.getComponent(world.getTag(CAMERA_TAG), [CameraData]);
         this.object.position.copy(position.clone());
         this.object.quaternion.copy(quaternion.clone());
     }
 }
 
 export const smoothCamera = world.createEntity();
-world.setComponent(smoothCamera, SmoothCameraData, new SmoothCameraData());
+world.setComponent(smoothCamera, [SmoothCamera], [new SmoothCamera()]);

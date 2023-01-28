@@ -1,7 +1,7 @@
 import { world } from '@grove/engine';
 import { GameSystem } from '@grove/engine';
-import { ScoreData } from './score';
-import { UserInterfaceData } from './userInterface';
+import { Score } from './score';
+import { UserInterface } from './userInterface';
 
 const SLIMES_TO_KILL = 20;
 
@@ -24,13 +24,13 @@ export default class QuestScript extends GameSystem {
         // const ctx = canvas.getContext('2d')!;
 
         const gui = world.createEntity();
-        const hud = new UserInterfaceData(
+        const hud = new UserInterface(
             '50%',
             '95%',
             '24px Arial',
             'white'
         );
-        world.setComponent(gui, UserInterfaceData, hud);
+        world.setComponent(gui, [UserInterface], [hud]);
 
         const updateGui = (content: string) => {
             hud.text = content;
@@ -45,7 +45,7 @@ export default class QuestScript extends GameSystem {
 
         updateGui(`Quest: kill ${SLIMES_TO_KILL} slimes`);
 
-        world.events.on('updateScore', (score: ScoreData) => {
+        world.events.on('updateScore', (score: Score) => {
             if (score.score >= SLIMES_TO_KILL) {
                 updateGui('QUEST COMPLETE');
             } else {

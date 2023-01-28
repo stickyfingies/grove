@@ -13,8 +13,8 @@ export default class AttackScript {
     constructor(public id: number, public target: number) {
         this.target = target;
         this.timer = setInterval(() => {
-            const entity_body = world.getComponent(id, PhysicsData);
-            const target_body = world.getComponent(this.target, PhysicsData);
+            const [entity_body] = world.getComponent(id, [PhysicsData]);
+            const [target_body] = world.getComponent(this.target, [PhysicsData]);
             const target_pos = physics.getBodyPosition(target_body);
             const entity_pos = physics.getBodyPosition(entity_body);
 

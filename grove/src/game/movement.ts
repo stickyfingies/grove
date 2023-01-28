@@ -1,11 +1,10 @@
 import { Vector3 } from 'three';
 
-import { Entity } from '@grove/ecs';
 import { GameSystem } from '@grove/engine';
 import { PhysicsData } from '@grove/physics';
 import { physics, world } from '@grove/engine';
 
-export class MovementData {
+export class Movement {
     /** Direction the entity should walk */
     direction = new Vector3();
 
@@ -28,33 +27,23 @@ export class MovementData {
     groundNormal = new Vector3();
 }
 
+function DefineTask(...args: any) {
+    // Data.set(entity, [Foo], [{ a: 3 }]);
+}
+
+DefineTask([PhysicsData, Movement], ([body, mvmt]: any) => {
+    body.foo;
+    mvmt.bar;
+});
+
+/**
+ * Uses physics API
+ * Uses movement data
+ * Uses physics data
+ */
 export default class MovementScript extends GameSystem {
-    init() {
-        world.events.on(`set${MovementData.name}Component`, (id: number, mvmt: MovementData) => {
-            const entity = new Entity(Entity.defaultManager, id);
-            const body = entity.getComponent(PhysicsData);
-
-            // entity movement depends on physics
-            if (!entity.hasComponent(PhysicsData)) throw new Error(`Component ${MovementData.name} must be set after ${PhysicsData.name}`);
-
-            /*
-            // update ground info when entity collides with something
-            body.addEventListener('collide', ({ contact }: { contact: ContactEquation }) => {
-                log('aight');
-                const normal = new Vec3();
-
-                // ensure the contact normal is facing outwards from the object, not the player
-                if (contact.bi.id === body.id) contact.ni.negate(normal);
-                else normal.copy(contact.ni);
-
-                mvmt.groundNormal = new Vector3(normal.x, normal.y, normal.z);
-            });
-            */
-        });
-    }
-
     every_frame() {
-        world.executeQuery([PhysicsData, MovementData], ([body, mvmt]) => {
+        world.executeQuery([PhysicsData, Movement], ([body, mvmt]) => {
             // walkVector = direction * speed
             const walkVector = mvmt.direction.normalize();
             walkVector.multiplyScalar(mvmt.walkVelocity);

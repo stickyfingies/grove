@@ -392,6 +392,7 @@ __metadata:
     "@grove/ecs": "workspace:^"
     "@grove/graphics": "workspace:^"
     "@grove/physics": "workspace:^"
+    three: ^0.148.0
     vite: ^3.2.3
     vite-plugin-dts: ^1.7.0
   languageName: unknown
@@ -441,6 +442,7 @@ __metadata:
     three: ^0.135.0
     typescript: ^4.5.4
     vite: ^2.8.0
+    ws: ^8.11.0
   languageName: unknown
   linkType: soft
 
@@ -4915,17 +4917,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"three@npm:^0.135.0":
+"three@npm:0.135.0":
   version: 0.135.0
   resolution: "three@npm:0.135.0"
   checksum: bd7e195932587a5be0c887947adf2b3898c6fa71722800432562aed10beddb2f448d0f237d937824805eebf90e625fc22ed57054618121f47811a8e82b528507
-  languageName: node
-  linkType: hard
-
-"three@npm:^0.140.0":
-  version: 0.140.2
-  resolution: "three@npm:0.140.2"
-  checksum: 67b2733c4177ba0555a16a99e833340586d7a5b1dc4ac2ce7a376c55542cbc6acf72d785ce55b887597551bcf6e209213bcacb0b2c990db66f56ba4991601acb
   languageName: node
   linkType: hard
 
@@ -5367,6 +5362,21 @@ __metadata:
   version: 1.0.2
   resolution: "wrappy@npm:1.0.2"
   checksum: 159da4805f7e84a3d003d8841557196034155008f817172d4e986bd591f74aa82aa7db55929a54222309e01079a65a92a9e6414da5a6aa4b01ee44a511ac3ee5
+  languageName: node
+  linkType: hard
+
+"ws@npm:^8.11.0":
+  version: 8.11.0
+  resolution: "ws@npm:8.11.0"
+  peerDependencies:
+    bufferutil: ^4.0.1
+    utf-8-validate: ^5.0.2
+  peerDependenciesMeta:
+    bufferutil:
+      optional: true
+    utf-8-validate:
+      optional: true
+  checksum: 316b33aba32f317cd217df66dbfc5b281a2f09ff36815de222bc859e3424d83766d9eb2bd4d667de658b6ab7be151f258318fb1da812416b30be13103e5b5c67
   languageName: node
   linkType: hard
 

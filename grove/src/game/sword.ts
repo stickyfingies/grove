@@ -15,11 +15,12 @@ export const sword = world.createEntity();
 
 assetLoader.loadModel('./models/sword-glb/sword.glb')
     .then((mesh) => {
-        mesh.parent = world.getComponent(world.getTag(PLAYER_TAG), MeshData);
+        const [playerMesh] = world.getComponent(world.getTag(PLAYER_TAG), [MeshData]);
+        mesh.parent = playerMesh;
         mesh.scale.set(0.2, 0.2, 0.2);
         mesh.position.set(-0.6, 0, 0);
         graphics.addObjectToScene(mesh);
-        world.setComponent(sword,MeshData, mesh);
+        world.setComponent(sword, [MeshData], [mesh]);
     });
 
 let lastSwung = 0;
@@ -31,8 +32,10 @@ document.addEventListener('mousedown', async (e) => {
 
     lastSwung = performance.now();
 
+    const [swordMesh] = world.getComponent(sword, [MeshData]);
+
     anime({
-        targets: world.getComponent(sword, MeshData).rotation,
+        targets: swordMesh.rotation,
         keyframes: [
             { x: Math.PI / 3 },
             { x: 0 },

@@ -86,9 +86,15 @@ export default class Engine {
     }
 
     attachModules(gameModules: any[]) {
+        // Debug: list functions present in modules
+        console.groupCollapsed('Game Modules')
+        gameModules.forEach(({ name, module }) => {
+            console.log(name + ' - ' + Object.keys(module).join(', '));
+        });
+        console.groupEnd();
+
         this.#gameScripts = gameModules
-            .filter(module => 'default' in module)
-            .map(module => new module.default(this));
+            .map(({ module }) => new module.default(this));
 
         this.#gameScripts.forEach(script => { if ('init' in script) script.init() });
     }

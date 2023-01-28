@@ -21,7 +21,9 @@
     "vite-plugin-dts": "^1.1.1"
   },
   "dependencies": {
-    "three": "^0.135.0",
     "three-csm": "^1.1.1"
+  },
+  "peerDependencies": {
+    "three": "^0.135.0"
   }
 }
