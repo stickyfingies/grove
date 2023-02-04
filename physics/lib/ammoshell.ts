@@ -225,13 +225,13 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine<Ammo
         }
     }
 
-    const createPlane = (data: Transform & RigidBodyDescription): Ammo.btRigidBody => {
+    const createPlane = (rbdesc: RigidBodyDescription, transform: Transform): Ammo.btRigidBody => {
         // shape
         const planeNormal = new Ammo.btVector3(0, 1, 0);
         const shape = new Ammo.btStaticPlaneShape(planeNormal, 1);
         Ammo.destroy(planeNormal);
 
-        const body = setupRigidBody(Ammo, shape, data, data);
+        const body = setupRigidBody(Ammo, shape, transform, rbdesc);
 
         dynamicsWorld.addRigidBody(body);
 
@@ -240,13 +240,9 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine<Ammo
         return body;
     }
 
-    const createSphere = (data: ObjectReference & SphereShapeDescription & Transform & RigidBodyDescription) => {
-        const {
-            radius
-        } = data;
-
-        const shape = new Ammo.btSphereShape(radius);
-        const body = setupRigidBody(Ammo, shape, data, data);
+    const createSphere = (rbdesc: RigidBodyDescription, t: Transform, s: SphereShapeDescription) => {
+        const shape = new Ammo.btSphereShape(s.radius);
+        const body = setupRigidBody(Ammo, shape, t, rbdesc);
 
         dynamicsWorld.addRigidBody(body);
         // console.log(rigidBodies);
@@ -258,13 +254,9 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine<Ammo
         return body;
     }
 
-    const createCapsule = (data: ObjectReference & Transform & CapsuleShapeDescription & RigidBodyDescription) => {
-        const {
-            radius, height
-        } = data;
-
-        const shape = new Ammo.btCapsuleShape(radius, height);
-        const body = setupRigidBody(Ammo, shape, data, data);
+    const createCapsule = (rbdesc: RigidBodyDescription, t: Transform, s: CapsuleShapeDescription) => {
+        const shape = new Ammo.btCapsuleShape(s.radius, s.height);
+        const body = setupRigidBody(Ammo, shape, t, rbdesc);
 
         dynamicsWorld.addRigidBody(body);
         // console.log(rigidBodies);
@@ -274,15 +266,10 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine<Ammo
         return body;
     }
 
-    const createTrimesh = (data: ObjectReference & Transform & TriangleMeshShapeDescription & RigidBodyDescription) => {
-        const {
-            triangleBuffer
-        } = data;
-
-        const trimesh = new Ammo.btTriangleMesh();
+    const createTrimesh = (rbdesc: RigidBodyDescription, t: Transform, s: TriangleMeshShapeDescription) => {const trimesh = new Ammo.btTriangleMesh();
         // const hull = new Ammo.btConvexHullShape();
 
-        const triangles = new Float32Array(triangleBuffer);
+        const triangles = new Float32Array(s);
         for (let i = 0; i < triangles.length; i += 9) {
             const v0 = new Ammo.btVector3(triangles[i + 0], triangles[i + 1], triangles[i + 2]);
             // hull.addPoint(v0, true);
@@ -295,7 +282,7 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine<Ammo
 
         const shape = new Ammo.btBvhTriangleMeshShape(trimesh, true, true);
 
-        const body = setupRigidBody(Ammo, shape, data, data);
+        const body = setupRigidBody(Ammo, shape, t, rbdesc);
 
         dynamicsWorld.addRigidBody(body);
         // console.log(rigidBodies);

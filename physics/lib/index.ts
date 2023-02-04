@@ -1,10 +1,20 @@
 import { BufferGeometry } from 'three';
 import Backend from './worker?worker';
-import { PhysicsEngine, Vec3, Workload, Transform, RigidBodyDescription, SphereShapeDescription, CapsuleShapeDescription } from './header';
+import { PhysicsEngine, Vec3, Workload, Transform, RigidBodyDescription, SphereShapeDescription, CapsuleShapeDescription, TriangleMeshShapeDescription } from './header';
 import EventEmitter from 'events';
 
 export { RigidBodyDescription } from './header';
 export type { Vec3, Quat } from './header';
+
+/***********************************\
+ *               !
+ * I hate this with all my passion *
+\***********************************/
+export function _threejs_geometry_to_buffer(geometry: BufferGeometry) {
+    const nonIndexedGeo = geometry.index ? geometry.toNonIndexed() : geometry;
+    const positionsArray = nonIndexedGeo.getAttribute('position').array as Float32Array;
+    return positionsArray.buffer;
+}
 
 /* --------------------------------- TYPES --------------------------------- */
 
@@ -277,19 +287,15 @@ export class Physics implements PhysicsEngine<PhysicsData> {
         });
     }
 
-    createTrimesh(opts: RigidBodyDescription, transform: Transform, geometry: BufferGeometry): PhysicsData {
+    createTrimesh(opts: RigidBodyDescription, transform: Transform, geometry: TriangleMeshShapeDescription): PhysicsData {
         const id = this.#storage.insert();
 
         // optimization: extract underlying buffer from the ThreeJS BufferAttribute
         // so that it can be moved to the worker thread, instead of copied.
 
-        const nonIndexedGeo = geometry.index ? geometry.toNonIndexed() : geometry;
-        const triangles = nonIndexedGeo.getAttribute('position').array as Float32Array;
-        const triangleBuffer = triangles.buffer;
-
         this.#worker.postMessage({
             type: 'createTrimesh',
-            triangleBuffer,
+            geometry,
             pos: transform.pos ?? [0, 0, 0],
             scale: transform.scale ?? [1, 1, 1],
             quat: transform.quat ?? [0, 0, 0, 1],

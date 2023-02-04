@@ -12,10 +12,10 @@ export interface PhysicsEngine<RigidBody> {
 
     // shape creation interface
     removeBody: (body: RigidBody) => void;
-    createPlane: (...args: any[]) => RigidBody;
-    createSphere: (...args: any[]) => RigidBody;
-    createCapsule: (...args: any[]) => RigidBody;
-    createTrimesh: (...args: any[]) => RigidBody;
+    createPlane: (rbdesc: RigidBodyDescription, t: Transform) => RigidBody;
+    createSphere: (rbdesc: RigidBodyDescription, t: Transform, s: SphereShapeDescription) => RigidBody;
+    createCapsule: (rbdesc: RigidBodyDescription, t: Transform, s: CapsuleShapeDescription) => RigidBody;
+    createTrimesh: (rbdesc: RigidBodyDescription, t: Transform, s: TriangleMeshShapeDescription) => RigidBody;
 
     // actions and commands
     collisionTest?: (args: any) => void;
@@ -54,9 +54,7 @@ export type CapsuleShapeDescription = {
     height: number,
 }
 
-export type TriangleMeshShapeDescription = {
-    triangleBuffer: ArrayBufferLike
-}
+export type TriangleMeshShapeDescription = ArrayBufferLike;
 
 /** */
 export type Force<RigidBody> = {
