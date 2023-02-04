@@ -1,7 +1,9 @@
 import { BufferGeometry } from 'three';
 import Backend from './worker?worker';
-import { PhysicsEngine, Vec3, Workload, Transform, RigidBodyDescription, SphereShapeDescription, CapsuleShapeDescription, TriangleMeshShapeDescription } from './header';
+import { PhysicsEngine, Vec3, Workload, Transform, RigidBodyDescription, SphereShapeDescription, CapsuleShapeDescription, TriangleMeshShapeDescription, CollisionCallback, VelocityRaycast, Velocity, ForceRaycast, Force, Raycast } from './header';
 import EventEmitter from 'events';
+
+export { start as start_physics_engine } from './ammoshell';
 
 export { RigidBodyDescription } from './header';
 export type { Vec3, Quat } from './header';
@@ -112,10 +114,6 @@ export type RaycastResult
         entityID: number, // the entity hit by the raycast
         hitPoint: Vec3 // hitpoint lcoation in worldspace
     }
-    ;
-export type CollisionCallback
-    =
-    (entity: number) => void
     ;
 
 /* ----------------------------- PUBLIC CLASSES ---------------------------- */
@@ -230,52 +228,40 @@ export class Physics implements PhysicsEngine<PhysicsData> {
         return Array.from(this.#storage.transform.view.slice(offset, offset + 3)) as Vec3;
     }
 
-    registerCollisionCallback({ id }: PhysicsData, cb: CollisionCallback) {
-        this.#collisionCallbacks.set(id, cb);
+    registerCollisionCallback({ id }: PhysicsData, cb: Function) {
+        this.#collisionCallbacks.set(id, cb as CollisionCallback);
     }
 
     removeCollisionCallback({ id }: PhysicsData) {
         this.#collisionCallbacks.delete(id);
     }
 
-    addForce(object: PhysicsData, vector: Vec3) {
-        this.#work.forces.push({
-            object,
-            vector
-        });
+    addForce(f: Force<PhysicsData>) {
+        this.#work.forces.push(f);
     }
 
-    addForceConditionalRaycast(object: PhysicsData, vector: Vec3, from: Vec3, to: Vec3) {
-        this.#work.force_raycasts.push({
-            force: { object, vector },
-            raycast: { id: 0, from, to }
-        });
+    addForceConditionalRaycast(f: ForceRaycast<PhysicsData>) {
+        this.#work.force_raycasts.push(f);
     }
 
-    addVelocity(object: PhysicsData, vector: Vec3) {
-        this.#work.velocities.push({
-            object,
-            vector
-        });
+    addVelocity(v: Velocity<PhysicsData>) {
+        this.#work.velocities.push(v);
     }
 
     /** Adds velocity to a RigidBody ONLY if raycast returns a hit */
-    addVelocityConditionalRaycast(object: PhysicsData, vector: Vec3, from: Vec3, to: Vec3) {
-        this.#work.velocity_raycasts.push({
-            velocity: { object, vector },
-            raycast: { id: 0, from, to }
-        });
+    addVelocityConditionalRaycast(v: VelocityRaycast<PhysicsData>) {
+        this.#work.velocity_raycasts.push(v);
     }
 
     /** Casts a ray, and returns either the entity ID that got hit or undefined. */
-    raycast(from: Vec3, to: Vec3) {
+    raycast(r: Raycast) {
         return new Promise<RaycastResult | null>((resolve) => {
             const id = this.#raycastIdCounter;
             this.#raycastIdCounter += 1;
 
             this.#raycastCallbacks.set(id, resolve);
 
-            this.#work.raycasts.push({ id, from, to });
+            this.#work.raycasts.push({ id, from: r.from, to: r.to });
         });
     }
 
@@ -287,7 +273,7 @@ export class Physics implements PhysicsEngine<PhysicsData> {
         });
     }
 
-    createTrimesh(opts: RigidBodyDescription, transform: Transform, geometry: TriangleMeshShapeDescription): PhysicsData {
+    createTrimesh(_opts: RigidBodyDescription, transform: Transform, geometry: TriangleMeshShapeDescription): PhysicsData {
         const id = this.#storage.insert();
 
         // optimization: extract underlying buffer from the ThreeJS BufferAttribute

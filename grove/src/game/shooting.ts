@@ -46,7 +46,7 @@ export function shoot(
     }, {
         radius
     });
-    physics.addVelocity(body, velocity);
+    physics.addVelocity({ object: body, vector: velocity });
 
     const geometry = new SphereBufferGeometry(radius, 1, 1);
     const material = new MeshPhongMaterial({ color: 0x00CCFF });

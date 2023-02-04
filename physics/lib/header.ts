@@ -2,6 +2,8 @@
 
 export type Init = { transform_buffer: ArrayBufferLike };
 
+export type CollisionCallback = (entity: number) => void;
+
 export interface PhysicsEngine<RigidBody> {
     // simulation / update step
     init: (...args: any[]) => void;
@@ -18,12 +20,13 @@ export interface PhysicsEngine<RigidBody> {
     createTrimesh: (rbdesc: RigidBodyDescription, t: Transform, s: TriangleMeshShapeDescription) => RigidBody;
 
     // actions and commands
-    collisionTest?: (args: any) => void;
-    addForce: (...args: any[]) => void;
-    addForceConditionalRaycast: (...args: any[]) => void;
-    addVelocity: (...args: any[]) => void;
-    addVelocityConditionalRaycast: (...args: any[]) => void;
-    raycast: (...args: any[]) => void;
+    registerCollisionCallback: (body: RigidBody, cb: CollisionCallback) => void;
+    removeCollisionCallback: (body: RigidBody) => void;
+    addForce: (f: Force<RigidBody>) => void;
+    addForceConditionalRaycast: (f: ForceRaycast<RigidBody>) => void;
+    addVelocity: (v: Velocity<RigidBody>) => void;
+    addVelocityConditionalRaycast: (v: VelocityRaycast<RigidBody>) => void;
+    raycast: (r: Raycast) => void;
 }
 
 export type Vec3

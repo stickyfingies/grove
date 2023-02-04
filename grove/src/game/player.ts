@@ -82,9 +82,6 @@ const body = physics.createSphere({
 }, {
     radius: 1
 });
-physics.registerCollisionCallback(body, (entity) => {
-    //
-})
 // const perception = physics.createSphere({
 //     mass: 100,
 //     shouldRotate: false,
