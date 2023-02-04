@@ -60,7 +60,8 @@ export default class Engine {
         assetLoader.init(LogService('load'));
         // await physics_ready;
         world.events.on(`set${PhysicsData.name}Component`, ({ entity_id, data }) => {
-            log(data.setUserIndex);
+            // ! using `physics.ts` internals inside `engine.ts` ? preposterous !
+            // Move this down to the physics API surface
             data.setUserIndex(entity_id);
         });
         world.events.on(`delete${PhysicsData.name}Component`, ({ data }) => {

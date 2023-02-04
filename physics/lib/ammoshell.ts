@@ -401,7 +401,6 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine<Ammo
     }
 
     const registerCollisionCallback = (body: Ammo.btRigidBody, cb: CollisionCallback) => {
-        console.log(body.getUserIndex());
         collisionCallbacks.set(body.getUserIndex(), cb as CollisionCallback);
     }
 
