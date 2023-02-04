@@ -2,7 +2,7 @@ import { MeshData } from '@grove/graphics';
 import { PhysicsData } from "@grove/physics";
 import { assetLoader, graphics, physics, world, GameSystem } from "@grove/engine";
 
-import HealthScript, { DeathData } from "./health";
+import Health, { Death } from "./health";
 
 export class BarbarianData { };
 
@@ -16,7 +16,7 @@ export default class BarbarianScript extends GameSystem {
     }
 
     every_frame() {
-        world.executeQuery([MeshData, BarbarianData, DeathData], ([mesh], entity) => {
+        world.executeQuery([MeshData, BarbarianData, Death], ([mesh], entity) => {
             graphics.removeObjectFromScene(mesh);
             world.deleteEntity(entity);
         });
@@ -29,20 +29,25 @@ export default class BarbarianScript extends GameSystem {
         const capsule = world.createEntity();
         const capsuleBody = physics.createCapsule({
             mass: 10,
-            pos: [0, 50, 30],
+            isGhost: false,
             shouldRotate: false,
+        }, {
+            pos: [0, 50, 30],
+            scale: [1, 1, 1],
+            quat: [0, 0, 0, 1]
+        }, {
             radius,
             height
         });
 
-        const mesh = await assetLoader.loadModel('./models/villager-male/villager-male.glb');
+        const mesh = await assetLoader.loadModel({ uri: './models/villager-male/villager-male.glb' });
         graphics.addObjectToScene(mesh);
 
-        const health = new HealthScript(1, 1);
+        const health = new Health(1, 1);
         const barbarian = {};
 
         world.setComponent(capsule,
-            [MeshData, PhysicsData, HealthScript, BarbarianData],
+            [MeshData, PhysicsData, Health, BarbarianData],
             [mesh, capsuleBody, health, barbarian]
         );
     }

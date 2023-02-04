@@ -1,7 +1,7 @@
 import { Vector3 } from 'three';
 
 import { GameSystem } from '@grove/engine';
-import { PhysicsData } from '@grove/physics';
+import { PhysicsData, Vec3 } from '@grove/physics';
 import { physics, world } from '@grove/engine';
 
 export class Movement {
@@ -50,7 +50,7 @@ export default class MovementScript extends GameSystem {
             walkVector.multiplyScalar(mvmt.sprinting ? 5 : 1);
 
             // walk
-            const walkVelocity = [walkVector.x, 0, walkVector.z];
+            const walkVelocity: Vec3 = [walkVector.x, 0, walkVector.z];
             physics.addVelocity(body, walkVelocity);
 
             const position = physics.getBodyPosition(body);

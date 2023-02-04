@@ -16,8 +16,8 @@
 
 import {
     Camera,
-    CameraHelper,
     Group,
+    InstancedMesh,
     Light,
     Material,
     Mesh,
@@ -61,31 +61,79 @@ type LogFn = (payload: object | string | number) => void;
 let [log, report]: LogFn[] = [console.log, console.error];
 let [workerLog, workerReport]: LogFn[] = [console.log, console.error];
 
+type Transform = {
+    buffer: SharedArrayBuffer;
+    view: Float32Array;
+    readonly elementsPerMatrix: number;
+};
+
+class Storage {
+    transform: Transform;
+
+    objects: Object3D[] = [];
+
+    capacity: number;
+
+    /**
+     * Every time a mesh gets removed from the scene, we recycle its index in the
+     * storage buffer so our array of data stays compact.
+     */
+    availableIndices: number[] = [];
+
+    /**
+     * Next available mesh ID
+     * @note when assigning ID's, recycle any ID's from `#availableIndices` first
+     */
+    #objectId = 0;
+
+    constructor(maxEntityCount: number) {
+        this.capacity = maxEntityCount;
+        if (typeof SharedArrayBuffer === 'undefined') {
+            report('SharedArrayBuffer not supported');
+        }
+        const bytesPerElement = Float32Array.BYTES_PER_ELEMENT;
+        const elementsPerMatrix = 16;
+        const bufferSize = bytesPerElement * elementsPerMatrix * maxEntityCount;
+        const buffer = new SharedArrayBuffer(bufferSize);
+        const view = new Float32Array(buffer);
+        this.transform = { buffer, view, elementsPerMatrix };
+    }
+
+    /**
+    * Smart algorithm for assigning ID's to renderable objects by reusing ID's from old, removed
+    * objects first, and generating a new ID only if no recyclable ID's exist.
+    */
+    add(object: Object3D): number {
+        let id = this.#objectId;
+
+        // pick a recycled ID if one is available
+        if (this.availableIndices.length > 0) {
+            id = this.availableIndices.shift()!;
+        } else {
+            this.#objectId += 1;
+            if (this.#objectId > this.capacity) {
+                report(`exceeded maximum object count: ${this.capacity}`);
+                debugger;
+            }
+        }
+
+        // set mesh/ID relationships
+        object.userData.meshId = id;
+        this.objects[id] = object;
+
+        return id;
+    }
+
+    remove(id: number) {
+        this.availableIndices.push(id);
+    }
+}
+
 export class Graphics {
     /** Tree-like graph of renderable game objects */
     #scene = new Scene();
 
     get scene() { return this.#scene; }
-
-    /**
-     * Map between mesh IDs and mesh instances
-     *
-     * @note mesh ID's are not the same as entity ID's, as we need a compact list of meshes,
-     * but not all entities will have mesh components.
-     */
-    #idToObject = new Map<number, Object3D>();
-
-    /**
-     * Every time a mesh gets removed from the scene, we recycle its ID so that the list of meshes
-     * stays compact.  Recycled, unused IDs go into this list.
-     */
-    #availableObjectIds: number[] = [];
-
-    /**
-     * Next available mesh ID
-     * @note when assigning ID's, recycle any ID's from `#availableObjectIds` first
-     */
-    #objectId = 0;
 
     /** Set of all texture UUID's that have already been uploaded to the backend */
     #textureCache = new Set<string>();
@@ -97,30 +145,13 @@ export class Graphics {
     #worker: Worker;
 
     /** Cross-thread buffer of mesh transforms */
-    #buffer: SharedArrayBuffer;
-
-    /** f32 array view over #buffer, used for raw access */
-    #array: Float32Array;
+    #storage: Storage;
 
     /**
      * This camera acts as a proxy for the actual rendering camera in the backend
      * @note camera has id #0
      */
     #camera = new PerspectiveCamera();
-
-    /** Number of bytes per each element in the shared array buffer */
-    readonly #bytesPerElement = Float32Array.BYTES_PER_ELEMENT;
-
-    /** Number of elements per each matrix in the transform buffer (4x4 matrix = 16) */
-    readonly #elementsPerTransform = 16;
-
-    /** Maximum number of meshes whcih may exist concurrently */
-    readonly #maxEntityCount = 1024;
-
-    /** Calculates the size of the transform buffer */
-    get #bufferSize() {
-        return this.#bytesPerElement * this.#elementsPerTransform * this.#maxEntityCount;
-    }
 
     get camera() {
         return this.#camera;
@@ -136,11 +167,7 @@ export class Graphics {
         // Useful for debugging the library itself
         log(import.meta.url);
 
-        if (typeof SharedArrayBuffer === 'undefined') {
-            report('SharedArrayBuffer not supported');
-        }
-        this.#buffer = new SharedArrayBuffer(this.#bufferSize);
-        this.#array = new Float32Array(this.#buffer);
+        this.#storage = new Storage(1024);
 
         this.#worker = new Backend();
         this.#worker.onmessage = ({ data }) => {
@@ -170,7 +197,7 @@ export class Graphics {
      *                 Creates a new element if one cannot be found.
      */
     init(canvasID: string = 'main-canvas') {
-        this.assignIdToObject(this.#camera);
+        this.#storage.add(this.#camera);
         this.#scene.add(this.#camera);
 
         // find (or create) canvas element
@@ -185,7 +212,7 @@ export class Graphics {
 
         this.submitCommand({
             type: 'init',
-            buffer: this.#buffer,
+            buffer: this.#storage.transform.buffer,
             canvas: offscreen,
             // @ts-ignore - OffscreenCanvas BS
         }, true, offscreen);
@@ -275,8 +302,7 @@ export class Graphics {
                 });
 
                 // recycle ID
-                this.#idToObject.delete(id);
-                this.#availableObjectIds.push(id);
+                this.#storage.remove(id);
             }
         });
     }
@@ -286,7 +312,7 @@ export class Graphics {
 
         const emitter = new Object3D();
         this.#scene.add(emitter);
-        const id = this.assignIdToObject(emitter);
+        const id = this.#storage.add(emitter);
 
         this.submitCommand({
             type: 'createParticleSystem',
@@ -305,39 +331,12 @@ export class Graphics {
         this.#scene.updateMatrixWorld();
 
         // for every renderable...
-        for (const [id, object] of this.#idToObject) {
-            // find its position in the transform buffer
-            const offset = id * this.#elementsPerTransform;
-            // copy world matrix into transform buffer
-            for (let i = 0; i < this.#elementsPerTransform; i++) {
-                this.#array[offset + i] = object.matrixWorld.elements[i];
+        for (let id = 0; id < this.#storage.objects.length; id++) {
+            const offset = id * this.#storage.transform.elementsPerMatrix;
+            for (let i = 0; i < this.#storage.transform.elementsPerMatrix; i++) {
+                this.#storage.transform.view[offset + i] = this.#storage.objects[id].matrixWorld.elements[i];
             }
         }
-    }
-
-    /**
-     * Smart algorithm for assigning ID's to renderable objects by reusing ID's from old, removed
-     * objects first, and generating a new ID only if no recyclable ID's exist.
-     */
-    private assignIdToObject(object: Object3D): number {
-        let id = this.#objectId;
-
-        // pick a recycled ID if one is available
-        if (this.#availableObjectIds.length > 0) {
-            id = this.#availableObjectIds.shift()!;
-        } else {
-            this.#objectId += 1;
-            if (this.#objectId > this.#maxEntityCount) {
-                report(`exceeded maximum object count: ${this.#maxEntityCount}`);
-                debugger;
-            }
-        }
-
-        // set mesh/ID relationships
-        this.#idToObject.set(id, object);
-        object.userData.meshId = id;
-
-        return id;
     }
 
     /**
@@ -385,7 +384,7 @@ export class Graphics {
      *
      * Current supported objects: `Mesh`, `Sprite`, `Light`
      */
-    addObjectToScene(object: Mesh | Light | Sprite | Group, ui = false) {
+    addObjectToScene(object: Mesh | InstancedMesh | Light | Sprite | Group, ui = false) {
         // place object in scene heirarchy
         if (object.parent) object.parent.add(object);
         else this.#scene.add(object);
@@ -394,7 +393,7 @@ export class Graphics {
         object.traverse((node) => {
             // debugger;
             if (!(node instanceof Group)) {
-                const id = this.assignIdToObject(node);
+                const id = this.#storage.add(node);
 
                 if ('material' in node) {
                     // Get a list of all the materials in this object/scene_node
@@ -411,9 +410,6 @@ export class Graphics {
 
                 // A very expensive call if `node.material` contains images.
                 const json = node.toJSON();
-
-                if (node instanceof CameraHelper) console.log(node);
-                if (node instanceof CameraHelper) console.log(json);
 
                 // send that bitch to the backend
                 this.submitCommand({

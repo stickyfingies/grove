@@ -32,6 +32,7 @@ import {
     GridHelper,
     Camera,
     CameraHelper,
+    InstancedMesh,
 } from 'three';
 
 // import CSM from 'three-csm';
@@ -80,8 +81,7 @@ export default class GraphicsBackend {
     /** ThreeJS WebGL renderer instance */
     #renderer!: WebGLRenderer;
 
-    /** map of mesh IDs to mesh instances */
-    #idToObject = new Map<number, Object3D>();
+    #objects: Object3D[] = [];
 
     /** map of texture identifiers to raw image data */
     #textureCache = new Map<string, DataTexture>();
@@ -98,7 +98,7 @@ export default class GraphicsBackend {
     // });
 
     /** number of elements per each transform matrix in the shared array buffer */
-    readonly #elementsPerTransform = 16;
+    readonly #elementsPerMatrix = 16;
 
     constructor() {
         log(import.meta.url);
@@ -128,7 +128,7 @@ export default class GraphicsBackend {
         // set up cameras
         this.#camera.matrixAutoUpdate = false;
         this.#scene.add(this.#camera);
-        this.#idToObject.set(0, this.#camera);
+        this.#objects[0] = this.#camera;
 
         this.#uicamera.matrixAutoUpdate = false;
         this.#uicamera.position.z = 10;
@@ -152,7 +152,7 @@ export default class GraphicsBackend {
             const delta = (timestamp - previous) / 100.0;
             previous = timestamp;
 
-            this.readTransformsFromArray(transformArray);
+            this.copyTransformsToObjects(transformArray, this.#objects);
 
             for (const sys of this.#particle_systems) {
                 const should_remove = updateParticleSystem(sys, this.#camera, delta);
@@ -175,7 +175,7 @@ export default class GraphicsBackend {
     }
 
     changeCamera({ camera_id }: ChangeCameraCmd) {
-        this.#camera = this.#idToObject.get(camera_id) as Camera;
+        this.#camera = this.#objects[camera_id] as Camera;
     }
 
     createParticleSystem({ emitter_id, texture_id, particle_count }: GraphicsCreateParticleSystemCmd) {
@@ -246,7 +246,7 @@ export default class GraphicsBackend {
         emitter.matrixAutoUpdate = false;
 
         this.#scene.add(emitter);
-        this.#idToObject.set(emitter_id, emitter);
+        this.#objects[emitter_id] = emitter;
 
         this.#particle_systems.add({
             emitter,
@@ -258,19 +258,21 @@ export default class GraphicsBackend {
     }
 
     /** Copy object transforms into their corresponding ThreeJS renderable */
-    private readTransformsFromArray(transformArray: Float32Array) {
-        for (const [id, object] of this.#idToObject) {
-            const offset = id * this.#elementsPerTransform;
+    private copyTransformsToObjects(transformArray: Float32Array, objectArray: Object3D[]) {
+        const ELEMENTS_PER_MATRIX = 16;
+        if (transformArray.length < objectArray.length * ELEMENTS_PER_MATRIX) {
+            report(`Copying data from differently-sized buffers transform[${transformArray.length}] -> object[${objectArray.length}]`);
+        }
+        for (let id = 0; id < objectArray.length; id++) {
+            const offset = id * ELEMENTS_PER_MATRIX;
             const matrix = new Matrix4().fromArray(transformArray, offset);
-
             // ! <hack/>
             // before the main thread starts pushing object matrices to the transform buffer,
             // there will be a period of time where `matrix` consists of entirely zeroes.
             // ThreeJS doesn't particularly like when scale elements are zero, so set them
             // to something else as a fix.
             if (matrix.elements[0] === 0) matrix.makeScale(1, 1, 1);
-
-            object.matrix.copy(matrix);
+            objectArray[id].matrix.copy(matrix);
         }
     }
 
@@ -297,7 +299,7 @@ export default class GraphicsBackend {
     /** Updates the material of a renderable object */
     updateMaterial({ material, id }: GraphicsUpdateMaterialCmd) {
         const mat = this.deserializeMaterial(material);
-        const mesh = this.#idToObject.get(id)! as Mesh | Points | Sprite | GridHelper;
+        const mesh = this.#objects[id] as Mesh | Points | Sprite | GridHelper;
         mesh.material = mat;
     }
 
@@ -316,6 +318,7 @@ export default class GraphicsBackend {
 
         if (false
             || object instanceof Mesh
+            || object instanceof InstancedMesh
             || object instanceof Points
             || object instanceof Sprite
             || object instanceof GridHelper
@@ -328,6 +331,23 @@ export default class GraphicsBackend {
                 object.material = lookupTable.get(object.material.uuid);
             }
 
+            if (object instanceof InstancedMesh) {
+                // const transformArray = new Float32Array(object.userData.transformBuffer);
+                // console.log(transformArray);
+                // object.instanceMatrix.d
+                // object.instanceMatrix = new InstancedBufferAttribute(transformArray, Float32Array.BYTES_PER_ELEMENT);
+                // object.instanceMatrix.setUsage(DynamicDrawUsage);
+                // set transforms
+                // for (let i = 0; i < 400; i++) {
+                //     const dummy = new Object3D();
+                //     dummy.position.set(Math.random() * 60 - 30, i, Math.random() * 60 - 30);
+                //     dummy.updateMatrix();
+                //     object.setMatrixAt(i, dummy.matrix);
+                // }
+                // object.instanceMatrix.needsUpdate = true;
+                // setInterval(() => { object.instanceMatrix.needsUpdate = true; }, 1000);
+            }
+
             object.castShadow = true;
             object.receiveShadow = true;
         }
@@ -338,13 +358,12 @@ export default class GraphicsBackend {
 
         object.matrixAutoUpdate = false;
         (ui ? this.#uiscene : this.#scene).add(object);
-        this.#idToObject.set(id, object);
+        this.#objects[id] = object;
     }
 
     /** Removes a renderable object from the scene */
     removeObject({ id }: GraphicsRemoveObjectCmd) {
-        const object = this.#idToObject.get(id)!;
-        this.#idToObject.delete(id);
+        const object = this.#objects[id];
         this.#scene.remove(object);
     }
 

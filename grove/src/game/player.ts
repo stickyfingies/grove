@@ -1,5 +1,6 @@
 import {
     CameraHelper,
+    Mesh,
     PerspectiveCamera,
     Sprite,
     SpriteMaterial,
@@ -7,7 +8,7 @@ import {
 } from 'three';
 
 import { GameSystem } from '@grove/engine';
-import HealthScript, { DeathData } from './health';
+import Health, { Death } from './health';
 import { KeyboardControls } from './keyboardControls';
 import { Movement } from './movement';
 import { PhysicsData } from '@grove/physics';
@@ -49,7 +50,7 @@ export const player = world.createEntity();
 
 world.addTag(player, PLAYER_TAG);
 
-const mesh = await assetLoader.loadModel('./models/villager-male/villager-male.glb')
+const mesh = await assetLoader.loadModel({ uri: './models/villager-male/villager-male.glb' });
 graphics.addObjectToScene(mesh);
 
 export const frustumCamera = new PerspectiveCamera(30, 1, 0.1, 10);
@@ -64,7 +65,7 @@ graphics.addObjectToScene(helper);
 mesh.add(frustumCamera);
 // graphics.changeCamera(frustumCamera); // for testing
 
-const health = new HealthScript(250, 250);
+const health = new Health(250, 250);
 const score = {
     score: 0
 };
@@ -72,10 +73,18 @@ const score = {
 // create physics body
 const body = physics.createSphere({
     mass: 100,
-    pos: [0, 120, 0],
     shouldRotate: false,
+    isGhost: false,
+}, {
+    pos: [0, 120, 0],
+    scale: [1, 1, 1],
+    quat: [0, 0, 0, 1]
+}, {
     radius: 1
 });
+physics.registerCollisionCallback(body, (entity) => {
+    //
+})
 // const perception = physics.createSphere({
 //     mass: 100,
 //     shouldRotate: false,
@@ -108,12 +117,12 @@ const hud = new UserInterface(
 );
 
 world.setComponent(player,
-    [MeshData, PhysicsData, HealthScript, Score, Movement, KeyboardControls, UserInterface],
+    [Mesh, PhysicsData, Health, Score, Movement, KeyboardControls, UserInterface],
     [mesh, body, health, score, mvmtData, kbControl, hud]
 );
 
 function drawHUD() {
-    const [score, health] = world.getComponent(player, [Score, HealthScript]);
+    const [score, health] = world.getComponent(player, [Score, Health]);
     hud.text = `${health.hp}/${health.max}HP\n${score.score} points`;
 }
 
@@ -169,7 +178,7 @@ world.events.on('enemyDied', async () => {
 
 // heal
 world.events.on('healPlayer', (amount: number) => {
-    const [health] = world.getComponent(player, [HealthScript]);
+    const [health] = world.getComponent(player, [Health]);
     health.hp += amount;
 });
 
@@ -181,7 +190,7 @@ todo('imgui: display player position');
 export default class PlayerScript extends GameSystem {
     every_frame() {
         drawHUD();
-        world.executeQuery([Score, DeathData], ([{ score }]) => {
+        world.executeQuery([Score, Death], ([{ score }]) => {
             document.querySelector('#blocker')?.setAttribute('style', 'display:block');
             const loadText = document.querySelector('#load')! as HTMLElement;
             loadText.setAttribute('style', 'display:block');

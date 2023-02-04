@@ -21,7 +21,13 @@ export default class UpgradeScript {
 
             const upgradeBody = physics.createSphere({
                 mass: 1000,
+                isGhost: false,
+                shouldRotate: true,
+            }, {
                 pos: [0, 60, 0],
+                scale: [1, 1, 1],
+                quat: [0, 0, 0, 1]
+            }, {
                 radius: 0.7
             });
 

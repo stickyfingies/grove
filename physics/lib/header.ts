@@ -1,18 +1,21 @@
-export type RigidBody = { id: number };
+// export type RigidBody = { id: number };
 
 export type Init = { transform_buffer: ArrayBufferLike };
 
-export interface PhysicsEngine {
+export interface PhysicsEngine<RigidBody> {
     // simulation / update step
     init: (...args: any[]) => void;
     update: (deltaTime: number) => void;
 
+    // !deprecated (?)
+    getBodyPosition: (body: RigidBody) => Vec3;
+
     // shape creation interface
     removeBody: (body: RigidBody) => void;
-    createPlane: (...args: any[]) => void;
-    createSphere: (...args: any[]) => void;
-    createCapsule: (...args: any[]) => void;
-    createTrimesh: (...args: any[]) => void;
+    createPlane: (...args: any[]) => RigidBody;
+    createSphere: (...args: any[]) => RigidBody;
+    createCapsule: (...args: any[]) => RigidBody;
+    createTrimesh: (...args: any[]) => RigidBody;
 
     // actions and commands
     collisionTest?: (args: any) => void;
@@ -30,15 +33,40 @@ export type Quat
     = [number, number, number, number]
     ;
 
+export type Transform = {
+    pos: Vec3,
+    scale: Vec3,
+    quat: Quat,
+}
+
+export class RigidBodyDescription {
+    mass: number = 1;
+    isGhost: boolean = false;
+    shouldRotate: boolean = true;
+}
+
+export type SphereShapeDescription = {
+    radius: number,
+}
+
+export type CapsuleShapeDescription = {
+    radius: number,
+    height: number,
+}
+
+export type TriangleMeshShapeDescription = {
+    triangleBuffer: ArrayBufferLike
+}
+
 /** */
-export type Force = {
-    id: number;
+export type Force<RigidBody> = {
+    object: RigidBody;
     vector: Vec3;
 };
 
 /** */
-export type Velocity = {
-    id: number;
+export type Velocity<RigidBody> = {
+    object: RigidBody;
     vector: Vec3;
 };
 
@@ -50,21 +78,21 @@ export type Raycast = {
 };
 
 /** */
-export type ForceRaycast = {
-    force: Force,
+export type ForceRaycast<RigidBody> = {
+    force: Force<RigidBody>,
     raycast: Raycast
 };
 
 /** */
-export type VelocityRaycast = {
-    velocity: Velocity,
+export type VelocityRaycast<RigidBody> = {
+    velocity: Velocity<RigidBody>,
     raycast: Raycast
 };
 
-export class Workload {
-    forces: Force[] = [];
-    velocities: Velocity[] = [];
+export class Workload<RigidBody> {
+    forces: Force<RigidBody>[] = [];
+    velocities: Velocity<RigidBody>[] = [];
     raycasts: Raycast[] = [];
-    force_raycasts: ForceRaycast[] = [];
-    velocity_raycasts: VelocityRaycast[] = [];
+    force_raycasts: ForceRaycast<RigidBody>[] = [];
+    velocity_raycasts: VelocityRaycast<RigidBody>[] = [];
 }

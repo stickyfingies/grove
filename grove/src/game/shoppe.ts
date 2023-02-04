@@ -1,19 +1,29 @@
 import { CameraData, CAMERA_TAG } from '@grove/graphics';
-import { PhysicsData } from "@grove/physics";
+import { PhysicsData, RigidBodyDescription } from "@grove/physics";
 import { Mesh, MeshBasicMaterial, SphereBufferGeometry, Vector3 } from "three";
 import { graphics, physics, world } from "@grove/engine";
 import { addToInventory } from "./inventory";
 import { player } from "./player";
 import { Score } from "./score";
+import { SphereShape } from '@grove/engine/lib/load';
 
+// data (mostly json)
 const shoppe = world.createEntity();
+const rigidBodyDescription: RigidBodyDescription = {
+    mass: 0,
+    isGhost: false,
+    shouldRotate: true
+};
+const sphereShape: SphereShape = { radius: 1 };
 
-// create the 3D model
-const mesh = new Mesh(new SphereBufferGeometry(1), new MeshBasicMaterial({ color: 0x0000ff }));
+// pipeline
+const mesh = new Mesh(new SphereBufferGeometry(sphereShape.radius), new MeshBasicMaterial({ color: 0x0000ff }));
 graphics.addObjectToScene(mesh);
-
-// create the Higgs field
-const body = physics.createSphere({ mass: 0, pos: [0, 20, 20], radius: 1 });
+const body = physics.createSphere(rigidBodyDescription, {
+    pos: [0, 20, 20],
+    scale: [1, 1, 1],
+    quat: [0, 0, 0, 1]
+}, sphereShape);
 world.setComponent(shoppe, [Mesh, PhysicsData], [mesh, body]);
 
 // 'e' to interact

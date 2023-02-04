@@ -1,6 +1,6 @@
 /**
- * @note setting `Vector3::mesh.userData.offset` allows you to define
- * a desirable offset between the rendured texture and the physical transform.
+ * @note setting `mesh.userData.offset: Vector3` allows you to define
+ * a desirable offset between the rendured mesh and the physical transform.
  */
 
 import { MeshData, SpriteData } from '@grove/graphics';

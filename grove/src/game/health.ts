@@ -22,11 +22,24 @@ export interface HealthData {
  * }
  * ```
  */
-export class DeathData { }
+export class Death { }
 
-export default class HealthScript {
-    static bahavior = (hp: number, max: number) => () => new HealthScript(hp, max);
+/**
+ * 
+ * query([HealthScript])
+ *  .filter(([health]) => (health < 0))
+ *  .then((e) => { e.delete([HealthScript]); e.set([DeathData], [{}]) });
+ * 
+ * query {
+ *  matches: [HealthScript],
+ * }
+ * action {
+ *  remove: [HealthScript]
+ *  add: [DeathData]
+ * }
+ */
 
+export default class Health {
     constructor(
         public hp: number = 1,
         public max: number = 2
@@ -35,8 +48,7 @@ export default class HealthScript {
     update(e: number) {
         this.hp = Math.min(this.hp, this.max);
         if (this.hp <= 0) {
-            world.deleteComponent(e, [HealthScript]);
-            world.setComponent(e, [DeathData], [{}]);
+            world.swapComponent(e, [Health], [Death], [{}]);
         }
     }
 }

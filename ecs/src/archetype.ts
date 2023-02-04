@@ -7,6 +7,11 @@ import {
 } from "./types";
 
 /**
+ * i.e. "add:Death|remove:Health"
+ */
+type SignatureHash = string;
+
+/**
  * Archetypes store the actual component data for entities.
  *
  * There is one archetype per component signature.  That means, all entities with the same
@@ -29,20 +34,28 @@ export class Archetype {
 
     indexToEntityId: number[] = [];
 
+    /**
+     * Maps a string representing signature changes to a destination archetype.
+     * 
+     * Used to optimize the process of finding a suitable destination archetype
+     * when an entity's signature changes. O(n) search -> O(1) lookup
+     */
+    transitions: Map<SignatureHash, Archetype> = new Map();
+
     constructor(signature: ComponentSignature, entities: Set<number>) {
         this.signature = signature;
         this.entities = entities;
-
-        this.signature.forEach((type) => {
-            this.components.set(type, []);
-        });
+        // instantiate component arrays
+        this.signature.forEach((type) => this.components.set(type, []));
     }
 
     addEntity(id: number) {
         this.entities.add(id);
-        this.entityIdToIndex[id] = this.poolSize;
-        this.indexToEntityId[this.poolSize] = id;
+        const entity_idx = this.poolSize;
+        this.entityIdToIndex[id] = entity_idx;
+        this.indexToEntityId[entity_idx] = id;
         this.poolSize += 1;
+        return entity_idx;
     }
 
     removeEntity(id: number) {
@@ -67,14 +80,15 @@ export class Archetype {
     setComponent<T extends ComponentTypeList>
         (id: number, types: T, data: ComponentDataFromSignature<T>) {
         const index = this.entityIdToIndex[id];
-        for (let i = 0; (i < types.length) && (i < data.length); i++) {
+        for (let i = 0; (i < types.length) && (i < (data.length as number)); i++) {
             this.components.get(types[i])![index] = data[i];
         }
+        return index;
     }
 
     getComponent<T extends ComponentTypeList>
-        (id: number, types: T): ComponentDataFromSignature<T> {
-        const index = this.entityIdToIndex[id];
+        (entity_id: number, types: T): ComponentDataFromSignature<T> {
+        const index = this.entityIdToIndex[entity_id];
         return types.map((type) => { return this.components.get(type)![index] }) as ComponentDataFromSignature<T>;
     }
 
@@ -129,15 +143,18 @@ export class Archetype {
     }
 }
 
-/** Copies entity data from an old archetype -> this archetype */
-export function transferEntityFrom(id: number, oldArchetype: Archetype, newArchetype: Archetype) {
-    newArchetype.addEntity(id);
-    const index = newArchetype.entityIdToIndex[id];
-    const oldIndex = oldArchetype.entityIdToIndex[id];
+/**
+ * Copies entity data from an old archetype -> this archetype
+ * @returns The index in newArchetype where entity's data is held
+ * */
+export function transferEntityFrom(entity_id: number, oldArchetype: Archetype, newArchetype: Archetype) {
+    const index = newArchetype.addEntity(entity_id);
+    const oldIndex = oldArchetype.entityIdToIndex[entity_id];
     oldArchetype.components.forEach((store, type) => {
         if (newArchetype.signature.has(type)) {
             newArchetype.components.get(type)![index] = store[oldIndex];
         }
     });
-    oldArchetype.removeEntity(id);
+    oldArchetype.removeEntity(entity_id);
+    return index;
 }

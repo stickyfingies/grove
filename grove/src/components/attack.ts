@@ -8,8 +8,6 @@ import { shoot } from "../game/shooting";
 export default class AttackScript {
     timer?: NodeJS.Timer;
 
-    static behavior = (target: number) => (id: number) => new AttackScript(id, target);
-
     constructor(public id: number, public target: number) {
         this.target = target;
         this.timer = setInterval(() => {

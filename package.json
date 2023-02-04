@@ -19,7 +19,8 @@
     "dev": "yarn workspace @grove/grove run dev"
   },
   "dependencies": {
-    "concurrently": "^7.5.0"
+    "concurrently": "^7.5.0",
+    "typescript": "beta"
   },
   "resolutions": {
     "@grove/**/three": "0.135.0",

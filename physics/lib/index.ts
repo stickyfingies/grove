@@ -1,8 +1,9 @@
 import { BufferGeometry } from 'three';
 import Backend from './worker?worker';
-import { PhysicsEngine, Vec3, Quat, Workload } from './header';
+import { PhysicsEngine, Vec3, Workload, Transform, RigidBodyDescription, SphereShapeDescription, CapsuleShapeDescription } from './header';
 import EventEmitter from 'events';
 
+export { RigidBodyDescription } from './header';
 export type { Vec3, Quat } from './header';
 
 /* --------------------------------- TYPES --------------------------------- */
@@ -16,6 +17,71 @@ type RaycastCallback
 type LogFn
     = (payload: object | string | number) => void
     ;
+
+type TransformBuffer = {
+    buffer: SharedArrayBuffer;
+    view: Float32Array;
+    readonly elementsPerMatrix: number;
+};
+
+class Storage {
+    transform: TransformBuffer;
+
+    capacity: number;
+
+    /**
+     * Every time an object gets removed from the scene, we recycle its index in the
+     * storage buffer so our array of data stays compact.
+     */
+    #availableIndices: number[] = [];
+
+    /**
+     * Next available ID
+     * @note when assigning ID's, recycle any ID's from `#availableIndices` first
+     */
+    #objectId = 0;
+
+    constructor(maxEntityCount: number) {
+        this.capacity = maxEntityCount;
+
+        if (typeof SharedArrayBuffer === 'undefined') {
+            report('SharedArrayBuffer not supported');
+        }
+
+        const bytesPerElement = Float32Array.BYTES_PER_ELEMENT;
+        const elementsPerMatrix = 16;
+        const bufferSize = bytesPerElement * elementsPerMatrix * maxEntityCount;
+
+        const buffer = new SharedArrayBuffer(bufferSize);
+        const view = new Float32Array(buffer);
+        this.transform = { buffer, view, elementsPerMatrix };
+    }
+
+    /**
+    * Smart algorithm for assigning ID's to renderable objects by reusing ID's from old, removed
+    * objects first, and generating a new ID only if no recyclable ID's exist.
+    */
+    insert(): number {
+        let id = this.#objectId;
+
+        // pick a recycled ID if one is available
+        if (this.#availableIndices.length > 0) {
+            id = this.#availableIndices.shift()!;
+        } else {
+            this.#objectId += 1;
+            if (this.#objectId > this.capacity) {
+                report(`exceeded maximum object count: ${this.capacity}`);
+                debugger;
+            }
+        }
+
+        return id;
+    }
+
+    remove(id: number) {
+        this.#availableIndices.push(id);
+    }
+}
 
 /* -------------------------------- GLOBALS -------------------------------- */
 
@@ -37,17 +103,6 @@ export type RaycastResult
         hitPoint: Vec3 // hitpoint lcoation in worldspace
     }
     ;
-export type RigidBodyOptions
-    = {
-        pos?: Vec3,
-        scale?: Vec3,
-        quat?: Quat,
-        mass?: number,
-        shouldRotate?: boolean,
-        isGhost?: boolean,
-        objectToFollow?: PhysicsData
-    }
-    ;
 export type CollisionCallback
     =
     (entity: number) => void
@@ -56,18 +111,13 @@ export type CollisionCallback
 /* ----------------------------- PUBLIC CLASSES ---------------------------- */
 
 export class PhysicsData { constructor(public id: number) { } }
-export class Physics implements PhysicsEngine {
+export class Physics implements PhysicsEngine<PhysicsData> {
     #worker: Worker;
-
-    /** A counter that gets incremented when a new ID needs to be allocated. */
-    #idCounter: RigidBodyID = 0;
 
     #raycastIdCounter = 0;
 
     /** Raw buffer containing RigidBody transform data. */
-    #tbuffer = new SharedArrayBuffer(4 * 16 * 1024);
-
-    #tview = new Float32Array(this.#tbuffer);
+    #storage = new Storage(1024);
 
     /** Map of RigidBody ID's to Entity ID's */
     #idToEntity = new Map<RigidBodyID, number>();
@@ -76,7 +126,7 @@ export class Physics implements PhysicsEngine {
 
     #raycastCallbacks = new Map<number, RaycastCallback>();
 
-    #work = new Workload();
+    #work = new Workload<PhysicsData>();
 
     constructor() {
         this.#worker = new Backend();
@@ -111,7 +161,7 @@ export class Physics implements PhysicsEngine {
                         // This is the backend saying, "libraries loaded and ready to go!"
                         this.#worker.postMessage({
                             type: 'init',
-                            buffer: this.#tbuffer
+                            buffer: this.#storage.transform.buffer
                         });
                         resolve();
                         break;
@@ -167,7 +217,7 @@ export class Physics implements PhysicsEngine {
 
     getBodyPosition({ id }: PhysicsData): Vec3 {
         const offset = 3 * id;
-        return Array.from(this.#tview.slice(offset, offset + 3)) as Vec3;
+        return Array.from(this.#storage.transform.view.slice(offset, offset + 3)) as Vec3;
     }
 
     registerCollisionCallback({ id }: PhysicsData, cb: CollisionCallback) {
@@ -178,31 +228,31 @@ export class Physics implements PhysicsEngine {
         this.#collisionCallbacks.delete(id);
     }
 
-    addForce({ id }: PhysicsData, vector: Vec3) {
+    addForce(object: PhysicsData, vector: Vec3) {
         this.#work.forces.push({
-            id,
+            object,
             vector
         });
     }
 
-    addForceConditionalRaycast({ id }: PhysicsData, vector: Vec3, from: Vec3, to: Vec3) {
+    addForceConditionalRaycast(object: PhysicsData, vector: Vec3, from: Vec3, to: Vec3) {
         this.#work.force_raycasts.push({
-            force: { id, vector },
+            force: { object, vector },
             raycast: { id: 0, from, to }
         });
     }
 
-    addVelocity({ id }: PhysicsData, vector: Vec3) {
+    addVelocity(object: PhysicsData, vector: Vec3) {
         this.#work.velocities.push({
-            id,
+            object,
             vector
         });
     }
 
     /** Adds velocity to a RigidBody ONLY if raycast returns a hit */
-    addVelocityConditionalRaycast({ id }: PhysicsData, vector: Vec3, from: Vec3, to: Vec3) {
+    addVelocityConditionalRaycast(object: PhysicsData, vector: Vec3, from: Vec3, to: Vec3) {
         this.#work.velocity_raycasts.push({
-            velocity: { id, vector },
+            velocity: { object, vector },
             raycast: { id: 0, from, to }
         });
     }
@@ -220,15 +270,15 @@ export class Physics implements PhysicsEngine {
     }
 
     removeBody({ id }: PhysicsData) {
+        this.#storage.remove(id);
         this.#worker.postMessage({
             type: 'removeBody',
             id,
         });
     }
 
-    createTrimesh(opts: RigidBodyOptions, geometry: BufferGeometry): PhysicsData {
-        const id = this.#idCounter;
-        this.#idCounter += 1;
+    createTrimesh(opts: RigidBodyDescription, transform: Transform, geometry: BufferGeometry): PhysicsData {
+        const id = this.#storage.insert();
 
         // optimization: extract underlying buffer from the ThreeJS BufferAttribute
         // so that it can be moved to the worker thread, instead of copied.
@@ -240,22 +290,9 @@ export class Physics implements PhysicsEngine {
         this.#worker.postMessage({
             type: 'createTrimesh',
             triangleBuffer,
-            pos: {
-                x: opts.pos?.[0] ?? 0,
-                y: opts.pos?.[1] ?? 0,
-                z: opts.pos?.[2] ?? 0,
-            },
-            scale: {
-                x: opts.scale?.[0] ?? 1,
-                y: opts.scale?.[1] ?? 1,
-                z: opts.scale?.[2] ?? 1,
-            },
-            quaternion: {
-                x: opts.quat?.[0] ?? 0,
-                y: opts.quat?.[1] ?? 0,
-                z: opts.quat?.[2] ?? 0,
-                w: opts.quat?.[3] ?? 1,
-            },
+            pos: transform.pos ?? [0, 0, 0],
+            scale: transform.scale ?? [1, 1, 1],
+            quat: transform.quat ?? [0, 0, 0, 1],
             mass: 0,
             id,
         }, []);
@@ -263,29 +300,15 @@ export class Physics implements PhysicsEngine {
         return { id };
     }
 
-    createPlane(opts: RigidBodyOptions) {
-        const id = this.#idCounter;
-        this.#idCounter += 1;
+    createPlane(opts: RigidBodyDescription, transform: Transform) {
+        const id = this.#storage.insert();
 
         this.#worker.postMessage({
             type: 'createPlane',
             mass: opts.mass,
-            pos: {
-                x: opts.pos?.[0] ?? 0,
-                y: opts.pos?.[1] ?? 0,
-                z: opts.pos?.[2] ?? 0,
-            },
-            scale: {
-                x: opts.scale?.[0] ?? 1,
-                y: opts.scale?.[1] ?? 1,
-                z: opts.scale?.[2] ?? 1,
-            },
-            quaternion: {
-                x: opts.quat?.[0] ?? 0,
-                y: opts.quat?.[1] ?? 0,
-                z: opts.quat?.[2] ?? 0,
-                w: opts.quat?.[3] ?? 1,
-            },
+            pos: transform.pos ?? [0, 0, 0],
+            scale: transform.scale ?? [1, 1, 1],
+            quat: transform.quat ?? [0, 0, 0, 1],
             shouldRotate: opts.shouldRotate ?? true,
             id,
         });
@@ -293,66 +316,35 @@ export class Physics implements PhysicsEngine {
         return { id };
     }
 
-    createSphere(opts: RigidBodyOptions & { radius: number }): PhysicsData {
-        const id = this.#idCounter;
-        this.#idCounter += 1;
+    createSphere(opts: RigidBodyDescription, transform: Transform, shape: SphereShapeDescription): PhysicsData {
+        const id = this.#storage.insert();
 
         this.#worker.postMessage({
             type: 'createSphere',
-            radius: opts.radius,
+            radius: shape.radius,
             mass: opts.mass,
-            pos: {
-                x: opts.pos?.[0] ?? 0,
-                y: opts.pos?.[1] ?? 0,
-                z: opts.pos?.[2] ?? 0,
-            },
-            scale: {
-                x: opts.scale?.[0] ?? 1,
-                y: opts.scale?.[1] ?? 1,
-                z: opts.scale?.[2] ?? 1,
-            },
-            quaternion: {
-                x: opts.quat?.[0] ?? 0,
-                y: opts.quat?.[1] ?? 0,
-                z: opts.quat?.[2] ?? 0,
-                w: opts.quat?.[3] ?? 1,
-            },
+            pos: transform.pos ?? [0, 0, 0],
+            scale: transform.scale ?? [1, 1, 1],
+            quat: transform.quat ?? [0, 0, 0, 1],
             isGhost: opts.isGhost,
-            objectToFollow: opts.objectToFollow?.id,
             shouldRotate: opts.shouldRotate ?? true,
             id,
         });
 
-        if (opts.objectToFollow) console.log(opts.objectToFollow.id);
-
         return { id };
     }
 
-    createCapsule(opts: RigidBodyOptions & { radius: number, height: number }): PhysicsData {
-        const id = this.#idCounter;
-        this.#idCounter += 1;
+    createCapsule(opts: RigidBodyDescription, transform: Transform, shape: CapsuleShapeDescription): PhysicsData {
+        const id = this.#storage.insert();
 
         this.#worker.postMessage({
             type: 'createCapsule',
-            radius: opts.radius,
-            height: opts.height,
+            radius: shape.radius,
+            height: shape.height,
             mass: opts.mass,
-            pos: {
-                x: opts.pos?.[0] ?? 0,
-                y: opts.pos?.[1] ?? 0,
-                z: opts.pos?.[2] ?? 0,
-            },
-            scale: {
-                x: opts.scale?.[0] ?? 1,
-                y: opts.scale?.[1] ?? 1,
-                z: opts.scale?.[2] ?? 1,
-            },
-            quaternion: {
-                x: opts.quat?.[0] ?? 0,
-                y: opts.quat?.[1] ?? 0,
-                z: opts.quat?.[2] ?? 0,
-                w: opts.quat?.[3] ?? 1,
-            },
+            pos: transform.pos ?? [0, 0, 0],
+            scale: transform.scale ?? [1, 1, 1],
+            quat: transform.quat ?? [0, 0, 0, 1],
             shouldRotate: opts.shouldRotate ?? true,
             id,
         });

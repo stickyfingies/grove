@@ -1,8 +1,14 @@
 import { MeshData } from '@grove/graphics';
-import { assetLoader, graphics, physics, world } from '@grove/engine';
+import { assetLoader, graphics, world } from '@grove/engine';
 import { PhysicsData } from '@grove/physics';
 import { Mesh } from 'three';
 import { CreateEntityEvent, DeleteComponentEvent, DeleteEntityEvent, SetComponentEvent, SignatureChangedEvent } from '@grove/ecs/lib/entity-manager';
+import { AssetsLoadedEvent } from '@grove/engine/lib/load';
+
+/**
+ * This is defined in `grove/app/preload.cjs`
+ */
+declare const webApi: any;
 
 type GraphData = {
     assets: any[],
@@ -35,7 +41,7 @@ function defineBatchAction(action: string, func: Function) {
     });
 }
 
-function defineAction(action: string, func: Function) {
+function defineAction(action: string, func: (value: any) => void) {
     socket.addEventListener('message', (event) => {
         const data: MessageData = JSON.parse(event.data);
         if (data.action === action) data.args.forEach(func);
@@ -58,15 +64,21 @@ world.events.on('deleteEntity', ({ entity_id }: DeleteEntityEvent) => {
     commit('deleteEntity', { entity_id });
 });
 
-world.events.on('signatureChanged', ({ old_signature, new_signature }: SignatureChangedEvent) => {
+world.events.on('signatureChanged', ({ old_signature, new_signature, added_components, removed_components }: SignatureChangedEvent) => {
     commit('signatureChanged', {
         old_signature: Array.from(old_signature).map((e) => e.name),
         new_signature: Array.from(new_signature).map((e) => e.name),
+        added_components: Array.from(added_components).map((e) => e.name),
+        removed_components: Array.from(removed_components).map((e) => e.name)
     });
 });
 
 world.events.on('deleteMeshComponent', ({ data: mesh }: DeleteComponentEvent) => {
-    commit('removeMesh', { mesh_id: mesh.id })
+    commit('removeMesh', { mesh_id: mesh.id });
+});
+
+assetLoader.events.on('assetsLoaded', (event: AssetsLoadedEvent) => {
+    commit('assetsLoaded', event);
 });
 
 const dataMappers = new Map<string, Function>();
@@ -105,7 +117,7 @@ webApi.handleGraphData((data: GraphData) => {
         let asset = src;
         // optimized in-place
         if (src !== 'sphere') {
-            asset = assetLoader.loadModel(src);
+            asset = assetLoader.loadModel({ uri: src });
         }
         assetTable[id] = asset;
     })
@@ -125,12 +137,12 @@ webApi.handleGraphData((data: GraphData) => {
             const body = (function parseShape(asset: string) {
                 switch (asset) {
                     case 'sphere': {
-                        return physics.createSphere({
-                            mass: 100,
-                            pos: [0, 120, 0],
-                            shouldRotate: false,
-                            radius: 1
-                        });
+                        // return physics.createSphere({
+                        //     mass: 100,
+                        //     pos: [0, 120, 0],
+                        //     shouldRotate: false,
+                        //     radius: 1
+                        // });
                     }
                     default: {
                         console.error(`${asset} is not a recognized asset source`);

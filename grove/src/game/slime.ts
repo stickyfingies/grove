@@ -1,13 +1,14 @@
-import { GameSystem } from '@grove/engine';
-import HealthScript, { DeathData } from './health';
+import { GameSystem, Model, ModelShape } from '@grove/engine';
+import Health, { Death } from './health';
 import { MeshData } from '@grove/graphics';
 import { PLAYER_TAG } from './player';
-import { PhysicsData } from '@grove/physics';
+import { PhysicsData, RigidBodyDescription } from '@grove/physics';
 import { LogService } from '@grove/engine';
-import { Vector3 } from 'three';
+import { DynamicDrawUsage, InstancedBufferAttribute, InstancedMesh, Mesh, Object3D, Vector3 } from 'three';
 import { distance, multiply, subtract } from 'mathjs';
 import { dealDamage } from './damage.system';
 import { assetLoader, graphics, physics, world } from '@grove/engine';
+import { SphereShape } from '@grove/engine/lib/load';
 
 const [log] = LogService('slime');
 
@@ -42,7 +43,7 @@ export default class SlimeScript extends GameSystem {
         const [playerBody] = world.getComponent(player, [PhysicsData]);
 
         // handle dead slimes
-        world.executeQuery([MeshData, Slime, DeathData], ([mesh], entity) => {
+        world.executeQuery([MeshData, Slime, Death], ([mesh], entity) => {
             world.events.emit('enemyDied', entity);
             graphics.removeObjectFromScene(mesh);
             world.deleteEntity(entity);
@@ -55,7 +56,7 @@ export default class SlimeScript extends GameSystem {
             const playerPos = physics.getBodyPosition(playerBody);
             const slimePos = physics.getBodyPosition(body);
 
-            const distanceToPlayer = distance(playerPos, slimePos);;
+            const distanceToPlayer = distance(playerPos, slimePos) as number;
             const vectorToPlayer = subtract(playerPos, slimePos);
 
             const { speed, lastHop } = slimeData;
@@ -66,7 +67,7 @@ export default class SlimeScript extends GameSystem {
 
             // The player is a valid target if they are closeby.
             if (distanceToPlayer < 20) {
-                const velocity = multiply(vectorToPlayer, speed * 5);
+                const velocity = multiply(vectorToPlayer, speed);
 
                 // The player should be weighted as a higher priority target than other slimes.
                 // Multiplying everything by 20 biases the final average towards the player.
@@ -82,13 +83,13 @@ export default class SlimeScript extends GameSystem {
                     const [otherBody] = world.getComponent(other, [PhysicsData]);
                     const otherPos = physics.getBodyPosition(otherBody);
 
-                    const distanceToOther = distance(otherPos, slimePos);
+                    const distanceToOther = distance(otherPos, slimePos) as number;
                     const vectorToOther = subtract(otherPos, slimePos);
 
                     if (distanceToOther < 20) {
                         slimesInVicinity += 1;
                         targets += 1;
-                        const velocity = multiply(vectorToOther, speed * 3);
+                        const velocity = multiply(vectorToOther, speed);
                         accumulatedVelocity.x += velocity[0];
                         accumulatedVelocity.y += velocity[1];
                         accumulatedVelocity.z += velocity[2];
@@ -115,7 +116,7 @@ export default class SlimeScript extends GameSystem {
                 // Add a hop force if the slime is standing on something
                 physics.addForceConditionalRaycast(
                     body,
-                    [accumulatedVelocity.x, 30, accumulatedVelocity.z],
+                    [accumulatedVelocity.x, 3, accumulatedVelocity.z],
                     slimePos,
                     [
                         slimePos[0] + (Math.random() * 3 - 1.5),
@@ -127,13 +128,70 @@ export default class SlimeScript extends GameSystem {
         }
     }
 
+    createInstancedSlime({ geometries, materials, meshes }: Model): InstancedMesh[] {
+        const COUNT = 400;
+
+        const transformBuffer = new SharedArrayBuffer(Float32Array.BYTES_PER_ELEMENT * 16 * COUNT);
+        const transformArray = new Float32Array(transformBuffer);
+        const instanceMatrix = new InstancedBufferAttribute(transformArray, Float32Array.BYTES_PER_ELEMENT);
+        instanceMatrix.setUsage(DynamicDrawUsage);
+
+        const instancedMeshes = meshes
+            .map(({ geometry, material, materialCount }) => {
+                // * lookup geometry / material
+                const geometryIndex = geometry - 1;
+                const materialIndex = material - 1;
+                const geometryInstance = geometries[geometryIndex];
+                const materialInstance = materials.slice(materialIndex, materialIndex + materialCount);
+
+                // * create instanced mesh
+                const instancedMesh = new InstancedMesh(geometryInstance, materialInstance[0], COUNT);
+
+                // * set up matrix array
+                // const transformBuffer = new SharedArrayBuffer(Float32Array.BYTES_PER_ELEMENT * 16 * COUNT);
+                // const transformArray = new Float32Array(transformBuffer);
+                // instancedMesh.instanceMatrix = new InstancedBufferAttribute(transformArray, Float32Array.BYTES_PER_ELEMENT);
+                // instancedMesh.instanceMatrix.setUsage(DynamicDrawUsage);
+                instancedMesh.instanceMatrix = instanceMatrix;
+                // instancedMesh.userData.transformBuffer = transformBuffer;
+
+                // * set transforms
+                for (let i = 0; i < COUNT; i++) {
+                    const dummy = new Object3D();
+                    dummy.position.set(Math.random() * 60 - 30, i, Math.random() * 60 - 30);
+                    dummy.updateMatrix();
+                    instancedMesh.setMatrixAt(i, dummy.matrix);
+                }
+                instancedMesh.instanceMatrix.needsUpdate = true;
+
+                return instancedMesh;
+            });
+        instancedMeshes.forEach((mesh) => {
+            mesh.scale.set(0.7, 0.7, 0.7);
+            graphics.addObjectToScene(mesh)
+        });
+        return instancedMeshes;
+    }
+
     async createSlime() {
         const slime = world.createEntity();
 
+        // data (json, more or less)
         const slimeData = { speed: 0.75, lastHop: performance.now() };
-        const health = new HealthScript(5, 5);
+        const health = new Health(5, 5);
+        const modelShape: ModelShape = { uri: './models/slime/slime.glb' };
+        const sphereShape: SphereShape = { radius: 1.39 / 2 };
+        const rigidBodyDescription: RigidBodyDescription = {
+            mass: 1,
+            isGhost: false,
+            shouldRotate: true
+        };
 
-        const mesh = await assetLoader.loadModel('./models/slime/slime.glb');
+        /* PIPELINE */
+
+        const mesh = await assetLoader.loadModel(modelShape);
+        const model = await assetLoader.loadModelData(modelShape);
+        // const instancedMeshes = this.createInstancedSlime(model);
         mesh.traverse(node => node.userData.entityId = slime); // create relationship between mesh->entity
         // @ts-ignore
         mesh.children[1].material = mesh.children[1].material.clone();
@@ -143,12 +201,12 @@ export default class SlimeScript extends GameSystem {
 
         const randomPos = () => Math.random() * 50 - 25;
 
-        const body = physics.createSphere({
-            mass: 10,
+        const body = physics.createSphere(rigidBodyDescription, {
             pos: [randomPos(), 60, randomPos()],
-            shouldRotate: false,
-            radius: 1.39 / 2
-        });
+            scale: [1, 1, 1],
+            quat: [0, 0, 0, 1]
+        }, sphereShape);
+
         // const perception = physics.createSphere({
         //     mass: 100,
         //     shouldRotate: false,
@@ -161,7 +219,7 @@ export default class SlimeScript extends GameSystem {
         // })
 
         world.setComponent(slime,
-            [MeshData, PhysicsData, Slime, HealthScript],
+            [Mesh, PhysicsData, Slime, Health],
             [mesh, body, slimeData, health]
         );
     }

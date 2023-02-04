@@ -14,7 +14,7 @@
     "@grove/ecs": "workspace:^",
     "@grove/graphics": "workspace:^",
     "@grove/physics": "workspace:^",
-    "three": "^0.148.0",
+    "three": "^0.149.0",
     "vite": "^3.2.3"
   },
   "devDependencies": {

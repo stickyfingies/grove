@@ -1,12 +1,5 @@
 import Ammo from './ammo/ammo';
-import { PhysicsEngine, Force, Velocity, Raycast, VelocityRaycast, ForceRaycast } from './header';
-
-type Vector3 = {
-    x: number,
-    y: number,
-    z: number,
-};
-type Vector4 = Vector3 & { w: number };
+import { PhysicsEngine, Force, Velocity, Raycast, VelocityRaycast, ForceRaycast, Vec3, Quat, Transform, RigidBodyDescription, SphereShapeDescription, CapsuleShapeDescription, TriangleMeshShapeDescription } from './header';
 
 type GenericShape =
     | Ammo.btBoxShape
@@ -14,18 +7,6 @@ type GenericShape =
     | Ammo.btCapsuleShape
     | Ammo.btStaticPlaneShape
     | Ammo.btBvhTriangleMeshShape;
-
-type Transform = {
-    pos: Vector3,
-    scale: Vector3,
-    quaternion: Vector4
-}
-
-type RigidBodyDescription = Transform & {
-    mass: number,
-    isGhost: boolean,
-    shouldRotate: boolean
-}
 
 type InitParams = {
     buffer: SharedArrayBuffer
@@ -35,40 +16,17 @@ type ObjectReference = {
     id: number
 }
 
-type SphereShapeDescription = {
-    radius: number,
-    objectToFollow: number
-}
-
-type CapsuleShapeDescription = {
-    radius: number,
-    height: number,
-}
-
-type TriangleMeshShapeDescription = {
-    triangleBuffer: ArrayBufferLike
-}
-
 type _Ammo = typeof Ammo;
 
-function scaleShape(Ammo: _Ammo, shape: GenericShape, scale: Vector3) {
-    const localScale = new Ammo.btVector3(scale.x, scale.y, scale.z);
+function scaleShape(Ammo: _Ammo, shape: GenericShape, scale: Vec3) {
+    const localScale = new Ammo.btVector3(...scale);
     shape.setLocalScaling(localScale);
     Ammo.destroy(localScale);
 }
 
-function createMotionState(Ammo: _Ammo, pos: Vector3, quaternion: Vector4) {
-    const origin = new Ammo.btVector3(
-        pos.x,
-        pos.y,
-        pos.z
-    );
-    const quat = new Ammo.btQuaternion(
-        quaternion.x,
-        quaternion.y,
-        quaternion.z,
-        quaternion.w
-    );
+function createMotionState(Ammo: _Ammo, pos: Vec3, quaternion: Quat) {
+    const origin = new Ammo.btVector3(...pos);
+    const quat = new Ammo.btQuaternion(...quaternion);
     const startTransform = new Ammo.btTransform();
     startTransform.setIdentity();
     startTransform.setOrigin(origin);
@@ -98,17 +56,15 @@ function createRigidBody(Ammo: _Ammo, shape: GenericShape, mass: number, motionS
     return body;
 }
 
-function setupRigidBody(Ammo: _Ammo, shape: GenericShape, description: RigidBodyDescription) {
+function setupRigidBody(Ammo: _Ammo, shape: GenericShape, transform: Transform, description: RigidBodyDescription) {
+    const { pos, scale, quat } = transform;
     const {
-        pos,
-        quaternion,
-        scale,
         mass,
         isGhost,
         shouldRotate
     } = description;
 
-    const motionState = createMotionState(Ammo, pos, quaternion);
+    const motionState = createMotionState(Ammo, pos, quat);
     scaleShape(Ammo, shape, scale);
     const body = createRigidBody(Ammo, shape, mass, motionState);
 
@@ -123,7 +79,7 @@ function setupRigidBody(Ammo: _Ammo, shape: GenericShape, description: RigidBody
 }
 
 const __Ammo = Ammo;
-export async function start(log: (msg: any) => void): Promise<PhysicsEngine> {
+export async function start(log: (msg: any) => void): Promise<PhysicsEngine<Ammo.btRigidBody>> {
     const Ammo = await __Ammo();
     log(import.meta.url);
 
@@ -144,12 +100,6 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine> {
     const gravity = new Ammo.btVector3(0, -9.8, 0);
     dynamicsWorld.setGravity(gravity);
     Ammo.destroy(gravity);
-
-    let tbuffer: SharedArrayBuffer;
-    let tview: Float32Array;
-
-    /** Map of ID's to RigidBodies */
-    const idToRb = new Map<number, Ammo.btRigidBody>();
 
     // `key` physically follows `value` through space
     const followRelationships = new Map<number, number>();
@@ -188,6 +138,7 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine> {
                     // 'collisionStarted' event between `first` and `bruh`
                     newCollisions.push(first, bruh);
                     newCollisions.push(bruh, first);
+                    
                     persistentCollisions.get(first)?.add(bruh);
                 }
             }
@@ -210,11 +161,6 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine> {
     };
 
     const init = (data: InitParams) => {
-        const { buffer } = data;
-
-        tbuffer = buffer;
-        tview = new Float32Array(tbuffer);
-
         // NOTE: This requires a special build of Ammo.js.  I got it from PlayCanvas, but
         // building it yourself is the reccomended route (i think).
         // @ts-ignore - Have to add `addFunction` to types definition file
@@ -222,33 +168,21 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine> {
         dynamicsWorld.setInternalTickCallback(checkForCollisionsPointer);
     }
 
-    const transform = new Ammo.btTransform();
     const update = (dt: number) => {
-        for (const [id0, id1] of followRelationships) {
-            const transform1 = new Ammo.btTransform(); // transform of target object
-            const rb0 = idToRb.get(id0)! // follower
-            const rb1 = idToRb.get(id1)! // target
-            rb1.getMotionState().getWorldTransform(transform1);
-            rb0.getMotionState().setWorldTransform(transform1);
-            rb0.setCenterOfMassTransform(transform1);
-        }
+        // for (const [id0, id1] of followRelationships) {
+        //     const transform1 = new Ammo.btTransform(); // transform of target object
+        //     const rb0 = storage.rigidBodies[id0];
+        //     const rb1 = storage.rigidBodies[id1];
+        //     rb1.getMotionState().getWorldTransform(transform1);
+        //     rb0.getMotionState().setWorldTransform(transform1);
+        //     rb0.setCenterOfMassTransform(transform1);
+        // }
         dynamicsWorld.stepSimulation(dt);
-        for (const [id, rb] of idToRb) {
-            rb.getMotionState().getWorldTransform(transform);
-
-            const offset = id * 3;
-            tview[offset + 0] = transform.getOrigin().x();
-            tview[offset + 1] = transform.getOrigin().y();
-            tview[offset + 2] = transform.getOrigin().z();
-        }
     }
 
-    const removeBody = (data: ObjectReference) => {
-        const { id } = data;
-        const body = idToRb.get(id)!;
+    const removeBody = (body: Ammo.btRigidBody) => {
         dynamicsWorld.removeRigidBody(body);
         // TODO - free memory (see `create_XXX_` methods)
-        idToRb.delete(id);
     }
 
     const collisionTest = (data: any) => {
@@ -291,57 +225,58 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine> {
         }
     }
 
-    const createPlane = (data: ObjectReference & RigidBodyDescription) => {
-        const { id } = data;
-
+    const createPlane = (data: Transform & RigidBodyDescription): Ammo.btRigidBody => {
         // shape
         const planeNormal = new Ammo.btVector3(0, 1, 0);
         const shape = new Ammo.btStaticPlaneShape(planeNormal, 1);
         Ammo.destroy(planeNormal);
 
-        const body = setupRigidBody(Ammo, shape, data);
+        const body = setupRigidBody(Ammo, shape, data, data);
 
         dynamicsWorld.addRigidBody(body);
-        body.setUserIndex(id);
-        idToRb.set(id, body);
 
-        // Memory left to be freed: RigidBody, shapes, motionState
+        // ! Memory left to be freed: RigidBody, shapes, motionState
+
+        return body;
     }
 
-    const createSphere = (data: ObjectReference & SphereShapeDescription & RigidBodyDescription) => {
+    const createSphere = (data: ObjectReference & SphereShapeDescription & Transform & RigidBodyDescription) => {
         const {
-            radius, id, objectToFollow
+            radius
         } = data;
 
         const shape = new Ammo.btSphereShape(radius);
-        const body = setupRigidBody(Ammo, shape, data);
+        const body = setupRigidBody(Ammo, shape, data, data);
 
         dynamicsWorld.addRigidBody(body);
-        body.setUserIndex(id);
-        idToRb.set(id, body);
-        if (objectToFollow >= 0) followRelationships.set(id, objectToFollow);
+        // console.log(rigidBodies);
 
-        // Memory left to be freed: RigidBody, shapes, motionState
+        // if (objectToFollow >= 0) followRelationships.set(id, objectToFollow);
+
+        // ! Memory left to be freed: RigidBody, shapes, motionState
+
+        return body;
     }
 
-    const createCapsule = (data: ObjectReference & CapsuleShapeDescription & RigidBodyDescription) => {
+    const createCapsule = (data: ObjectReference & Transform & CapsuleShapeDescription & RigidBodyDescription) => {
         const {
-            radius, height, id,
+            radius, height
         } = data;
 
         const shape = new Ammo.btCapsuleShape(radius, height);
-        const body = setupRigidBody(Ammo, shape, data);
+        const body = setupRigidBody(Ammo, shape, data, data);
 
         dynamicsWorld.addRigidBody(body);
-        body.setUserIndex(id);
-        idToRb.set(id, body);
+        // console.log(rigidBodies);
 
-        // Memory left to be freed: RigidBody, shapes, motionState
+        // ! Memory left to be freed: RigidBody, shapes, motionState
+
+        return body;
     }
 
-    const createTrimesh = (data: ObjectReference & TriangleMeshShapeDescription & RigidBodyDescription) => {
+    const createTrimesh = (data: ObjectReference & Transform & TriangleMeshShapeDescription & RigidBodyDescription) => {
         const {
-            triangleBuffer, id,
+            triangleBuffer
         } = data;
 
         const trimesh = new Ammo.btTriangleMesh();
@@ -360,28 +295,27 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine> {
 
         const shape = new Ammo.btBvhTriangleMeshShape(trimesh, true, true);
 
-        const body = setupRigidBody(Ammo, shape, data);
+        const body = setupRigidBody(Ammo, shape, data, data);
 
         dynamicsWorld.addRigidBody(body);
-        body.setUserIndex(id);
-        idToRb.set(id, body);
+        // console.log(rigidBodies);
 
-        // Memory left to be freed: RigidBody, shapes, motionState
+        // ! Memory left to be freed: RigidBody, shapes, motionState
+
+        return body;
     }
 
-    const addForce = (forces: Force[]) => {
-        forces.forEach(({ id, vector: [x, y, z] }: Force) => {
-            const body = idToRb.get(id)!;
-            body.activate(true);
-
+    const addForce = (forces: Force<Ammo.btRigidBody>[]) => {
+        forces.forEach(({ object, vector: [x, y, z] }) => {
+            object.activate(true);
             const force = new Ammo.btVector3(x, y, z);
-            body.applyCentralImpulse(force);
+            object.applyCentralImpulse(force);
             Ammo.destroy(force);
         });
     }
 
-    const addForceConditionalRaycast = (force_raycasts: ForceRaycast[]) => {
-        force_raycasts.forEach(({ force, raycast }: ForceRaycast) => {
+    const addForceConditionalRaycast = (force_raycasts: ForceRaycast<Ammo.btRigidBody>[]) => {
+        force_raycasts.forEach(({ force, raycast }) => {
             const src = new Ammo.btVector3(...raycast.from);
             const dst = new Ammo.btVector3(...raycast.to);
             const res = new Ammo.ClosestRayResultCallback(src, dst);
@@ -392,7 +326,7 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine> {
             if (!res.hasHit()) return;
             Ammo.destroy(res);
 
-            const body = idToRb.get(force.id)!;
+            const body = force.object;
             body.activate(true);
 
             const btForce = new Ammo.btVector3(...force.vector);
@@ -401,9 +335,9 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine> {
         });
     }
 
-    const addVelocity = (velocities: Velocity[]) => {
-        velocities.forEach(({ id, vector: [x, y, z] }: Velocity) => {
-            const body = idToRb.get(id)!;
+    const addVelocity = (velocities: Velocity<Ammo.btRigidBody>[]) => {
+        velocities.forEach(({ object, vector: [x, y, z] }) => {
+            const body = object;
             body.activate(true);
 
             // Note that this will also clamp the body's velocity to the velocity you're adding.
@@ -425,8 +359,8 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine> {
         });
     }
 
-    const addVelocityConditionalRaycast = (velocity_raycasts: VelocityRaycast[]) => {
-        velocity_raycasts.forEach(({ velocity, raycast }: VelocityRaycast) => {
+    const addVelocityConditionalRaycast = (velocity_raycasts: VelocityRaycast<Ammo.btRigidBody>[]) => {
+        velocity_raycasts.forEach(({ velocity, raycast }) => {
             const src = new Ammo.btVector3(...raycast.from);
             const dst = new Ammo.btVector3(...raycast.to);
             const res = new Ammo.ClosestRayResultCallback(src, dst);
@@ -437,7 +371,7 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine> {
             if (!res.hasHit()) return;
             Ammo.destroy(res);
 
-            const body = idToRb.get(velocity.id)!;
+            const body = velocity.object;
             body.activate(true);
 
             const currentVelocity = body.getLinearVelocity();
@@ -485,6 +419,17 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine> {
             }));
     }
 
+    const getBodyPosition = (body: Ammo.btRigidBody): Vec3 => {
+        const matrix = new Ammo.btTransform();
+        body.getMotionState().getWorldTransform(matrix);
+        const origin = matrix.getOrigin();
+        const x = origin.x();
+        const y = origin.y();
+        const z = origin.z();
+        Ammo.destroy(matrix);
+        return [x, y, z];
+    }
+
     return {
         init,
         update,
@@ -498,6 +443,7 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine> {
         addForceConditionalRaycast,
         addVelocity,
         addVelocityConditionalRaycast,
-        raycast
+        raycast,
+        getBodyPosition
     }
 }

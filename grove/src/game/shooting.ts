@@ -1,7 +1,7 @@
 import { Mesh, MeshPhongMaterial, SphereBufferGeometry, Vector3 } from 'three';
 
 import { Graphics } from '@grove/graphics';
-import { Physics, PhysicsData } from '@grove/physics';
+import { Physics, PhysicsData, Vec3 } from '@grove/physics';
 import { world } from '@grove/engine';
 
 const sound = new Audio('/audio/pop.wav');
@@ -37,7 +37,13 @@ export function shoot(
 
     const body = physics.createSphere({
         mass,
+        isGhost: false,
+        shouldRotate: true
+    }, {
         pos: position,
+        scale: [1, 1, 1],
+        quat: [0, 0, 0, 1]
+    }, {
         radius
     });
     physics.addVelocity(body, velocity);

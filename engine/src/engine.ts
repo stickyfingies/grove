@@ -3,7 +3,7 @@ import { GUI } from 'dat.gui';
 import Stats from 'stats.js';
 import autoBind from 'auto-bind';
 
-import AssetLoader from './load';
+import AssetLoader, { Model, ModelShape } from './load';
 import { Entity, EntityManager } from '@grove/ecs';
 import LogService from './log';
 import { GameSystem } from './script';
@@ -12,7 +12,8 @@ import {
     CameraData,
     Graphics,
 } from '@grove/graphics';
-import { Physics } from '@grove/physics';
+import { Physics, RigidBodyDescription } from '@grove/physics';
+import { SignatureChangedEvent } from '@grove/ecs/lib/entity-manager';
 
 export const gui = new GUI();
 export const graphics = new Graphics(LogService('graphics'), LogService('graphics:worker'));
@@ -44,7 +45,7 @@ export default class Engine {
     }
 
     async init() {
-        const [log, report] = LogService('window');
+        const [log, report] = LogService('engine');
         // @ts-ignore - Useful for debugging
         window.log = log;
         // @ts-ignore - Useful for debugging
@@ -55,10 +56,10 @@ export default class Engine {
         events.on('startLoop', () => { this.#running = true; });
         events.on('stopLoop', () => { this.#running = false; });
 
-        const token = physics.init(world.events, LogService('physics'), LogService('physics:worker'));
+        const physics_ready = physics.init(world.events, LogService('physics'), LogService('physics:worker'));
         graphics.init();
         assetLoader.init(LogService('load'));
-        await token;
+        await physics_ready;
 
         // create camera
         new Entity(world)
