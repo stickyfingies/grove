@@ -26,7 +26,7 @@
     "@types/stats.js": "^0.17.0",
     "@types/three": "^0.138.0",
     "concurrently": "^7.0.0",
-    "electron": "^17.1.0",
+    "electron": "^18.3.7",
     "typescript": "beta",
     "vite": "^2.8.0"
   },
