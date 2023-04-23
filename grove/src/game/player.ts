@@ -76,7 +76,7 @@ const body = physics.createSphere({
     shouldRotate: false,
     isGhost: false,
 }, {
-    pos: [0, 120, 0],
+    pos: [0, 20, 0],
     scale: [1, 1, 1],
     quat: [0, 0, 0, 1]
 }, {

@@ -1,0 +1,560 @@
+[
+    {
+        "data": {
+            "parent": "container",
+            "id": "script://add_entity",
+            "label": "Add Entity",
+            "type": "script",
+            "fn": "addEntity",
+            "dom": {
+                "__cy_id": "script://add_entity"
+            }
+        },
+        "position": {
+            "x": 12.80589800584326,
+            "y": -133.92912410430114
+        },
+        "group": "nodes",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": false,
+        "classes": ""
+    },
+    {
+        "data": {
+            "parent": "container",
+            "id": "script://add_asset",
+            "label": "Add Asset",
+            "type": "script",
+            "fn": "addAsset",
+            "dom": {
+                "__cy_id": "script://add_asset"
+            }
+        },
+        "position": {
+            "x": 15.81193017143355,
+            "y": 104.07087689569886
+        },
+        "group": "nodes",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": false,
+        "classes": ""
+    },
+    {
+        "data": {
+            "parent": "container",
+            "id": "script://add_mesh",
+            "label": "Add Mesh",
+            "type": "script",
+            "fn": "addMesh",
+            "dom": {
+                "__cy_id": "script://add_mesh"
+            }
+        },
+        "position": {
+            "x": -111.00037824615582,
+            "y": 580.0708788956987
+        },
+        "group": "nodes",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": false,
+        "classes": ""
+    },
+    {
+        "data": {
+            "parent": "container",
+            "id": "script://add_body",
+            "label": "Add Body",
+            "type": "script",
+            "fn": "addBody",
+            "dom": {
+                "__cy_id": "script://add_body"
+            }
+        },
+        "position": {
+            "x": 44.98088743114457,
+            "y": -645.9291261043012
+        },
+        "group": "nodes",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": false,
+        "classes": ""
+    },
+    {
+        "data": {
+            "parent": "container",
+            "id": "script://add_health",
+            "label": "Add Health",
+            "type": "script",
+            "fn": "addHealth",
+            "dom": {
+                "__cy_id": "script://add_health"
+            }
+        },
+        "position": {
+            "x": -111.00123242222689,
+            "y": 1072.0708808956983
+        },
+        "group": "nodes",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": false,
+        "classes": ""
+    },
+    {
+        "data": {
+            "parent": "container",
+            "id": "script://add_movement",
+            "label": "Add Movement",
+            "type": "script",
+            "fn": "addMovement",
+            "dom": {
+                "__cy_id": "script://add_movement"
+            }
+        },
+        "position": {
+            "x": -112.73612121846134,
+            "y": 342.07087789569886
+        },
+        "group": "nodes",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": false,
+        "classes": ""
+    },
+    {
+        "data": {
+            "parent": "container",
+            "id": "script://add_keyboardcontrols",
+            "label": "Add Keyboard Controls",
+            "type": "script",
+            "fn": "addKeyboardControls",
+            "dom": {
+                "__cy_id": "script://add_keyboardcontrols"
+            }
+        },
+        "position": {
+            "x": -111.0008868478346,
+            "y": 826.0708798956986
+        },
+        "group": "nodes",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": false,
+        "classes": ""
+    },
+    {
+        "data": {
+            "parent": "container",
+            "id": "script://add_script",
+            "label": "Add Script",
+            "type": "script",
+            "fn": "addScript",
+            "dom": {
+                "__cy_id": "script://add_script"
+            }
+        },
+        "position": {
+            "x": 212.1211314193474,
+            "y": -7.322330197377255
+        },
+        "group": "nodes",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": false,
+        "classes": ""
+    },
+    {
+        "data": {
+            "parent": "container",
+            "id": "script://save",
+            "label": "Save",
+            "type": "script",
+            "fn": "save",
+            "dom": {
+                "__cy_id": "script://save"
+            }
+        },
+        "position": {
+            "x": 178.92287302869715,
+            "y": -245.32233119737725
+        },
+        "group": "nodes",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": false,
+        "classes": ""
+    },
+    {
+        "data": {
+            "parent": "container",
+            "id": "script://reset",
+            "label": "Reset",
+            "type": "script",
+            "fn": "reset",
+            "dom": {
+                "__cy_id": "script://reset"
+            }
+        },
+        "position": {
+            "x": -133.0771289713028,
+            "y": -380.8743611436801
+        },
+        "group": "nodes",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": false,
+        "classes": ""
+    },
+    {
+        "data": {
+            "id": "container",
+            "label": "Commands"
+        },
+        "position": {
+            "x": 39.522001224022304,
+            "y": 204.57087739569857
+        },
+        "group": "nodes",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": false,
+        "classes": ""
+    },
+    {
+        "data": {
+            "parent": "container",
+            "id": "ctxmenu://meta",
+            "label": "Command Nodes",
+            "type": "ctxmenu",
+            "selector": "[type=\"ctxmenu\"]",
+            "dom": {
+                "__cy_id": "ctxmenu://meta"
+            }
+        },
+        "position": {
+            "x": 200.98088843114456,
+            "y": -500.32233219737736
+        },
+        "group": "nodes",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": false,
+        "classes": ""
+    },
+    {
+        "data": {
+            "parent": "container",
+            "id": "ctxmenu://core",
+            "label": "Backgorund",
+            "type": "ctxmenu",
+            "selector": "core",
+            "dom": {
+                "__cy_id": "ctxmenu://core"
+            }
+        },
+        "position": {
+            "x": 22.92287202869717,
+            "y": -380.92912510430114
+        },
+        "group": "nodes",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": false,
+        "classes": ""
+    },
+    {
+        "data": {
+            "parent": "container",
+            "id": "ctxmenu://entity",
+            "label": "Entity",
+            "type": "ctxmenu",
+            "selector": "[type=\"entity\"]",
+            "dom": {
+                "__cy_id": "ctxmenu://entity"
+            }
+        },
+        "position": {
+            "x": -111.01911356885542,
+            "y": -636.9291261043012
+        },
+        "group": "nodes",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": false,
+        "classes": ""
+    },
+    {
+        "data": {
+            "id": "ctxmenu_add_script",
+            "source": "ctxmenu://meta",
+            "target": "script://add_script"
+        },
+        "position": {
+            "x": 0,
+            "y": 0
+        },
+        "group": "edges",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": true,
+        "classes": ""
+    },
+    {
+        "data": {
+            "id": "entity_mesh",
+            "source": "ctxmenu://entity",
+            "target": "script://add_mesh"
+        },
+        "position": {
+            "x": 0,
+            "y": 0
+        },
+        "group": "edges",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": true,
+        "classes": ""
+    },
+    {
+        "data": {
+            "id": "entity_body",
+            "source": "ctxmenu://entity",
+            "target": "script://add_body"
+        },
+        "position": {
+            "x": 0,
+            "y": 0
+        },
+        "group": "edges",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": true,
+        "classes": ""
+    },
+    {
+        "data": {
+            "id": "entity_health",
+            "source": "ctxmenu://entity",
+            "target": "script://add_health"
+        },
+        "position": {
+            "x": 0,
+            "y": 0
+        },
+        "group": "edges",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": true,
+        "classes": ""
+    },
+    {
+        "data": {
+            "id": "entity_movement",
+            "source": "ctxmenu://entity",
+            "target": "script://add_movement"
+        },
+        "position": {
+            "x": 0,
+            "y": 0
+        },
+        "group": "edges",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": true,
+        "classes": ""
+    },
+    {
+        "data": {
+            "id": "entity_keyboardcontrols",
+            "source": "ctxmenu://entity",
+            "target": "script://add_keyboardcontrols"
+        },
+        "position": {
+            "x": 0,
+            "y": 0
+        },
+        "group": "edges",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": true,
+        "classes": ""
+    },
+    {
+        "data": {
+            "id": "core_save",
+            "source": "ctxmenu://core",
+            "target": "script://save"
+        },
+        "position": {
+            "x": 0,
+            "y": 0
+        },
+        "group": "edges",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": true,
+        "classes": ""
+    },
+    {
+        "data": {
+            "id": "core_reset",
+            "source": "ctxmenu://core",
+            "target": "script://reset"
+        },
+        "position": {
+            "x": 0,
+            "y": 0
+        },
+        "group": "edges",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": true,
+        "classes": ""
+    },
+    {
+        "data": {
+            "id": "core_entity",
+            "source": "ctxmenu://core",
+            "target": "script://add_entity"
+        },
+        "position": {
+            "x": 0,
+            "y": 0
+        },
+        "group": "edges",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": true,
+        "classes": ""
+    },
+    {
+        "data": {
+            "id": "core_asset",
+            "source": "ctxmenu://core",
+            "target": "script://add_asset"
+        },
+        "position": {
+            "x": 0,
+            "y": 0
+        },
+        "group": "edges",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": true,
+        "classes": ""
+    },
+    {
+        "data": {
+            "source": "ctxmenu://core",
+            "target": "ctxmenu://meta",
+            "id": "71be93bb-0e00-430d-b7c3-6f8120dacb3e"
+        },
+        "position": {
+            "x": 0,
+            "y": 0
+        },
+        "group": "edges",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": true,
+        "classes": ""
+    },
+    {
+        "data": {
+            "source": "ctxmenu://core",
+            "target": "ctxmenu://entity",
+            "id": "368750d9-8554-4a9e-b358-888c03e88dcd"
+        },
+        "position": {
+            "x": 0,
+            "y": 0
+        },
+        "group": "edges",
+        "removed": false,
+        "selected": false,
+        "selectable": true,
+        "locked": false,
+        "grabbable": true,
+        "pannable": true,
+        "classes": ""
+    }
+]
