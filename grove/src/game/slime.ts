@@ -1,7 +1,7 @@
 import { GameSystem, Model, ModelShape } from '@grove/engine';
 import Health, { Death } from './health';
 import { MeshData } from '@grove/graphics';
-import { PLAYER_TAG } from './player';
+import { PLAYER_TAG, player } from './player';
 import { PhysicsData, RigidBodyDescription } from '@grove/physics';
 import { LogService } from '@grove/engine';
 import { DynamicDrawUsage, InstancedBufferAttribute, InstancedMesh, Mesh, Object3D, Vector3 } from 'three';
@@ -28,14 +28,6 @@ export default class SlimeScript extends GameSystem {
         });
 
         setInterval(this.createSlime, 5000);
-
-        // deal melee damage on contact
-        const player = world.getTag(PLAYER_TAG);
-        world.events.on('collision', ({ id0, id1 }) => {
-            if (world.hasComponent(id0, Slime) && id1 === player) {
-                dealDamage(world)(3)(id1);
-            }
-        });
     }
 
     every_frame() {
@@ -114,16 +106,21 @@ export default class SlimeScript extends GameSystem {
                 accumulatedVelocity.z /= targets;
 
                 // Add a hop force if the slime is standing on something
-                physics.addForceConditionalRaycast(
-                    body,
-                    [accumulatedVelocity.x, 3, accumulatedVelocity.z],
-                    slimePos,
-                    [
-                        slimePos[0] + (Math.random() * 3 - 1.5),
-                        slimePos[1] - 1.5,
-                        slimePos[2] + (Math.random() * 3 - 1.5),
-                    ],
-                );
+                physics.addForceConditionalRaycast({
+                    force: {
+                        object: body,
+                        vector: [accumulatedVelocity.x, 3, accumulatedVelocity.z],
+                    },
+                    raycast: {
+                        id: 0,
+                        from: slimePos,
+                        to: [
+                            slimePos[0] + (Math.random() * 3 - 1.5),
+                            slimePos[1] - 1.5,
+                            slimePos[2] + (Math.random() * 3 - 1.5),
+                        ],
+                    },
+                });
             }
         }
     }
@@ -222,5 +219,7 @@ export default class SlimeScript extends GameSystem {
             [Mesh, PhysicsData, Slime, Health],
             [mesh, body, slimeData, health]
         );
+
+        physics.registerCollisionCallback(body, dealDamage(world)(3));
     }
 }

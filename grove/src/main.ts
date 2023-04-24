@@ -30,8 +30,9 @@ import { Engine } from '@grove/engine';
 
 const engine = new Engine();
 
-document.addEventListener('DOMContentLoaded', async () => {
-    await engine.init();
+// document.addEventListener('DOMContentLoaded', async () => {
+    
+    engine.init();
 
     // @ts-ignore - TSC and Vite aren't playing nice still
     const modules: Record<string, Function> = import.meta.glob('./game/**/*.ts');
@@ -47,4 +48,4 @@ document.addEventListener('DOMContentLoaded', async () => {
         .filter(({ module }) => 'default' in module)
 
     engine.attachModules(game_modules);
-});
+// });

@@ -1,5 +1,5 @@
 import Ammo from './ammo/ammo';
-import { PhysicsEngine, Force, Velocity, Raycast, VelocityRaycast, ForceRaycast, Vec3, Quat, Transform, RigidBodyDescription, SphereShapeDescription, CapsuleShapeDescription, TriangleMeshShapeDescription } from './header';
+import { PhysicsEngine, Force, Velocity, Raycast, VelocityRaycast, ForceRaycast, Vec3, Quat, Transform, RigidBodyDescription, SphereShapeDescription, CapsuleShapeDescription, TriangleMeshShapeDescription, CollisionCallback } from './header';
 
 type GenericShape =
     | Ammo.btBoxShape
@@ -7,14 +7,6 @@ type GenericShape =
     | Ammo.btCapsuleShape
     | Ammo.btStaticPlaneShape
     | Ammo.btBvhTriangleMeshShape;
-
-type InitParams = {
-    buffer: SharedArrayBuffer
-}
-
-type ObjectReference = {
-    id: number
-}
 
 type _Ammo = typeof Ammo;
 
@@ -101,10 +93,11 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine<Ammo
     dynamicsWorld.setGravity(gravity);
     Ammo.destroy(gravity);
 
-    // `key` physically follows `value` through space
-    const followRelationships = new Map<number, number>();
-
     const persistentCollisions = new Map<number, Set<number>>();
+
+    let newCollisions: number[] = [];
+
+    const collisionCallbacks = new Map<number, CollisionCallback>();
 
     const checkForCollisions = () => {
         const frameCollisions = new Map<number, Set<number>>();
@@ -125,29 +118,23 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine<Ammo
             }
         }
 
-        const newCollisions = [];
-
         // add to persistent collisions if not already (detects new collisions)
+        // 'second' is a set of IDs colliding with `first`
         for (const [first, second] of frameCollisions) {
             if (!persistentCollisions.has(first)) {
                 persistentCollisions.set(first, new Set());
             }
-
+            // `bruh` is each ID in the set of ID's colliding with `first`
             for (const bruh of second) {
                 if (!persistentCollisions.get(first)?.has(bruh)) {
                     // 'collisionStarted' event between `first` and `bruh`
                     newCollisions.push(first, bruh);
                     newCollisions.push(bruh, first);
-                    
+
                     persistentCollisions.get(first)?.add(bruh);
                 }
             }
         }
-
-        postMessage({
-            type: 'collisions',
-            collisions: newCollisions,
-        });
 
         // remove from persistent collisions if not colliding this frame
         for (const [first, second] of persistentCollisions) {
@@ -160,7 +147,7 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine<Ammo
         }
     };
 
-    const init = (data: InitParams) => {
+    const init = () => {
         // NOTE: This requires a special build of Ammo.js.  I got it from PlayCanvas, but
         // building it yourself is the reccomended route (i think).
         // @ts-ignore - Have to add `addFunction` to types definition file
@@ -178,6 +165,12 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine<Ammo
         //     rb0.setCenterOfMassTransform(transform1);
         // }
         dynamicsWorld.stepSimulation(dt);
+        for (let i = 0; i < newCollisions.length; i += 2) {
+            const rbId0 = newCollisions[i + 0];
+            const rbId1 = newCollisions[i + 1];
+            collisionCallbacks.get(rbId0)?.(rbId1);
+        }
+        newCollisions = [];
     }
 
     const removeBody = (body: Ammo.btRigidBody) => {
@@ -185,12 +178,11 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine<Ammo
         // TODO - free memory (see `create_XXX_` methods)
     }
 
-    const collisionTest = (data: any) => {
-        const { test_id } = data;
+    const _collisionTest = () => {
 
         const cbContactResult = new Ammo.ConcreteContactResultCallback();
 
-        cbContactResult.addSingleResult = (cp, colObj0Wrap, partId0, index0, colObj1Wrap, partId1, index1) => {
+        cbContactResult.addSingleResult = (cp, colObj0Wrap, _partId0, _index0, colObj1Wrap, _partId1, _index1) => {
 
             let contactPoint = Ammo.wrapPointer(cp, Ammo.btManifoldPoint);
 
@@ -225,13 +217,13 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine<Ammo
         }
     }
 
-    const createPlane = (data: Transform & RigidBodyDescription): Ammo.btRigidBody => {
+    const createPlane = (rbdesc: RigidBodyDescription, transform: Transform): Ammo.btRigidBody => {
         // shape
         const planeNormal = new Ammo.btVector3(0, 1, 0);
         const shape = new Ammo.btStaticPlaneShape(planeNormal, 1);
         Ammo.destroy(planeNormal);
 
-        const body = setupRigidBody(Ammo, shape, data, data);
+        const body = setupRigidBody(Ammo, shape, transform, rbdesc);
 
         dynamicsWorld.addRigidBody(body);
 
@@ -240,13 +232,9 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine<Ammo
         return body;
     }
 
-    const createSphere = (data: ObjectReference & SphereShapeDescription & Transform & RigidBodyDescription) => {
-        const {
-            radius
-        } = data;
-
-        const shape = new Ammo.btSphereShape(radius);
-        const body = setupRigidBody(Ammo, shape, data, data);
+    const createSphere = (rbdesc: RigidBodyDescription, t: Transform, s: SphereShapeDescription) => {
+        const shape = new Ammo.btSphereShape(s.radius);
+        const body = setupRigidBody(Ammo, shape, t, rbdesc);
 
         dynamicsWorld.addRigidBody(body);
         // console.log(rigidBodies);
@@ -258,13 +246,9 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine<Ammo
         return body;
     }
 
-    const createCapsule = (data: ObjectReference & Transform & CapsuleShapeDescription & RigidBodyDescription) => {
-        const {
-            radius, height
-        } = data;
-
-        const shape = new Ammo.btCapsuleShape(radius, height);
-        const body = setupRigidBody(Ammo, shape, data, data);
+    const createCapsule = (rbdesc: RigidBodyDescription, t: Transform, s: CapsuleShapeDescription) => {
+        const shape = new Ammo.btCapsuleShape(s.radius, s.height);
+        const body = setupRigidBody(Ammo, shape, t, rbdesc);
 
         dynamicsWorld.addRigidBody(body);
         // console.log(rigidBodies);
@@ -274,15 +258,11 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine<Ammo
         return body;
     }
 
-    const createTrimesh = (data: ObjectReference & Transform & TriangleMeshShapeDescription & RigidBodyDescription) => {
-        const {
-            triangleBuffer
-        } = data;
-
+    const createTrimesh = (rbdesc: RigidBodyDescription, t: Transform, s: TriangleMeshShapeDescription) => {
         const trimesh = new Ammo.btTriangleMesh();
         // const hull = new Ammo.btConvexHullShape();
 
-        const triangles = new Float32Array(triangleBuffer);
+        const triangles = new Float32Array(s);
         for (let i = 0; i < triangles.length; i += 9) {
             const v0 = new Ammo.btVector3(triangles[i + 0], triangles[i + 1], triangles[i + 2]);
             // hull.addPoint(v0, true);
@@ -295,7 +275,7 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine<Ammo
 
         const shape = new Ammo.btBvhTriangleMeshShape(trimesh, true, true);
 
-        const body = setupRigidBody(Ammo, shape, data, data);
+        const body = setupRigidBody(Ammo, shape, t, rbdesc);
 
         dynamicsWorld.addRigidBody(body);
         // console.log(rigidBodies);
@@ -305,118 +285,108 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine<Ammo
         return body;
     }
 
-    const addForce = (forces: Force<Ammo.btRigidBody>[]) => {
-        forces.forEach(({ object, vector: [x, y, z] }) => {
-            object.activate(true);
-            const force = new Ammo.btVector3(x, y, z);
-            object.applyCentralImpulse(force);
-            Ammo.destroy(force);
-        });
+    const addForce = (f: Force<Ammo.btRigidBody>) => {
+        const { object, vector: [x, y, z] } = f;
+        object.activate(true);
+        const force = new Ammo.btVector3(x, y, z);
+        object.applyCentralImpulse(force);
+        Ammo.destroy(force);
     }
 
-    const addForceConditionalRaycast = (force_raycasts: ForceRaycast<Ammo.btRigidBody>[]) => {
-        force_raycasts.forEach(({ force, raycast }) => {
-            const src = new Ammo.btVector3(...raycast.from);
-            const dst = new Ammo.btVector3(...raycast.to);
-            const res = new Ammo.ClosestRayResultCallback(src, dst);
-            dynamicsWorld.rayTest(src, dst, res);
-            Ammo.destroy(dst);
-            Ammo.destroy(src);
+    const addForceConditionalRaycast = (f: ForceRaycast<Ammo.btRigidBody>) => {
+        const { force, raycast } = f;
+        const src = new Ammo.btVector3(...raycast.from);
+        const dst = new Ammo.btVector3(...raycast.to);
+        const res = new Ammo.ClosestRayResultCallback(src, dst);
+        dynamicsWorld.rayTest(src, dst, res);
+        Ammo.destroy(dst);
+        Ammo.destroy(src);
 
-            if (!res.hasHit()) return;
-            Ammo.destroy(res);
+        if (!res.hasHit()) return;
+        Ammo.destroy(res);
 
-            const body = force.object;
-            body.activate(true);
+        const body = force.object;
+        body.activate(true);
 
-            const btForce = new Ammo.btVector3(...force.vector);
-            body.applyCentralImpulse(btForce);
-            Ammo.destroy(btForce);
-        });
+        const btForce = new Ammo.btVector3(...force.vector);
+        body.applyCentralImpulse(btForce);
+        Ammo.destroy(btForce);
     }
 
-    const addVelocity = (velocities: Velocity<Ammo.btRigidBody>[]) => {
-        velocities.forEach(({ object, vector: [x, y, z] }) => {
-            const body = object;
-            body.activate(true);
+    const addVelocity = (v: Velocity<Ammo.btRigidBody>) => {
+        const { object, vector: [x, y, z] } = v;
+        const body = object;
+        body.activate(true);
 
-            // Note that this will also clamp the body's velocity to the velocity you're adding.
-            // If you don't like it, talk to the character controller author!
+        // Note that this will also clamp the body's velocity to the velocity you're adding.
+        // If you don't like it, talk to the character controller author!
 
-            const { max, min } = Math;
-            const clamp = (n: number, a: number, b: number) => max(min(n, max(a, b)), min(a, b));
+        const { max, min } = Math;
+        const clamp = (n: number, a: number, b: number) => max(min(n, max(a, b)), min(a, b));
 
-            const velocity = body.getLinearVelocity();
-            const newVelocity = new Ammo.btVector3(
-                velocity.x() + x,
-                velocity.y() + y,
-                velocity.z() + z,
-            );
-            newVelocity.setX(clamp(newVelocity.x(), -x, x));
-            newVelocity.setZ(clamp(newVelocity.z(), -z, z));
-            body.setLinearVelocity(newVelocity);
-            Ammo.destroy(newVelocity);
-        });
+        const velocity = body.getLinearVelocity();
+        const newVelocity = new Ammo.btVector3(
+            velocity.x() + x,
+            velocity.y() + y,
+            velocity.z() + z,
+        );
+        newVelocity.setX(clamp(newVelocity.x(), -x, x));
+        newVelocity.setZ(clamp(newVelocity.z(), -z, z));
+        body.setLinearVelocity(newVelocity);
+        Ammo.destroy(newVelocity);
     }
 
-    const addVelocityConditionalRaycast = (velocity_raycasts: VelocityRaycast<Ammo.btRigidBody>[]) => {
-        velocity_raycasts.forEach(({ velocity, raycast }) => {
-            const src = new Ammo.btVector3(...raycast.from);
-            const dst = new Ammo.btVector3(...raycast.to);
-            const res = new Ammo.ClosestRayResultCallback(src, dst);
-            dynamicsWorld.rayTest(src, dst, res);
-            Ammo.destroy(dst);
-            Ammo.destroy(src);
+    const addVelocityConditionalRaycast = (v: VelocityRaycast<Ammo.btRigidBody>) => {
+        const { velocity, raycast } = v;
 
-            if (!res.hasHit()) return;
-            Ammo.destroy(res);
+        const src = new Ammo.btVector3(...raycast.from);
+        const dst = new Ammo.btVector3(...raycast.to);
+        const res = new Ammo.ClosestRayResultCallback(src, dst);
+        dynamicsWorld.rayTest(src, dst, res);
+        Ammo.destroy(dst);
+        Ammo.destroy(src);
 
-            const body = velocity.object;
-            body.activate(true);
+        if (!res.hasHit()) return;
+        Ammo.destroy(res);
 
-            const currentVelocity = body.getLinearVelocity();
-            const newVelocity = new Ammo.btVector3(
-                currentVelocity.x() + velocity.vector[0],
-                currentVelocity.y() + velocity.vector[1],
-                currentVelocity.z() + velocity.vector[2],
-            );
-            body.setLinearVelocity(newVelocity);
-            Ammo.destroy(newVelocity);
-        });
+        const body = velocity.object;
+        body.activate(true);
+
+        const currentVelocity = body.getLinearVelocity();
+        const newVelocity = new Ammo.btVector3(
+            currentVelocity.x() + velocity.vector[0],
+            currentVelocity.y() + velocity.vector[1],
+            currentVelocity.z() + velocity.vector[2],
+        );
+        body.setLinearVelocity(newVelocity);
+        Ammo.destroy(newVelocity);
     }
 
-    const raycast = (raycasts: Raycast[]) => {
-        raycasts.map(({ id, from: [fx, fy, fz], to: [tx, ty, tz] }: Raycast) => {
-            const src = new Ammo.btVector3(fx, fy, fz);
-            const dst = new Ammo.btVector3(tx, ty, tz);
-            // there's different kinds of callbakcs you can use
-            const res = new Ammo.ClosestRayResultCallback(src, dst);
-            dynamicsWorld.rayTest(src, dst, res);
-            Ammo.destroy(dst);
-            Ammo.destroy(src);
+    const raycast = (r: Raycast) => {
+        const { id, from: [fx, fy, fz], to: [tx, ty, tz] } = r;
+        const src = new Ammo.btVector3(fx, fy, fz);
+        const dst = new Ammo.btVector3(tx, ty, tz);
+        // there's different kinds of callbakcs you can use
+        const res = new Ammo.ClosestRayResultCallback(src, dst);
+        dynamicsWorld.rayTest(src, dst, res);
+        Ammo.destroy(dst);
+        Ammo.destroy(src);
 
-            if (!res.hasHit()) {
-                return { raycastId: id, bodyId: -1 };
-            }
+        if (!res.hasHit()) {
+            return { raycastId: id, bodyId: -1 };
+        }
 
-            const body = Ammo.btRigidBody.prototype.upcast(res.get_m_collisionObject());
-            const hitPoint = res.get_m_hitPointWorld();
-            return {
-                raycastId: id,
-                bodyId: body.getUserIndex(),
-                hitPoint: {
-                    x: hitPoint.x(),
-                    y: hitPoint.y(),
-                    z: hitPoint.z(),
-                },
-            }
-        })
-            .forEach(({ raycastId, bodyId, hitPoint }: any) => postMessage({
-                type: 'raycastResult',
-                raycastId,
-                bodyId,
-                hitPoint
-            }));
+        const body = Ammo.btRigidBody.prototype.upcast(res.get_m_collisionObject());
+        const hitPoint = res.get_m_hitPointWorld();
+        return {
+            raycastId: id,
+            bodyId: body.getUserIndex(),
+            hitPoint: {
+                x: hitPoint.x(),
+                y: hitPoint.y(),
+                z: hitPoint.z(),
+            },
+        };
     }
 
     const getBodyPosition = (body: Ammo.btRigidBody): Vec3 => {
@@ -430,11 +400,20 @@ export async function start(log: (msg: any) => void): Promise<PhysicsEngine<Ammo
         return [x, y, z];
     }
 
+    const registerCollisionCallback = (body: Ammo.btRigidBody, cb: CollisionCallback) => {
+        collisionCallbacks.set(body.getUserIndex(), cb as CollisionCallback);
+    }
+
+    const removeCollisionCallback = (body: Ammo.btRigidBody) => {
+        collisionCallbacks.delete(body.getUserIndex());
+    }
+
     return {
         init,
         update,
         removeBody,
-        collisionTest,
+        registerCollisionCallback,
+        removeCollisionCallback,
         createPlane,
         createSphere,
         createCapsule,

@@ -106,28 +106,28 @@ globalThis.onmessage = ({ data }) => {
         }
         case 'createPlane': {
             const { id } = data;
-            const body = createPlane(data);
+            const body = createPlane(data, data);
             body.setUserIndex(id);
             storage.rigidBodies[id] = body;
             break;
         }
         case 'createSphere': {
             const { id } = data;
-            const body = createSphere(data);
+            const body = createSphere(data, data, data);
             body.setUserIndex(id);
             storage.rigidBodies[id] = body;
             break;
         }
         case 'createCapsule': {
             const { id } = data;
-            const body = createCapsule(data);
+            const body = createCapsule(data, data, data);
             body.setUserIndex(id);
             storage.rigidBodies[id] = body;
             break;
         }
         case 'createTrimesh': {
             const { id } = data;
-            const body = createTrimesh(data);
+            const body = createTrimesh(data, data, data.geometry);
             body.setUserIndex(id);
             storage.rigidBodies[id] = body;
             break;

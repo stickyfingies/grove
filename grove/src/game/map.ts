@@ -2,7 +2,7 @@ import { GameSystem, world } from "@grove/engine";
 
 import maps from '../json/maps.json';
 import { Mesh, Quaternion, Vector3 } from "three";
-import { PhysicsData, Quat } from "@grove/physics";
+import { PhysicsData, Quat, _threejs_geometry_to_buffer } from "@grove/physics";
 import { MeshData } from '@grove/graphics';
 import { assetLoader, graphics, physics } from "@grove/engine";
 
@@ -29,7 +29,7 @@ export default class MapScript extends GameSystem {
                     pos: worldPos.toArray(),
                     scale: worldScale.toArray(),
                     quat: worldQuat.toArray() as Quat,
-                }, node.geometry);
+                }, _threejs_geometry_to_buffer(node.geometry));
 
                 const mapFragment = world.createEntity();
                 world.setComponent(mapFragment, [PhysicsData], [body]);

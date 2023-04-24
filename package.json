@@ -12,11 +12,12 @@
     "engine",
     "graphics",
     "physics",
-    "grove"
+    "grove",
+    "editor"
   ],
   "scripts": {
     "build": "yarn workspaces foreach -pt run build",
-    "dev": "yarn workspace @grove/grove run dev"
+    "dev": "concurrently -k 'yarn workspace @grove/grove run dev' 'yarn workspace @grove/editor run dev'"
   },
   "dependencies": {
     "concurrently": "^7.5.0",

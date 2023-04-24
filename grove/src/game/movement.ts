@@ -51,17 +51,22 @@ export default class MovementScript extends GameSystem {
 
             // walk
             const walkVelocity: Vec3 = [walkVector.x, 0, walkVector.z];
-            physics.addVelocity(body, walkVelocity);
+            physics.addVelocity({ object: body, vector: walkVelocity });
 
             const position = physics.getBodyPosition(body);
 
             if (mvmt.wantsToJump) {
-                physics.addVelocityConditionalRaycast(
-                    body,
-                    [0, mvmt.jumpVelocity, 0],
-                    position,
-                    [position[0], position[1] - 2.5, position[2]],
-                );
+                physics.addVelocityConditionalRaycast({
+                    velocity: {
+                        object: body,
+                        vector: [0, mvmt.jumpVelocity, 0],
+                    },
+                    raycast: {
+                        id: 0,
+                        from: position,
+                        to: [position[0], position[1] - 2.5, position[2]],
+                    },
+                });
             }
         });
     }

@@ -1,13 +1,10 @@
 # **The Grove**
 
-![Vite](https://a11ybadges.com/badge?logo=vite)
-![TypeScript](https://a11ybadges.com/badge?logo=typescript)
-![Three.js](https://a11ybadges.com/badge?logo=threedotjs)
-![Electron](https://a11ybadges.com/badge?logo=electron)
-
 This game is the longest hobby project I ever have - and likely ever will - have worked on.  Born in 2017 as a browser-based RPG akin to TESV: Skyrim, the game has been rebuilt from the ground-up several times over the years, and now is a sort of sandbox for testing new web technologies and applying them in a game context.
 
-## **Packages Included**
+> I encourage you to explore the [Software Architecture](), and then familiarize yourself with the [Technologies]().  The [Instructions]() can help you build the game on your PC.
+
+## **Software Architecture**
 
 - **ECS**: All game objects ("entities") and their behaviors are logically represented using the [ECS paradigm](https://en.wikipedia.org/wiki/Entity_component_system).  Yeah, the game runs on Javascript and the performance benefits of this are negligable.  On the flip side, building this system has taught me a lot about cache locality and some of the architectural benefits of composition-over-inheritance.
 - **Graphics**: This game uses [Three.js](https://github.com/mrdoob/three.js) to both order game objects into a heirarchical scene graph _(main thread)_, and then draw those objects _(render thread)_.  Every frame, the main thread computes individual object transforms, and communicates them to the render thread using [shared memory](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer), which uses WebGL to draw the objects.
@@ -18,27 +15,74 @@ them all talking to eachother.  It also includes utilities for logging, asset lo
 and so we can use GameScripts to decide what actually happens in the sumulation.  There are GameScripts for the player,
 for the camera, for enemies and health bars, and basically everything which exists in the world.
 
-## **Building**
+## **Technologies**
 
-These instructions assume you use the Yarn package manager.  If you elect to use NPM instead, replace all instances of `yarn` with `npm run`.
+> Click any of the fancy badges to open that technology's website.
 
-### ▻ **Developing the App**
+| Website | Description | Install |
+|------:|-------|---
+| ![Yarn](https://shields.io/badge/Nodejs-339933?style=flat-square&logo=node.js&logoColor=white) | "Cross-platform JavaScript runtime environment." | ✓ |
+| ![Yarn](https://shields.io/badge/Yarn-FFFFFF?style=flat-square&logo=yarn&logoColor=2C8EBB) | "A package manager that doubles as project manager." | ✓ |
+| ![TypeScript](https://shields.io/badge/Typescript-3178C6?style=flat-square&logo=typescript&logoColor=FFFFFF) | "TypeScript is JavaScript with syntax for types." | ✗ |
+| ![Three.js](https://shields.io/badge/Three.js-000000?style=flat-square&logo=three.js&logoColor=FFFFFF) | Spatial math and 3D rendering on the GPU via WebGL. | ✗ |
+| ![Vite](https://img.shields.io/badge/Vite-646CFF.svg?style=flat-square&logo=vite&logoColor=yellow) | A build tool that powerfully combines all our source files. | ✗  |
+| ![Electron](https://shields.io/badge/Electron-47848F?style=flat-square&logo=electron&logoColor=FFFFFF) | "Enables web developers to make desktop applications." | ✗
+
+## **Instructions**
+
+> This section requires a basic familiarity with computer terminal emulator programs, like `cmd.exe` on Windows.
+
+
+<details>
+<summary><b>(1) — Prerequisites</b></summary>
+
+All of the development tools use a JavaScript engine called `Node`, and its package manager, `npm`.  Together, these tools allow developers to organize, test, and distribute their software projects.
+
+1. Install [Node.js](https://nodejs.org/en) from the website.
+
+My code uses `Yarn`, an alternative package manager with cool features for managing large projects.  The following command will enable `Yarn` on your machine.
 
 ```sh
-$ yarn                # fetch dependencies (only run once)
-$ yarn dev            # launch Vite dev server and serve electron app
+$ corepack enable  # gain access to Yarn
 ```
+To demonstrate the power of these package managers, we can install all the rest of the software tools you'll use with one fell swoop:
+```sh
+$ yarn install     # install *literally* everything else
+```
+
+</details>
+
+---
+
+<details>
+<summary><b>(2) — Running / Editing the Game</b></summary>
+
+Running the following command starts the game in development mode.
+
+```sh
+$ yarn dev  # launch Vite dev server and serve electron app
+```
+
+The game's source code files are found in `grove/src/game/`, and you can change them to see the game update in real-time.
 
 The Grove uses the [Vite](https://vitejs.dev/guide/features.html#hot-module-replacement) build tool, which supports _hot module reloading_.  This means any changes you make to the code will automatically transfer to the electron app - no refresh required.
 
+</details>
 
-### ▻ **Building for Production**
+---
+
+<details>
+<summary><b>(3) — Building</b></summary>
+
+Run the following command to bundle the entire game up into a package.  The resulting binaries + distributables will be in the `out/` directory.
 
 ```sh
-$ yarn build          # bundle source files
+$ yarn build    # bundle source files
 ```
 
-The resulting binaries + distributables will be in the `out/` directory.
+</details>
+
+---
 
 ## **License**
 

@@ -3,7 +3,7 @@ import { GUI } from 'dat.gui';
 import Stats from 'stats.js';
 import autoBind from 'auto-bind';
 
-import AssetLoader, { Model, ModelShape } from './load';
+import AssetLoader from './load';
 import { Entity, EntityManager } from '@grove/ecs';
 import LogService from './log';
 import { GameSystem } from './script';
@@ -12,12 +12,11 @@ import {
     CameraData,
     Graphics,
 } from '@grove/graphics';
-import { Physics, RigidBodyDescription } from '@grove/physics';
-import { SignatureChangedEvent } from '@grove/ecs/lib/entity-manager';
+import { PhysicsData, start_physics_engine } from '@grove/physics';
 
 export const gui = new GUI();
 export const graphics = new Graphics(LogService('graphics'), LogService('graphics:worker'));
-export const physics = new Physics();
+export const physics = await start_physics_engine(LogService('physics')[0]);
 export const assetLoader = new AssetLoader();
 
 /// for things that live in the world
@@ -59,7 +58,15 @@ export default class Engine {
         const physics_ready = physics.init(world.events, LogService('physics'), LogService('physics:worker'));
         graphics.init();
         assetLoader.init(LogService('load'));
-        await physics_ready;
+        // await physics_ready;
+        world.events.on(`set${PhysicsData.name}Component`, ({ entity_id, data }) => {
+            // ! using `physics.ts` internals inside `engine.ts` ? preposterous !
+            // Move this down to the physics API surface
+            data.setUserIndex(entity_id);
+        });
+        world.events.on(`delete${PhysicsData.name}Component`, ({ data }) => {
+            physics.removeBody(data);
+        });
 
         // create camera
         new Entity(world)
@@ -107,7 +114,7 @@ export default class Engine {
 
         if (this.#running) {
             this.#physicsStats.begin();
-            physics.update();
+            physics.update(delta);
             this.#physicsStats.end();
 
             this.#scriptStats.begin();
