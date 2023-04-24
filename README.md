@@ -2,7 +2,7 @@
 
 This game is the longest hobby project I ever have - and likely ever will - have worked on.  Born in 2017 as a browser-based RPG akin to TESV: Skyrim, the game has been rebuilt from the ground-up several times over the years, and now is a sort of sandbox for testing new web technologies and applying them in a game context.
 
-> I encourage you to explore the [Software Architecture](#chapter-1), and then familiarize yourself with the [Technologies](#chapter-2).  The [Instructions](#chapter-3) can help you build the game on your PC.
+> I encourage you to explore the [Software Architecture](#chapter-1), and then familiarize yourself with the [Technologies](#chapter-2) used.  The [Instructions](#chapter-3) can help you build the game on your PC.
 
 ## **Software Architecture** <a name="chapter-1"></a>
 
