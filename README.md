@@ -21,9 +21,9 @@ for the camera, for enemies and health bars, and basically everything which exis
 
 | Website | Description | Install |
 |------:|-------|---
-| ![Yarn](https://shields.io/badge/Nodejs-339933?style=flat-square&logo=node.js&logoColor=white) | "Cross-platform JavaScript runtime environment." | ✓ |
-| ![Yarn](https://shields.io/badge/Yarn-FFFFFF?style=flat-square&logo=yarn&logoColor=2C8EBB) | "A package manager that doubles as project manager." | ✓ |
-| ![TypeScript](https://shields.io/badge/Typescript-3178C6?style=flat-square&logo=typescript&logoColor=FFFFFF) | "TypeScript is JavaScript with syntax for types." | ✗ |
+| [![Node.js](https://shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/dist/latest-v18.x/docs/api/synopsis.html) | "Cross-platform JavaScript runtime environment." | ✓ |
+| [![Yarn](https://shields.io/badge/Yarn-FFFFFF?style=flat-square&logo=yarn&logoColor=2C8EBB)](https://yarnpkg.com/getting-started/usage) | "A package manager that doubles as project manager." | ✓ |
+| [![TypeScript](https://shields.io/badge/Typescript-3178C6?style=flat-square&logo=typescript&logoColor=FFFFFF)](https://www.typescriptlang.org/) | "TypeScript is JavaScript with syntax for types." | ✗ |
 | ![Three.js](https://shields.io/badge/Three.js-000000?style=flat-square&logo=three.js&logoColor=FFFFFF) | Spatial math and 3D rendering on the GPU via WebGL. | ✗ |
 | ![Vite](https://img.shields.io/badge/Vite-646CFF.svg?style=flat-square&logo=vite&logoColor=yellow) | A build tool that powerfully combines all our source files. | ✗  |
 | ![Electron](https://shields.io/badge/Electron-47848F?style=flat-square&logo=electron&logoColor=FFFFFF) | "Enables web developers to make desktop applications." | ✗
