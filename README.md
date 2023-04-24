@@ -2,9 +2,9 @@
 
 This game is the longest hobby project I ever have - and likely ever will - have worked on.  Born in 2017 as a browser-based RPG akin to TESV: Skyrim, the game has been rebuilt from the ground-up several times over the years, and now is a sort of sandbox for testing new web technologies and applying them in a game context.
 
-> I encourage you to explore the [Software Architecture](), and then familiarize yourself with the [Technologies]().  The [Instructions]() can help you build the game on your PC.
+> I encourage you to explore the [Software Architecture](#chapter-1), and then familiarize yourself with the [Technologies](#chapter-2).  The [Instructions](#chapter-3) can help you build the game on your PC.
 
-## **Software Architecture**
+## **Software Architecture** <a name="chapter-1"></a>
 
 - **ECS**: All game objects ("entities") and their behaviors are logically represented using the [ECS paradigm](https://en.wikipedia.org/wiki/Entity_component_system).  Yeah, the game runs on Javascript and the performance benefits of this are negligable.  On the flip side, building this system has taught me a lot about cache locality and some of the architectural benefits of composition-over-inheritance.
 - **Graphics**: This game uses [Three.js](https://github.com/mrdoob/three.js) to both order game objects into a heirarchical scene graph _(main thread)_, and then draw those objects _(render thread)_.  Every frame, the main thread computes individual object transforms, and communicates them to the render thread using [shared memory](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer), which uses WebGL to draw the objects.
@@ -15,7 +15,7 @@ them all talking to eachother.  It also includes utilities for logging, asset lo
 and so we can use GameScripts to decide what actually happens in the sumulation.  There are GameScripts for the player,
 for the camera, for enemies and health bars, and basically everything which exists in the world.
 
-## **Technologies**
+## **Technologies** <a name="chapter-2"></a>
 
 > Click any of the fancy badges to open that technology's website.
 
@@ -28,7 +28,7 @@ for the camera, for enemies and health bars, and basically everything which exis
 | ![Vite](https://img.shields.io/badge/Vite-646CFF.svg?style=flat-square&logo=vite&logoColor=yellow) | A build tool that powerfully combines all our source files. | ✗  |
 | ![Electron](https://shields.io/badge/Electron-47848F?style=flat-square&logo=electron&logoColor=FFFFFF) | "Enables web developers to make desktop applications." | ✗
 
-## **Instructions**
+## **Instructions** <a name="chapter-3"></a>
 
 > This section requires a basic familiarity with computer terminal emulator programs, like `cmd.exe` on Windows.
 
