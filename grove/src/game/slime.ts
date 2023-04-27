@@ -20,7 +20,7 @@ class Slime {
 }
 
 export default class SlimeScript extends GameSystem {
-    init() {
+    initialize() {
         window.webApi.onmessage('slime', () => {
             log('spawn enemy');
             for (let i = 0; i < 20; i++)

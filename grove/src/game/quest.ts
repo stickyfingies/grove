@@ -6,7 +6,7 @@ import { UserInterface } from './userInterface';
 const SLIMES_TO_KILL = 20;
 
 export default class QuestScript extends GameSystem {
-    init() {
+    initialize() {
         // const gui = new Entity();
 
         // const guiSprite = new Sprite();

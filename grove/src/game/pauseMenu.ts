@@ -22,7 +22,7 @@
 import { events } from "@grove/engine";
 
 export default class PauseMenuScript {
-    init() {
+    initialize() {
         const pointerlockchange = () => {
             const isLocked = (document.pointerLockElement === document.body);
 

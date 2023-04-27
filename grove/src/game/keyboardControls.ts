@@ -43,7 +43,7 @@ export default class KeyboardControlScript extends GameSystem {
 
     euler = new Euler(0, 0, 0, 'YXZ');
 
-    init() {
+    initialize() {
         events.on('startLoop', () => {
             document.addEventListener('mousemove', this.onMouseMove);
             document.addEventListener('keydown', this.onKeyDown);

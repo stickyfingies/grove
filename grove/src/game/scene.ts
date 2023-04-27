@@ -17,7 +17,7 @@ import { graphics, world } from '@grove/engine';
 export default class SceneSetupScript {
     skybox!: number;
 
-    async init() {
+    async initialize() {
         this.skybox = world.createEntity();
         // skybox state
         const imagePrefix = './img/skybox/';

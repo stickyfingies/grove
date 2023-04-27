@@ -7,7 +7,7 @@ import { MeshData } from '@grove/graphics';
 import { assetLoader, graphics, physics } from "@grove/engine";
 
 export default class MapScript extends GameSystem {
-    async init() {
+    async initialize() {
         // const floor = physics.createPlane({
         //     mass: 0
         // });

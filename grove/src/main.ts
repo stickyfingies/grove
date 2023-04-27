@@ -1,51 +1,70 @@
 import './style.css';
-import { Engine } from '@grove/engine';
+import { Engine, GameSystem } from '@grove/engine';
 
-/**
- * Note to future Seth:  I'm really pissed that I didn't blog about this coding journey.
- * The Grove has been single-handedly my deepest dive into coding a large project from scratch,
- * it has taught me so much, and I think there was a lot of invaluable wisdom gained from working
- * on this.
- *
- * I recall from memory *so* many thought processes and development decisions that could've been
- * written about, and it's a shame that I didn't do so.  My best wish now is to continue work on
- * The Grove, and document _everything_ on my way.
- *
- * Buddha shine upon these TypeScript files.
- */
+type ScriptInfo = {
+    language: 'TypeScript' | 'WebAssembly',
+    glob: Record<string, () => Promise<NodeModule>>
+};
 
-/**
- * UPDATE 8/12/2021
- * ================
- * Big fat ole TODO: re-implement https://github.com/hybridalpaca/grove-revamped
- * using the modern Grove engine!!  I'm SO down!
- */
+const CONFIG: ReadonlyArray<ScriptInfo> = [{
+    language: 'WebAssembly',
+    glob: import.meta.glob('./game/**/*.js')
+}, {
+    language: 'TypeScript',
+    glob: import.meta.glob('./game/*.ts')
+}];
 
-/**
- * TODO 9/2/2021
- * =============
- * [X] Delete physics bodies
- * [ ] Procedural terrain
- */
+//////////////////////
+/// IMPLEMENTATION ///
+//////////////////////
 
-const engine = new Engine();
+async function loadGameScripts({ language, glob }: ScriptInfo) {
 
-// document.addEventListener('DOMContentLoaded', async () => {
-    
-    engine.init();
-
-    // @ts-ignore - TSC and Vite aren't playing nice still
-    const modules: Record<string, Function> = import.meta.glob('./game/**/*.ts');
-    const module_promises = Object
-        .entries(modules)
+    // **Import Code**
+    // { filepath->fn() } -> { filepath->module }
+    const modules = (await Promise.all(Object
+        .entries(glob)
         .map(([path, loadModule]) => loadModule().then((module: NodeModule) => {
-            const filename = path.split('/').pop();
-            const name = filename?.split('.')[0]!;
-            return { name, module };
-        }));
+            const filepath = path.split('/').pop();
+            const filename = filepath?.split('.')[0]!;
+            return { filename, module } as const;
+        }))))
+        .filter(({ module }) => 'default' in module);
 
-    const game_modules = (await Promise.all(module_promises))
-        .filter(({ module }) => 'default' in module)
+    // **Logging**
+    // Frogs to the bone
+    console.groupCollapsed(language);
+    modules
+        .map(({ filename, module }) => filename + ' - ' + Object.keys(module).join(', '))
+        .forEach(s => console.log(s));
+    console.groupEnd();
 
-    engine.attachModules(game_modules);
-// });
+    // **TypeScript files**
+    // Assumes 'export default class extends GameScript'
+    if (language === 'TypeScript') {
+        return modules.map(({ module }) => new (module as any).default() as GameSystem);
+    }
+    // **WebAssembly files**
+    // Assumes 'export default function `init_wasm_module() => void`'
+    else if (language === 'WebAssembly') {
+        return Promise.all(modules.map(({ module }) => (module as any).default() as GameSystem));
+    }
+
+    return 0 as never;
+
+}
+
+async function main() {
+
+    const scripts_please = CONFIG.map(loadGameScripts);
+
+    const engine = new Engine();
+    await engine.init();
+
+    (await Promise.all(scripts_please))
+        .forEach(engine.attachModules);
+
+}
+
+if (document.readyState !== 'loading') { main(); }
+else { document.addEventListener('DOMContentLoaded', main); }

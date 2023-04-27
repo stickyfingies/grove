@@ -27,7 +27,7 @@ export abstract class GameSystem {
     }
 
     /** @virtual */
-    init(): void {}
+    initialize(): void {}
 
     /** @virtual */
     every_frame(_dt: number): void {}

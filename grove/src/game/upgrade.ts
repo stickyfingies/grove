@@ -13,7 +13,7 @@ import { graphics, physics, world } from '@grove/engine';
  * Spawns hearts which heal the player for 15 hp each upon contact.
  */
 export default class UpgradeScript {
-    async init() {
+    async initialize() {
         const upgradeTexture = await new TextureLoader().loadAsync('./img/HealthUpgrade.png');
 
         const makeUpgrade = async () => {

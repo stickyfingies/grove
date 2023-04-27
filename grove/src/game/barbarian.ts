@@ -7,7 +7,7 @@ import Health, { Death } from "./health";
 export class BarbarianData { };
 
 export default class BarbarianScript extends GameSystem {
-    init() {
+    initialize() {
         window.webApi.onmessage('barbarian', () => {
             this.spawnBarbarian();
         });

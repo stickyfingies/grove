@@ -93,18 +93,15 @@ export default class Engine {
         requestAnimationFrame(this.update);
     }
 
-    attachModules(gameModules: any[]) {
-        // Debug: list functions present in modules
-        console.groupCollapsed('Game Modules')
-        gameModules.forEach(({ name, module }) => {
-            console.log(name + ' - ' + Object.keys(module).join(', '));
-        });
-        console.groupEnd();
-
-        this.#gameScripts = gameModules
-            .map(({ module }) => new module.default(this));
-
-        this.#gameScripts.forEach(script => { if ('init' in script) script.init() });
+    /**
+     * Takes a `GameScript[]` and initializes them.
+     * 
+     * Also registers `GameScript`s to have their `every_frame(dt)` function
+     * called every frame.
+     */
+    attachModules(scripts: GameSystem[]) {
+        this.#gameScripts = this.#gameScripts.concat(scripts);
+        scripts.forEach(script => { if ('initialize' in script) script.initialize() });
     }
 
     update(now: number) {

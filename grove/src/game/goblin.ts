@@ -18,7 +18,7 @@ class GoblinData { }
 export default class GoblinScript extends GameSystem {
     shootTimer?: NodeJS.Timer;
 
-    async init() {
+    async initialize() {
         setInterval(this.createGoblin, 15_000);
     }
 
