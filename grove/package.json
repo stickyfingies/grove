@@ -41,6 +41,7 @@
     "dat.gui": "^0.7.9",
     "electron-squirrel-startup": "^1.0.0",
     "events": "^3.3.0",
+    "markdown-link-extractor": "^3.1.0",
     "mathjs": "^10.5.1",
     "stats.js": "^0.17.0",
     "three": "^0.149.0",

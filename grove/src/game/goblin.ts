@@ -10,6 +10,9 @@ import { CapsuleShape } from '@grove/engine/lib/load';
 
 class GoblinData { }
 
+// A "Goblin" is an [avatar](./model/path.glb).
+// which [target, shoot]s the [player].
+
 // window.webApi.onmessage('goblin', () => {
 //     log('spawn enemy');
 //     this.createGoblin();
@@ -31,6 +34,7 @@ export default class GoblinScript extends GameSystem {
     }
 
     async createGoblin() {
+
         const goblin = world.createEntity();
 
         const modelShape = { uri: './models/villager-male/villager-male.glb' };
@@ -44,7 +48,7 @@ export default class GoblinScript extends GameSystem {
             height: 1.7
         };
         const health = new Health(3, 3);
-        // const attack = new AttackScript(goblin, world.getTag(PLAYER_TAG));
+        const attack = new AttackScript(goblin, world.getTag(PLAYER_TAG));
         const gbln = {};
 
         const mesh = await assetLoader.loadModel(modelShape);
@@ -57,6 +61,8 @@ export default class GoblinScript extends GameSystem {
             quat: [0, 0, 0, 1]
         }, capsuleShape);
 
-        world.setComponent(goblin, [PhysicsData, Mesh, GoblinData, Health], [body, mesh, gbln, health]);
+        world.setComponent(goblin,
+            [PhysicsData, Mesh, GoblinData, Health, AttackScript],
+            [body, mesh, gbln, health, attack]);
     }
 }

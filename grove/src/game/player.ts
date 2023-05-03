@@ -14,7 +14,7 @@ import { Movement } from './movement';
 import { PhysicsData } from '@grove/physics';
 import { Score } from './score';
 import { shoot } from './shooting';
-import { CAMERA_TAG, CameraData, SpriteData, MeshData } from '@grove/graphics';
+import { CAMERA_TAG, CameraData, SpriteData } from '@grove/graphics';
 import { UserInterface } from './userInterface';
 import { dealDamage } from './damage.system';
 import { assetLoader, events, graphics, physics, world, LogService } from '@grove/engine';
@@ -34,35 +34,21 @@ const getCameraDir = () => {
     return new Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
 };
 
-// scratch canvas context
-// const RESOLUTION = 256;
-// const canvas = document.createElement('canvas');
-// canvas.width = RESOLUTION;
-// canvas.height = RESOLUTION;
-// const ctx = canvas.getContext('2d')!;
-// this.hudCanvas = canvas;
-// this.hudCtx = ctx;
-
-const player_components = { "graphics": { "id": "0.7273584832990544", "label": "villager-male.glb", "type": "asset", "source": "./models/villager-male/villager-male.glb" } }
-/// to an array of components
-
 export const player = world.createEntity();
-
 world.addTag(player, PLAYER_TAG);
 
 const mesh = await assetLoader.loadModel({ uri: './models/villager-male/villager-male.glb' });
-graphics.addObjectToScene(mesh);
 
-export const frustumCamera = new PerspectiveCamera(30, 1, 0.1, 10);
-frustumCamera.rotateY(Math.PI);
-frustumCamera.translateY(2);
-frustumCamera.rotateX(-Math.PI / 9);
-frustumCamera.translateZ(1);
-graphics.addObjectToScene(frustumCamera);
+export const frustumCamera = new PerspectiveCamera(30, 1, 0.1, 10)
+    .rotateY(Math.PI)
+    .translateY(2)
+    .rotateX(-Math.PI / 9)
+    .translateZ(1);
 const helper = new CameraHelper(frustumCamera);
 frustumCamera.add(helper);
-graphics.addObjectToScene(helper);
 mesh.add(frustumCamera);
+
+graphics.addObjectToScene(mesh);
 // graphics.changeCamera(frustumCamera); // for testing
 
 const health = new Health(250, 250);

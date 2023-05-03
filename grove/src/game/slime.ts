@@ -1,7 +1,7 @@
 import { GameSystem, Model, ModelShape } from '@grove/engine';
 import Health, { Death } from './health';
 import { MeshData } from '@grove/graphics';
-import { PLAYER_TAG, player } from './player';
+import { PLAYER_TAG } from './player';
 import { PhysicsData, RigidBodyDescription } from '@grove/physics';
 import { LogService } from '@grove/engine';
 import { DynamicDrawUsage, InstancedBufferAttribute, InstancedMesh, Mesh, Object3D, Vector3 } from 'three';

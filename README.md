@@ -1,5 +1,7 @@
 # **The Grove**
 
+> **Note** This document is also a config file!  Links with <sup>⚙️</sup> after them can be changed to affect project behavior.
+
 This game is the longest hobby project I ever have - and likely ever will - have worked on.  Born in 2017 as a browser-based RPG akin to TESV: Skyrim, the game has been rebuilt from the ground-up several times over the years, and now is a sort of sandbox for testing new web technologies and applying them in a game context.
 
 > I encourage you to explore the [Software Architecture](#chapter-1), and then familiarize yourself with the [Technologies](#chapter-2) used.  The [Instructions](#chapter-3) can help you build the game on your PC.
@@ -30,7 +32,7 @@ for the camera, for enemies and health bars, and basically everything which exis
 
 ## **Instructions** <a name="chapter-3"></a>
 
-> This section requires a basic familiarity with computer terminal emulator programs, like `cmd.exe` on Windows.
+> **Note** This section requires a basic familiarity with computer terminal emulator programs, like `cmd.exe` on Windows.
 
 
 <details>
@@ -74,7 +76,8 @@ The Grove uses the [Vite](https://vitejs.dev/guide/features.html#hot-module-repl
 <details>
 <summary><b>(3) — Building</b></summary>
 
-Run the following command to bundle the entire game up into a package.  The resulting binaries + distributables will be in the `out/` directory.
+Run the following command to bundle the entire game up into a package. The resulting binaries + distributables will go in
+[app/build](SETTINGS.md#build-output-location)<sup>⚙️</sup>.
 
 ```sh
 $ yarn build    # bundle source files
