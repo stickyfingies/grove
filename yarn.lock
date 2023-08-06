@@ -530,18 +530,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@grove/ecs@workspace:^, @grove/ecs@workspace:ecs":
+"@grove/ecs@workspace:^, @grove/ecs@workspace:src/ecs":
   version: 0.0.0-use.local
-  resolution: "@grove/ecs@workspace:ecs"
+  resolution: "@grove/ecs@workspace:src/ecs"
   dependencies:
     vite: ^3.2.4
     vite-plugin-dts: ^1.7.0
   languageName: unknown
   linkType: soft
 
-"@grove/editor@workspace:editor":
+"@grove/editor@workspace:src/editor":
   version: 0.0.0-use.local
-  resolution: "@grove/editor@workspace:editor"
+  resolution: "@grove/editor@workspace:src/editor"
   dependencies:
     "@types/cytoscape": ^3.19.9
     "@types/cytoscape-edgehandles": ^4.0.0
@@ -557,9 +557,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@grove/engine@workspace:^, @grove/engine@workspace:engine":
+"@grove/engine@workspace:^, @grove/engine@workspace:src/engine":
   version: 0.0.0-use.local
-  resolution: "@grove/engine@workspace:engine"
+  resolution: "@grove/engine@workspace:src/engine"
   dependencies:
     "@grove/ecs": "workspace:^"
     "@grove/graphics": "workspace:^"
@@ -570,9 +570,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@grove/graphics@workspace:^, @grove/graphics@workspace:graphics":
+"@grove/graphics@workspace:^, @grove/graphics@workspace:src/graphics":
   version: 0.0.0-use.local
-  resolution: "@grove/graphics@workspace:graphics"
+  resolution: "@grove/graphics@workspace:src/graphics"
   dependencies:
     "@types/node": ^17.0.31
     "@types/three": ^0.140.0
@@ -584,9 +584,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@grove/grove@workspace:grove":
+"@grove/grove@workspace:src/grove":
   version: 0.0.0-use.local
-  resolution: "@grove/grove@workspace:grove"
+  resolution: "@grove/grove@workspace:src/grove"
   dependencies:
     "@electron-forge/cli": ^6.0.0-beta.63
     "@electron-forge/maker-deb": ^6.0.0-beta.63
@@ -620,9 +620,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@grove/physics@workspace:^, @grove/physics@workspace:physics":
+"@grove/physics@workspace:^, @grove/physics@workspace:src/physics":
   version: 0.0.0-use.local
-  resolution: "@grove/physics@workspace:physics"
+  resolution: "@grove/physics@workspace:src/physics"
   dependencies:
     "@types/node": ^17.0.31
     "@types/three": ^0.140.0

@@ -1,9 +1,14 @@
 {
   "compilerOptions": {
     "declaration": true,
-    "declarationDir": "lib",
+    "declarationDir": "dist",
     "declarationMap": true,
-    "experimentalDecorators": true,
+    "incremental": true,
+    "composite": true,
+    "types": [
+      "vite/client",
+      "node"
+    ],
     "lib": [
       "WebWorker",
       "DOM",
@@ -16,7 +21,7 @@
     "moduleResolution": "Node",
     "strict": true,
     "sourceMap": true,
-    "noEmit": true,
+    // "noEmit": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "strictNullChecks": true,
@@ -28,14 +33,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "allowJs": false,
-    "baseUrl": "node_modules",
-    "paths": {
-      "three": [
-        "three"
-      ]
-    }
+    "skipLibCheck": true
   },
-  "include": [
-    "src/**/*.ts"
-  ],
+  "include": ["src/*.ts"],
 }

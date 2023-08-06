@@ -6,23 +6,27 @@
   "description": "Typescipt RPG",
   "author": "Seth Traman",
   "license": "MIT",
-  "type": "module",
-  "workspaces": [
-    "ecs",
-    "engine",
-    "graphics",
-    "physics",
-    "grove",
-    "editor"
-  ],
+
   "scripts": {
     "build": "yarn workspaces foreach -pt run build",
     "dev": "concurrently -k 'yarn workspace @grove/grove run dev' 'yarn workspace @grove/editor run dev'"
   },
+
+  "type": "module",
+  "workspaces": [
+    "src/ecs",
+    "src/engine",
+    "src/graphics",
+    "src/physics",
+    "src/grove",
+    "src/editor"
+  ],
+
   "dependencies": {
     "concurrently": "^7.5.0",
     "typescript": "beta"
   },
+  
   "resolutions": {
     "@grove/**/three": "0.135.0",
     "three": "0.135.0"

@@ -32,33 +32,14 @@ export default defineConfig({
     assetsDir: '',
     target: 'esnext',
     lib: {
-      entry: resolvePath('lib/index.ts'),
-      name: '3-AD',
+      entry: resolvePath('src/index.ts'),
+      name: 'Firearm',
       formats: ['es'],
-      fileName: format => `index.${format}.js`
+      fileName: (format) => `index.${format}.js`
     },
-    rollupOptions: {
-      // input: {
-      //   main: resolvePath('index.html'),
-      // },
-      external: ['three'],
-    }
   },
   worker: {
     format: 'es'
   },
-  plugins: [
-    dts(),
-    postbuild(),
-    {
-      name: "configure-response-headers",
-      configureServer: (server) => {
-        server.middlewares.use((_req, res, next) => {
-          res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
-          res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-          next();
-        });
-      },
-    },
-  ]
+  plugins: [dts(), postbuild()]
 });
