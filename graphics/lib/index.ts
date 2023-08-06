@@ -112,7 +112,7 @@ class Storage {
         } else {
             this.#objectId += 1;
             if (this.#objectId > this.capacity) {
-                report(`exceeded maximum object count: ${this.capacity}`);
+                report(`Storage.add() - exceeded maximum object count: ${this.capacity}`);
                 debugger;
             }
         }

@@ -32,8 +32,7 @@ async function loadGameScripts({ language, glob }: ScriptInfo) {
         .filter(({ module }) => 'default' in module);
 
     // **Logging**
-    // Frogs to the bone
-    console.groupCollapsed(language);
+    console.groupCollapsed(`loadGameScripts() - ${language}`);
     modules
         .map(({ filename, module }) => filename + ' - ' + Object.keys(module).join(', '))
         .forEach(s => console.log(s));

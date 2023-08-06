@@ -1,6 +1,6 @@
 # **The Grove**
 
-> **Note** This document is also a config file!  Links with <sup>⚙️</sup> after them can be changed to affect project behavior.
+> **Note** This document is also a config file!  Links with ⚙️ after them can be changed to affect project behavior.
 
 This game is the longest hobby project I ever have - and likely ever will - have worked on.  Born in 2017 as a browser-based RPG akin to TESV: Skyrim, the game has been rebuilt from the ground-up several times over the years, and now is a sort of sandbox for testing new web technologies and applying them in a game context.
 
