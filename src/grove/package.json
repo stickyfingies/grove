@@ -4,7 +4,9 @@
   "main": "./app/index.cjs",
   "license": "MIT",
   "private": true,
+
   "scripts": {
+    "test": "vitest",
     "start": "yarn build && yarn electron:prod",
     "dev": "concurrently -k 'vite --force' 'yarn electron:dev'",
     "build": "vite build",
@@ -14,6 +16,7 @@
     "electron:build": "electron-forge make",
     "electron:package": "electron-forge package"
   },
+
   "devDependencies": {
     "@electron-forge/cli": "^6.0.0-beta.63",
     "@electron-forge/maker-deb": "^6.0.0-beta.63",
@@ -28,7 +31,8 @@
     "concurrently": "^7.0.0",
     "electron": "^17.1.0",
     "typescript": "beta",
-    "vite": "^2.8.0"
+    "vite": "^2.8.0",
+    "vitest": "^0.34.1"
   },
   "dependencies": {
     "@grove/ecs": "workspace:^",

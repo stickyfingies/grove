@@ -9,6 +9,10 @@
       "@grove/ecs": ["ecs/src"]
     },
 
+    "types": [
+      "vite/client"
+    ],
+
     "declaration": true,
     "declarationDir": "lib",
     "declarationMap": true,

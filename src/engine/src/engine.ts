@@ -134,4 +134,69 @@ export default class Engine {
 
         requestAnimationFrame(this.update);
     }
+
+    /**
+     * Used with `import.meta.glob` to dynamically load and run scripts
+     */
+    async run_scripts(scriptConfig: ScriptConfig) {
+
+        const gameSystems: GameSystem[] = [];
+
+        scriptConfig.typescript ??= [];
+        scriptConfig.webassembly ??= [];
+
+        for (const glob of scriptConfig.typescript) {
+            console.groupCollapsed('typescript');
+            const modules = await loadModules(glob);
+            const systems = modules.map(({ module }) => new (module as any).default() as GameSystem)
+            systems.forEach((system) => gameSystems.push(system));
+            console.groupEnd();
+        }
+
+        for (const glob of scriptConfig.webassembly) {
+            console.groupCollapsed('webassembly');
+            const modules = await loadModules(glob);
+            const systems = modules.map(({ module }) => (module as any).default() as GameSystem);
+            systems.forEach((system) => gameSystems.push(system));
+            console.groupEnd();
+        }
+
+        const systems: GameSystem[] = await Promise.all(gameSystems);
+        this.attachModules(systems);
+    }
+}
+
+/**
+ * @example import.meta.glob("src/*.ts");
+ */
+type ImportMetaGlob = Record<string, () => Promise<NodeModule>>;
+// type F = (ValueT<ImportMeta>)
+export type ScriptConfig = {
+    typescript: ReadonlyArray<ImportMetaGlob> | undefined;
+    webassembly: ReadonlyArray<ImportMetaGlob> | undefined;
+};
+
+// **Import Code**
+// { filepath->fn() } -> { filepath->module }
+async function loadModules(glob: ImportMetaGlob) {
+    const modules = await Promise.all(Object
+        .entries(glob)
+        .map(async ([path, loadModule]) => {
+
+            const filepath = path.split('/').pop();
+            const filename = filepath?.split('.')[0]!;
+
+            try {
+                const module = await loadModule();
+                console.log(filename + ' - ' + Object.keys(module).join(', '));
+                return { filename, module } as const;
+            } catch (err) {
+                console.error("Failed to load file " + filename);
+                console.warn(err);
+                return { filename, module: {} } as const;
+            }
+
+        }));
+
+    return modules.filter(({ module }) => 'default' in module);
 }
