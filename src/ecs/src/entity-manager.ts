@@ -103,7 +103,7 @@ export class EntityManager {
 
     constructor() {
         // @ts-ignore - Useful for debugging
-        window.archetypes = this.#archetypes;
+        if (typeof window !== 'undefined') { window.archetypes = this.#archetypes; }
     }
 
     /** Allocate an ID for a new entity */

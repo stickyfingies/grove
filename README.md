@@ -93,8 +93,15 @@ $ yarn build    # bundle source files
 
  - ¹ Most images are not owned by Hybrid Alpaca Game Studios.
  
-## **Contributors**
+## **Credits**
 
+**3D Models**
+
+    KayKit : Adventurers Character Pack (1.0)
+    Created/distributed by Kay Lousberg (www.kaylousberg.com)
+    Creation date: 15/07/2023 09:00
+
+**People**
 - Seth Traman:              Lead Developer, CEO Hybrid Alapca Game Studios
 - Nate Goldsborough:        Developer, Marketing, General Maintenance, CEO Artifex Inc.
 - Casimir Kash:             Developer, Graphics, Beta Testing

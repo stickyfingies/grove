@@ -7,8 +7,8 @@
   "author": "Seth Traman",
   "license": "MIT",
   "scripts": {
-    "test": "yarn workspaces foreach -pt run test",
-    "build": "yarn workspaces foreach -pt run build",
+    "test": "yarn workspaces foreach -ptvi run test",
+    "build": "yarn workspaces foreach -ptvi run build",
     "dev": "concurrently -k 'yarn workspace @grove/grove run dev' 'yarn workspace @grove/editor run dev'"
   },
   "type": "module",
@@ -22,6 +22,7 @@
   ],
   "dependencies": {
     "concurrently": "^7.5.0",
+    "expect": "^29.6.2",
     "typescript": "beta"
   },
   "resolutions": {

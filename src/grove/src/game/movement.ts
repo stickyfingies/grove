@@ -1,12 +1,12 @@
-import { Vector3 } from 'three';
+import { Euler, Vector3 } from 'three';
 
 import { GameSystem } from '@grove/engine';
 import { PhysicsData, Vec3 } from '@grove/physics';
 import { physics, world } from '@grove/engine';
+import { CAMERA_TAG, CameraData, MeshData } from '@grove/graphics';
+import { SmoothCamera, smoothCamera } from './smoothCamera';
 
 export class Movement {
-    /** Direction the entity should walk */
-    direction = new Vector3();
 
     /** Speed that gets applied for normal movement */
     walkVelocity = 0;
@@ -25,16 +25,17 @@ export class Movement {
      * @internal
      */
     groundNormal = new Vector3();
-}
 
-function DefineTask(...args: any) {
-    // Data.set(entity, [Foo], [{ a: 3 }]);
-}
+    moveForward = false;
 
-DefineTask([PhysicsData, Movement], ([body, mvmt]: any) => {
-    body.foo;
-    mvmt.bar;
-});
+    moveBackward = false;
+
+    moveLeft = false;
+
+    moveRight = false;
+
+    euler = new Euler(0, 0, 0, 'YXZ');
+}
 
 /**
  * Uses physics API
@@ -43,9 +44,27 @@ DefineTask([PhysicsData, Movement], ([body, mvmt]: any) => {
  */
 export default class MovementScript extends GameSystem {
     every_frame() {
-        world.executeQuery([PhysicsData, Movement], ([body, mvmt]) => {
+        world.executeQuery([PhysicsData, MeshData, Movement], ([body, mesh, mvmt]) => {
+            const direction = new Vector3(0, 0, 0);
+            if (mvmt.moveForward) {
+                direction.z = -1;
+            }
+            if (mvmt.moveBackward) {
+                direction.z = 1;
+            }
+            if (mvmt.moveLeft) {
+                direction.x = -1;
+            }
+            if (mvmt.moveRight) {
+                direction.x = 1;
+            }
+
+            const [{ object: camdata, positionStep, quaternionStep, offsetY, offsetZ }] = world.getComponent(smoothCamera, [SmoothCamera]);
+            const [camera] = world.getComponent(world.getTag(CAMERA_TAG), [CameraData]);
+            direction.applyQuaternion(camdata.quaternion);
+
             // walkVector = direction * speed
-            const walkVector = mvmt.direction.normalize();
+            const walkVector = direction.normalize();
             walkVector.multiplyScalar(mvmt.walkVelocity);
             walkVector.multiplyScalar(mvmt.sprinting ? 5 : 1);
 
@@ -68,6 +87,16 @@ export default class MovementScript extends GameSystem {
                     },
                 });
             }
+
+            const [px, py, pz] = physics.getBodyPosition(body);
+            camdata.position.copy(new Vector3(px, py + 1, pz));
+            camdata.position.y += offsetY;
+            camdata.translateZ(offsetZ);
+
+            camera.position.lerp(camdata.position, positionStep);
+            camera.quaternion.slerp(camdata.quaternion, quaternionStep);
+
+            mesh.rotation.y = Math.PI + mvmt.euler.y;
         });
     }
 }

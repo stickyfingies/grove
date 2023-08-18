@@ -1,5 +1,7 @@
 import {
     CameraHelper,
+    Frustum,
+    Matrix4,
     Mesh,
     PerspectiveCamera,
     Sprite,
@@ -14,7 +16,7 @@ import { Movement } from './movement';
 import { PhysicsData } from '@grove/physics';
 import { Score } from './score';
 import { shoot } from './shooting';
-import { CAMERA_TAG, CameraData, SpriteData } from '@grove/graphics';
+import { CAMERA_TAG, CameraData, SpriteData, animate } from '@grove/graphics';
 import { UserInterface } from './userInterface';
 import { dealDamage } from './damage.system';
 import { assetLoader, events, graphics, physics, world, LogService } from '@grove/engine';
@@ -37,16 +39,52 @@ const getCameraDir = () => {
 export const player = world.createEntity();
 world.addTag(player, PLAYER_TAG);
 
-const mesh = await assetLoader.loadModel({ uri: './models/villager-male/villager-male.glb' });
+// const mesh = await assetLoader.loadModel({ uri: './models/villager-male/villager-male.glb' });
+const model = await graphics.loadModel();
+const mesh = model.mesh;
+console.log(model.animations);
+animate(model, 'Idle');
 
-export const frustumCamera = new PerspectiveCamera(30, 1, 0.1, 10)
+export const frustumCamera = new PerspectiveCamera(30, 1, 0.1, 100)
     .rotateY(Math.PI)
-    .translateY(2)
+    .translateY(3)
     .rotateX(-Math.PI / 9)
     .translateZ(1);
-const helper = new CameraHelper(frustumCamera);
-frustumCamera.add(helper);
 mesh.add(frustumCamera);
+// const helper = new CameraHelper(frustumCamera);
+// frustumCamera.add(helper);
+
+export function animatePlayer(anim_name: string) {
+    animate(model, anim_name);
+}
+
+const DELAY_BETWEEN_SWINGS = 1000; // milliseconds
+const DAMAGE = 10; // ???
+let lastSwung = 0;
+document.addEventListener('mousedown', async (e) => {
+    if (e.button !== 0) return;
+
+    if (performance.now() - lastSwung < DELAY_BETWEEN_SWINGS) return;
+
+    lastSwung = performance.now();
+
+    animatePlayer('1H_Melee_Attack_Slice_Diagonal');
+    setTimeout(() => animatePlayer('Idle'), 340);
+
+    const frustum = new Frustum().setFromProjectionMatrix(new Matrix4().multiplyMatrices(frustumCamera.projectionMatrix, frustumCamera.matrixWorldInverse));
+    let foundTarget = false;
+    graphics.scene.traverse((node) => {
+        if (foundTarget) return;
+        if (node.isMesh && (frustum.containsPoint(node.position) || frustum.intersectsObject(node))) {
+            if (world.hasComponent(node.userData.entityId, Health)) {
+                foundTarget = true;
+                const damage = getEquippedItem()?.damage ?? DAMAGE;
+                dealDamage(world)(damage)(node.userData.entityId);
+            }
+        }
+    });
+});
+
 
 graphics.addObjectToScene(mesh);
 // graphics.changeCamera(frustumCamera); // for testing
@@ -59,7 +97,7 @@ const score = {
 // create physics body
 const body = physics.createSphere({
     mass: 100,
-    shouldRotate: false,
+    shouldRotate: true,
     isGhost: false,
 }, {
     pos: [0, 20, 0],
@@ -86,8 +124,29 @@ const body = physics.createSphere({
 
 const mvmtData = new Movement();
 mvmtData.jumpVelocity = 5;
-mvmtData.walkVelocity = 7;
-const kbControl = {};
+mvmtData.walkVelocity = 14;
+const kbControl = new KeyboardControls({
+    'MoveForward': ['w_down'],
+    'MoveBackward': ['s_down'],
+    'MoveLeft': ['a_down'],
+    'MoveRight': ['d_down'],
+    'Idle': ['w_up', 'a_up', 's_up', 'd_up']
+});
+kbControl.addListener('Idle', () => {
+    animatePlayer('Idle');
+})
+kbControl.addListener('MoveForward', () => {
+    animatePlayer('Running_A');
+});
+kbControl.addListener('MoveBack', () => {
+    animatePlayer('Running_A');
+});
+kbControl.addListener('MoveLeft', () => {
+    animatePlayer('Running_A');
+});
+kbControl.addListener('MoveRight', () => {
+    animatePlayer('Running_A');
+});
 
 // createUserInterface({ x, y, font, color, text });
 
@@ -120,8 +179,12 @@ const crosshair = world.createEntity();
 
 const shootTowardsCrosshair = (e: MouseEvent) => {
     if (e.button !== 2) return;
-    const item = getEquippedItem();
-    if (!item?.ranged) return;
+
+    animatePlayer('1H_Ranged_Aiming');
+    setTimeout(() => animatePlayer('Idle'), 2000);
+
+    // const item = getEquippedItem();
+    // if (!item?.ranged) return;
     const onCollide = dealDamage(world)(5);
     const [{ position: origin }] = world.getComponent(world.getTag(CAMERA_TAG), [CameraData]);
     shoot(physics, graphics, origin, getCameraDir(), onCollide);

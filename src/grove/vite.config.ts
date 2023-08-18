@@ -43,5 +43,5 @@ export default defineConfig({
     emptyOutDir: true,
     outDir: settings.get('build-output-location') ?? '../app/build',
     target: 'esnext',
-  },
+  }
 });

@@ -10,7 +10,8 @@
     },
 
     "types": [
-      "vite/client"
+      "vite/client",
+      "vitest/importMeta"
     ],
 
     "declaration": true,
@@ -30,8 +31,8 @@
     "strict": true,
     "sourceMap": true,
     "noEmit": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "strictNullChecks": true,
     "alwaysStrict": true,
     "noImplicitAny": true,
@@ -43,6 +44,7 @@
     "allowJs": false,
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "src/**/*.test.ts"
   ],
 }

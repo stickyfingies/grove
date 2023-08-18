@@ -1,22 +1,58 @@
-import { Euler, Vector3 } from 'three';
+/**
+ * =============
+ * === IDEAS ===
+ * =============
+ * 
+ * - KeyboardControl components receive keyboard events
+ * - KeyboardControl<T> class contains mappings from KeyboardEvent -> T
+ * - Class listens for event <T> and does behaviors
+ */
 
-import { GameSystem } from '@grove/engine';
+import { Euler } from 'three';
+
 import { Movement } from './movement';
-import { PhysicsData } from '@grove/physics';
-import { CAMERA_TAG, CameraData, MeshData } from '@grove/graphics';
-import { events, physics, world } from '@grove/engine';
+import { events, world, GameSystem } from '@grove/engine';
 import { smoothCamera, SmoothCamera } from './smoothCamera';
+import EventEmitter from 'events';
 
 /**
- * Adding this component to an entity makes its movement controllable via mouse and keyboard
- * @note depends on: `PhysicsData`, `MovementData`
+ * @example
+ * // Creating a keyboard controller
+ * const kbControls = new KeyboardControls({
+ *   'w_down': 'MoveForward',
+ *   'space_up': 'Jump'
+ * });
+ * // Receiving useful events
+ * kbControls.addListener('Jump', jump);
  */
-export class KeyboardControls { }
+export class KeyboardControls extends EventEmitter {
+    #eventMap = new Map<string, string>(); // kb_event -> T_event
+    constructor(eventMapping: Record<string, string[]>) { // T_event -> kb_event[]
+        super();
+        for (const effect in eventMapping) {
+            const keyboardActions = eventMapping[effect];
+            for (const kbAction of keyboardActions) {
+                console.log(kbAction);
+                this.#eventMap.set(kbAction, effect);
+            }
+        }
+    };
+
+    public process_keyboard_event(key: string, type: 'up' | 'down') {
+        const eventName = this.#eventMap.get(`${key}_${type}`);
+        if (eventName) {
+            this.emit(eventName);
+        }
+    }
+}
 
 /**
  * Registers mouse/keyboard input events and maps them to a `Movement` component
  */
 export default class KeyboardControlScript extends GameSystem {
+
+    keyState = new Map<string, boolean>();
+
     /** W, UpArrow */
     moveForward = false;
 
@@ -58,37 +94,30 @@ export default class KeyboardControlScript extends GameSystem {
     }
 
     every_frame(_deltaTime: number) {
-        world.executeQuery([PhysicsData, Movement, MeshData], ([body, mvmt, mesh]) => {
-            mvmt.direction = new Vector3(0, 0, 0);
-            if (this.moveForward) {
-                mvmt.direction.z = -1;
+
+        const pressedKeys: string[] = [];
+
+        for (const [key, pressed] of this.keyState) {
+            if (pressed) {
+                pressedKeys.push(key);
             }
-            if (this.moveBackward) {
-                mvmt.direction.z = 1;
-            }
-            if (this.moveLeft) {
-                mvmt.direction.x = -1;
-            }
-            if (this.moveRight) {
-                mvmt.direction.x = 1;
-            }
+        }
+
+        // world.executeQuery([KeyboardControls], ([kbControls]) => {
+        //     for (const key of pressedKeys) {
+        //         console.log(key);
+        //         kbControls.process_keyboard_event(key);
+        //     }
+        // });
+
+        world.executeQuery([Movement], ([mvmt]) => {
+            mvmt.moveForward = this.moveForward;
+            mvmt.moveBackward = this.moveBackward;
+            mvmt.moveLeft = this.moveLeft;
+            mvmt.moveRight = this.moveRight;
             mvmt.wantsToJump = this.wantsToJump;
             mvmt.sprinting = this.sprint;
-
-            const [{ object: camdata, positionStep, quaternionStep, offsetY, offsetZ }] = world.getComponent(smoothCamera, [SmoothCamera]);
-            const [camera] = world.getComponent(world.getTag(CAMERA_TAG), [CameraData]);
-            mvmt.direction.applyQuaternion(camdata.quaternion);
-
-            // TODO this needs to be done AFTER MovementScript updates
-            const [px, py, pz] = physics.getBodyPosition(body);
-            camdata.position.copy(new Vector3(px, py + 1, pz));
-            camdata.position.y += offsetY;
-            camdata.translateZ(offsetZ);
-
-            camera.position.lerp(camdata.position, positionStep);
-            camera.quaternion.slerp(camdata.quaternion, quaternionStep);
-
-            mesh.rotation.y = Math.PI + this.euler.y;
+            mvmt.euler = this.euler;
         });
     }
 
@@ -112,7 +141,16 @@ export default class KeyboardControlScript extends GameSystem {
     /**
      * @event(window, 'keydown')
      */
-    private onKeyDown({ key }: KeyboardEvent) {
+    private onKeyDown(e: KeyboardEvent) {
+
+        const { key } = e;
+
+        this.keyState.set(key, true);
+
+        world.executeQuery([KeyboardControls], ([kbControls]) => {
+            kbControls.process_keyboard_event(e.key, 'down');
+        });
+
         switch (key) {
             case 'ArrowUp':
             case 'w':
@@ -150,6 +188,13 @@ export default class KeyboardControlScript extends GameSystem {
      * @event(window, 'keyup')
      */
     private onKeyUp({ key }: KeyboardEvent) {
+
+        this.keyState.set(key, false);
+
+        world.executeQuery([KeyboardControls], ([kbControls]) => {
+            kbControls.process_keyboard_event(key, 'up');
+        });
+
         switch (key) {
             case 'ArrowUp':
             case 'w':

@@ -8,7 +8,7 @@
     ],
     "target": "ESNext",
     "useDefineForClassFields": true,
-    "module": "ESNext",
+    "module": "CommonJS",
     "moduleResolution": "Node",
     "strict": true,
     "noEmit": true,

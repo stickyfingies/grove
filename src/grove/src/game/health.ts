@@ -24,21 +24,6 @@ export interface HealthData {
  */
 export class Death { }
 
-/**
- * 
- * query([HealthScript])
- *  .filter(([health]) => (health < 0))
- *  .then((e) => { e.delete([HealthScript]); e.set([DeathData], [{}]) });
- * 
- * query {
- *  matches: [HealthScript],
- * }
- * action {
- *  remove: [HealthScript]
- *  add: [DeathData]
- * }
- */
-
 export default class Health {
     constructor(
         public hp: number = 1,
