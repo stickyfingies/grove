@@ -12,7 +12,7 @@ export default class MapScript extends GameSystem {
         //     mass: 0
         // });
 
-        const mapData = maps.skjarIsles;
+        const mapData = maps.testArena;
         const map = world.createEntity();
         const mapMesh = await assetLoader.loadModel({ uri: mapData.path });
         mapMesh.name = 'Map';
@@ -32,10 +32,10 @@ export default class MapScript extends GameSystem {
                 }, _threejs_geometry_to_buffer(node.geometry));
 
                 const mapFragment = world.createEntity();
-                world.setComponent(mapFragment, [PhysicsData], [body]);
+                world.put(mapFragment, [PhysicsData], [body]);
             }
         });
         graphics.addObjectToScene(mapMesh);
-        world.setComponent(map, [MeshData], [mapMesh]);
+        world.put(map, [MeshData], [mapMesh]);
     }
 }

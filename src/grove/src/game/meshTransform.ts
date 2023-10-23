@@ -33,7 +33,7 @@ export default class MeshTransformScript {
             // if (!mesh.userData.norotate) mesh.quaternion.set(qx, qy, qz, qw);
         }
 
-        world.executeQuery([PhysicsData, MeshData], updateTransform);
-        world.executeQuery([PhysicsData, SpriteData], updateTransform);
+        world.do_with([PhysicsData, MeshData], updateTransform);
+        world.do_with([PhysicsData, SpriteData], updateTransform);
     }
 }

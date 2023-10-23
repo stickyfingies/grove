@@ -117,7 +117,7 @@ export default class Engine {
             this.#scriptStats.begin();
             for (const script of this.#gameScripts as any[]) {
                 // script is being used as a component
-                if ('update' in script) world.executeQuery([script.constructor], ([instance], e) => instance.update(e));
+                if ('update' in script) world.do_with([script.constructor], ([instance], e) => instance.update(e));
                 // this is on everything
                 if (script.every_frame) script.every_frame(delta);
             }

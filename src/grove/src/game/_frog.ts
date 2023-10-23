@@ -130,7 +130,7 @@ webApi.handleGraphData((data: GraphData) => {
             // assumes 'asset' is 'model'
             const asset = await assetTable[data.asset_id];
             graphics.addObjectToScene(asset);
-            world.setComponent(entity, [MeshData], [asset]);
+            world.put(entity, [MeshData], [asset]);
         }
         if (data.type === 'component.body') {
             const asset = await assetTable[data.asset_id];
@@ -150,7 +150,7 @@ webApi.handleGraphData((data: GraphData) => {
                     }
                 }
             })(asset);
-            if (body) world.setComponent(entity, [PhysicsData], [body]);
+            if (body) world.put(entity, [PhysicsData], [body]);
         }
         return null;
     });

@@ -124,7 +124,7 @@ export class EntityManager {
         }
         // emit 'delete' events for every component in this entity
         for (const type of archetype.signature) {
-            const [data] = this.getComponent(entity_id, [type]) as any;
+            const [data] = this.get(entity_id, [type]) as any;
             this.events.emit(`delete${type.name}Component`, { entity_id, name: type.name, data } as DeleteComponentEvent);
             if ('destroy' in data) data.destroy();
         }
@@ -141,7 +141,7 @@ export class EntityManager {
     }
 
     /** Set a component for an entity */
-    setComponent<T extends ComponentTypeList>(entity_id: number, types: T, data: ComponentDataFromSignature<T>) {
+    put<T extends ComponentTypeList>(entity_id: number, types: T, data: ComponentDataFromSignature<T>) {
         const delta: SignatureDelta = { added: new Set(types), removed: new Set() }
         // move entity to a different archetype matching its new signature
         const old_signature = this.getEntityComponentSignature(entity_id);
@@ -178,7 +178,7 @@ export class EntityManager {
     /** Delete a component for an entity.  Returns whether the component was deleted */
     deleteComponent<T extends ComponentTypeList>(entity_id: number, types: T) {
         const delta: SignatureDelta = { added: new Set(), removed: new Set(types) };
-        const data = this.getComponent(entity_id, types) as any;
+        const data = this.get(entity_id, types) as any;
 
         // calculate new signature
         const old_signature = this.getEntityComponentSignature(entity_id);
@@ -207,7 +207,7 @@ export class EntityManager {
     }
 
     /** Get a component from an entity */
-    getComponent<T extends ComponentTypeList>(entity_id: number, types: T): ComponentDataFromSignature<T> {
+    get<T extends ComponentTypeList>(entity_id: number, types: T): ComponentDataFromSignature<T> {
         const archetype = this.getArchetype(entity_id);
 
         // Check ID
@@ -239,7 +239,7 @@ export class EntityManager {
 
         // emit a `delete` event
         removeTypes.forEach((type) => {
-            const [data] = this.getComponent(entity_id, [type]);
+            const [data] = this.get(entity_id, [type]);
             const event: DeleteComponentEvent = { entity_id, name: type.name, data };
             this.events.emit(`delete${type.name}Component`, event);
             this.events.emit(`deleteComponent`, event);
@@ -253,7 +253,7 @@ export class EntityManager {
 
         // emit a `set` event
         addTypes.forEach((type) => {
-            const [data] = this.getComponent(entity_id, [type]);
+            const [data] = this.get(entity_id, [type]);
             const event: SetComponentEvent = { entity_id, name: type.name, data };
             this.events.emit(`set${type.name}Component`, event);
             this.events.emit(`setComponent`, event);
@@ -271,9 +271,19 @@ export class EntityManager {
     }
 
     /** Check if an entity has a component */
-    hasComponent(entity_id: number, type: ComponentType): boolean {
+    has(entity_id: number, type: ComponentType): boolean {
         const archetype = this.getArchetype(entity_id);
         return archetype?.hasComponent(entity_id, [type]) || false;
+    }
+
+    hasTag(tag: symbol) {
+        if (!this.#tagList.has(tag)) { return false; }
+        const entity_id = this.#tagList.get(tag)!
+        const archetype = this.getArchetype(entity_id);
+        if (!archetype) {
+           return false;
+        }
+        return true;
     }
 
     /** Add a tag to an entity.  Entities can later be retrieved using the same tag */
@@ -283,11 +293,15 @@ export class EntityManager {
 
     /** Get a specific entity by its tag */
     getTag(tag: symbol) {
-        if (!this.#tagList.has(tag)) {
+        if (!this.hasTag(tag)) {
             throw new Error(`no entity found with tag:${tag.description}`);
         }
 
         return this.#tagList.get(tag)!;
+    }
+
+    removeTag(tag: symbol) {
+        this.#tagList.delete(tag);
     }
 
     /**
@@ -312,7 +326,7 @@ export class EntityManager {
         }
     }
 
-    executeQuery<T extends ComponentTypeList>
+    do_with<T extends ComponentTypeList>
         (query: T, callback: (c: ComponentDataFromSignature<T>, id: number) => void) {
         const hash = hashSignature(new Set(query));
 

@@ -16,7 +16,7 @@ export default class BarbarianScript extends GameSystem {
     }
 
     every_frame() {
-        world.executeQuery([MeshData, BarbarianData, Death], ([mesh], entity) => {
+        world.do_with([MeshData, BarbarianData, Death], ([mesh], entity) => {
             graphics.removeObjectFromScene(mesh);
             world.deleteEntity(entity);
         });
@@ -46,7 +46,7 @@ export default class BarbarianScript extends GameSystem {
         const health = new Health(1, 1);
         const barbarian = {};
 
-        world.setComponent(capsule,
+        world.put(capsule,
             [MeshData, PhysicsData, Health, BarbarianData],
             [mesh, capsuleBody, health, barbarian]
         );

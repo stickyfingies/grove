@@ -31,7 +31,7 @@ export default class SceneSetupScript {
             const skyboxMesh = new Mesh(skyGeometry, materialArray);
             skyboxMesh.name = 'Skybox';
             graphics.addObjectToScene(skyboxMesh);
-            world.setComponent(this.skybox, [MeshData], [skyboxMesh]);
+            world.put(this.skybox, [MeshData], [skyboxMesh]);
         });
         const loader = new ImageBitmapLoader(loadingManager);
         for (let i = 0; i < 6; i++) {
@@ -55,8 +55,8 @@ export default class SceneSetupScript {
 
     every_frame() {
         // center skybox around camera
-        const [camera] = world.getComponent(world.getTag(CAMERA_TAG), [CameraData]);
-        const [mesh] = world.getComponent(this.skybox, [MeshData])
+        const [camera] = world.get(world.getTag(CAMERA_TAG), [CameraData]);
+        const [mesh] = world.get(this.skybox, [MeshData])
         camera?.position.copy(camera.position);
     }
 }

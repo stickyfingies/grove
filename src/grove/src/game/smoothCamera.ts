@@ -10,11 +10,11 @@ export class SmoothCamera {
     offsetZ = 10;
 
     constructor() {
-        const [{ position, quaternion }] = world.getComponent(world.getTag(CAMERA_TAG), [CameraData]);
+        const [{ position, quaternion }] = world.get(world.getTag(CAMERA_TAG), [CameraData]);
         this.object.position.copy(position.clone());
         this.object.quaternion.copy(quaternion.clone());
     }
 }
 
 export const smoothCamera = world.createEntity();
-world.setComponent(smoothCamera, [SmoothCamera], [new SmoothCamera()]);
+world.put(smoothCamera, [SmoothCamera], [new SmoothCamera()]);

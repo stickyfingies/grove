@@ -44,7 +44,7 @@ export class Movement {
  */
 export default class MovementScript extends GameSystem {
     every_frame() {
-        world.executeQuery([PhysicsData, MeshData, Movement], ([body, mesh, mvmt]) => {
+        world.do_with([PhysicsData, MeshData, Movement], ([body, mesh, mvmt]) => {
             const direction = new Vector3(0, 0, 0);
             if (mvmt.moveForward) {
                 direction.z = -1;
@@ -59,8 +59,8 @@ export default class MovementScript extends GameSystem {
                 direction.x = 1;
             }
 
-            const [{ object: camdata, positionStep, quaternionStep, offsetY, offsetZ }] = world.getComponent(smoothCamera, [SmoothCamera]);
-            const [camera] = world.getComponent(world.getTag(CAMERA_TAG), [CameraData]);
+            const [{ object: camdata, positionStep, quaternionStep, offsetY, offsetZ }] = world.get(smoothCamera, [SmoothCamera]);
+            const [camera] = world.get(world.getTag(CAMERA_TAG), [CameraData]);
             direction.applyQuaternion(camdata.quaternion);
 
             // walkVector = direction * speed

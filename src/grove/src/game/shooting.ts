@@ -53,7 +53,7 @@ export function shoot(
     const mesh = new Mesh(geometry, material);
     mesh.name = 'Bullet';
     graphics.addObjectToScene(mesh);
-    world.setComponent(ball, [Mesh, PhysicsData], [mesh, body]);
+    world.put(ball, [Mesh, PhysicsData], [mesh, body]);
 
     const collideCb = (entity: number) => {
         physics.removeCollisionCallback(body);

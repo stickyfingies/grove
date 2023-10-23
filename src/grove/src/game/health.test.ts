@@ -15,7 +15,7 @@ class HealthAPI {
     }
 
     deal_damage(entity: number, damage: number) {
-        const [health] = this.ecs.getComponent(entity, [HealthData]);
+        const [health] = this.ecs.get(entity, [HealthData]);
         health.hp -= damage;
         if (health.hp <= 0) {
             this.ecs.swapComponent(entity, [HealthData], [DeathData], [{}]);
@@ -34,20 +34,20 @@ describe('Entity interactions', () => {
         { hp: 20, damage: 19, after: 1 },
     ])('Given an entity with $hp hp \t when it takes $damage damage \t then it has $after hp', ({ hp, damage, after }) => {
         // Given
-        ecs.setComponent(entity, [HealthData], [new HealthData(hp, hp)]);
+        ecs.put(entity, [HealthData], [new HealthData(hp, hp)]);
         // When
         health_api.deal_damage(entity, damage);
         // Then
         {
-            const [health] = ecs.getComponent(entity, [HealthData]);
+            const [health] = ecs.get(entity, [HealthData]);
             expect(health.hp).toBe(after);
         }
     });
 
     test('Entities should die after suffering fatal wounds', () => {
         health_api.deal_damage(entity, 999);
-        const alive = ecs.hasComponent(entity, HealthData);
-        const dead = ecs.hasComponent(entity, DeathData);
+        const alive = ecs.has(entity, HealthData);
+        const dead = ecs.has(entity, DeathData);
         expect(alive).toBeFalsy();
         expect(dead).toBeTruthy();
     });

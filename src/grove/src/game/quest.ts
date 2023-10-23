@@ -30,7 +30,7 @@ export default class QuestScript extends GameSystem {
             '24px Arial',
             'white'
         );
-        world.setComponent(gui, [UserInterface], [hud]);
+        world.put(gui, [UserInterface], [hud]);
 
         const updateGui = (content: string) => {
             hud.text = content;

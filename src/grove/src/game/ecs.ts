@@ -22,7 +22,7 @@ export function entityExists(entity_id: number) {
   * Component types must be unique.
   */
 export function setComponent<T extends ComponentTypeList>(entity_id: number, types: T, data: ComponentDataFromSignature<T>) {
-    world.setComponent(entity_id, types, data);
+    world.put(entity_id, types, data);
 }
 
 /** deletes the specified components from an entity. */
@@ -32,5 +32,5 @@ export function deleteComponent<T extends ComponentTypeList>(entity_id: number, 
 
 /** gets the component data for an entity.Prefer object destructuring to access specific data. */
 export function getComponent<T extends ComponentTypeList>(entity_id: number, types: T) {
-    return world.getComponent(entity_id, types);
+    return world.get(entity_id, types);
 }

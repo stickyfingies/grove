@@ -6,6 +6,7 @@ import {
     PerspectiveCamera,
     Sprite,
     SpriteMaterial,
+    TextureLoader,
     Vector3,
 } from 'three';
 
@@ -21,6 +22,8 @@ import { UserInterface } from './userInterface';
 import { dealDamage } from './damage.system';
 import { assetLoader, events, graphics, physics, world, LogService } from '@grove/engine';
 import { getEquippedItem } from './inventory';
+import { Slime } from './slime';
+import { addAbilityToTargetIndicator, makeTargetIndicator, syncTargetIndicator, updateTargetIndicator } from './targetIndicator';
 
 const [todo] = LogService('engine:todo');
 
@@ -32,7 +35,7 @@ export const PLAYER_TAG = Symbol('player');
 
 /** get a ThreeJS vector pointing outwards from the camera */
 const getCameraDir = () => {
-    const [camera] = world.getComponent(world.getTag(CAMERA_TAG), [CameraData]);
+    const [camera] = world.get(world.getTag(CAMERA_TAG), [CameraData]);
     return new Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
 };
 
@@ -58,8 +61,9 @@ export function animatePlayer(anim_name: string) {
     animate(model, anim_name);
 }
 
-const DELAY_BETWEEN_SWINGS = 1000; // milliseconds
+const DELAY_BETWEEN_SWINGS = 800; // milliseconds
 const DAMAGE = 10; // ???
+const hit_sound = new Audio('/audio/squelch.mp3');
 let lastSwung = 0;
 document.addEventListener('mousedown', async (e) => {
     if (e.button !== 0) return;
@@ -73,13 +77,20 @@ document.addEventListener('mousedown', async (e) => {
 
     const frustum = new Frustum().setFromProjectionMatrix(new Matrix4().multiplyMatrices(frustumCamera.projectionMatrix, frustumCamera.matrixWorldInverse));
     let foundTarget = false;
-    graphics.scene.traverse((node) => {
+    graphics.scene.traverseVisible((node) => {
         if (foundTarget) return;
         if (node.isMesh && (frustum.containsPoint(node.position) || frustum.intersectsObject(node))) {
-            if (world.hasComponent(node.userData.entityId, Health)) {
+            if (world.has(node.userData.entityId, Health)) {
                 foundTarget = true;
-                const damage = getEquippedItem()?.damage ?? DAMAGE;
-                dealDamage(world)(damage)(node.userData.entityId);
+
+                setTimeout(() => {
+                    const damage = getEquippedItem()?.damage ?? DAMAGE;
+                    dealDamage(world)(damage)(node.userData.entityId);
+
+                    hit_sound.currentTime = 0.5;
+                    hit_sound.play();
+                }, 500);
+
             }
         }
     });
@@ -158,13 +169,13 @@ const hud = new UserInterface(
     '[health goes here]'
 );
 
-world.setComponent(player,
+world.put(player,
     [Mesh, PhysicsData, Health, Score, Movement, KeyboardControls, UserInterface],
     [mesh, body, health, score, mvmtData, kbControl, hud]
 );
 
 function drawHUD() {
-    const [score, health] = world.getComponent(player, [Score, Health]);
+    const [score, health] = world.get(player, [Score, Health]);
     hud.text = `${health.hp}/${health.max}HP\n${score.score} points`;
 }
 
@@ -174,7 +185,7 @@ const crosshair = world.createEntity();
     crosshairSprite.scale.set(10, 10, 1);
     crosshairSprite.position.set(0, 0, -1);
     graphics.addObjectToScene(crosshairSprite, true);
-    world.setComponent(crosshair, [SpriteData], [crosshairSprite]);
+    world.put(crosshair, [SpriteData], [crosshairSprite]);
 }
 
 const shootTowardsCrosshair = (e: MouseEvent) => {
@@ -186,7 +197,7 @@ const shootTowardsCrosshair = (e: MouseEvent) => {
     // const item = getEquippedItem();
     // if (!item?.ranged) return;
     const onCollide = dealDamage(world)(5);
-    const [{ position: origin }] = world.getComponent(world.getTag(CAMERA_TAG), [CameraData]);
+    const [{ position: origin }] = world.get(world.getTag(CAMERA_TAG), [CameraData]);
     shoot(physics, graphics, origin, getCameraDir(), onCollide);
 };
 
@@ -208,14 +219,14 @@ events.on('stopLoop', () => {
 // });
 
 // handle enemy deaths
-const sound = new Audio('/audio/alien.mp3');
+const sound = new Audio('/audio/boop.wav');
 sound.volume = 0.5;
 world.events.on('enemyDied', async () => {
     // const position = world.getComponent(entity, MeshData).position;
     // const texture = await new TextureLoader().loadAsync('img/fire.png');
     // const emitter = graphics.createParticleEmitter(texture);
     // emitter.position.copy(position);
-    const [score] = world.getComponent(player, [Score]);
+    const [score] = world.get(player, [Score]);
     score.score += 1;
     world.events.emit('updateScore', score);
 
@@ -224,24 +235,38 @@ world.events.on('enemyDied', async () => {
 
 // heal
 world.events.on('healPlayer', (amount: number) => {
-    const [health] = world.getComponent(player, [Health]);
+    const [health] = world.get(player, [Health]);
     health.hp += amount;
 });
 
 todo('imgui: display player position');
-// this.gui.add(body.position, 'x').listen();
-// this.gui.add(body.position, 'y').listen();
-// this.gui.add(body.position, 'z').listen();
+
+
+
+const target_sprite = makeTargetIndicator();
+
+addAbilityToTargetIndicator(target_sprite);
+addAbilityToTargetIndicator(target_sprite);
+addAbilityToTargetIndicator(target_sprite);
+addAbilityToTargetIndicator(target_sprite);
 
 export default class PlayerScript extends GameSystem {
     every_frame() {
+
         drawHUD();
-        world.executeQuery([Score, Death], ([{ score }]) => {
+
+        world.do_with([Score, Death], ([{ score }]) => {
             document.querySelector('#blocker')?.setAttribute('style', 'display:block');
             const loadText = document.querySelector('#load')! as HTMLElement;
             loadText.setAttribute('style', 'display:block');
             loadText.innerHTML = `<h1>You Have Perished. Score... ${score}</h1>`;
             world.deleteEntity(player);
         });
+
+        if (Math.random() < 0.5) {
+            updateTargetIndicator(player, frustumCamera);
+        }
+
+        syncTargetIndicator(target_sprite);
     }
 }

@@ -37,7 +37,7 @@ export default class UpgradeScript {
             sprite.material.map = upgradeTexture;
             graphics.addObjectToScene(sprite);
 
-            world.setComponent(upgrade, [PhysicsData, Sprite], [upgradeBody, sprite]);
+            world.put(upgrade, [PhysicsData, Sprite], [upgradeBody, sprite]);
 
             // const collideCb = ({ body }: { body: PhysicsData }) => {
             //     const player = Entity.getTag(PLAYER_TAG);

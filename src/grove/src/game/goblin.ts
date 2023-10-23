@@ -8,7 +8,7 @@ import AttackScript from '../components/attack';
 import { Mesh } from 'three';
 import { CapsuleShape } from '@grove/engine/lib/load';
 
-class GoblinData { }
+export class Goblin { }
 
 // A "Goblin" is an [avatar](./model/path.glb).
 // which [target, shoot]s the [player].
@@ -26,7 +26,7 @@ export default class GoblinScript extends GameSystem {
     }
 
     every_frame() {
-        world.executeQuery([MeshData, GoblinData, Death], ([mesh], entity_id) => {
+        world.do_with([MeshData, Goblin, Death], ([mesh], entity_id) => {
             world.events.emit('enemyDied', { entity_id });
             graphics.removeObjectFromScene(mesh);
             world.deleteEntity(entity_id);
@@ -61,8 +61,8 @@ export default class GoblinScript extends GameSystem {
             quat: [0, 0, 0, 1]
         }, capsuleShape);
 
-        world.setComponent(goblin,
-            [PhysicsData, Mesh, GoblinData, Health, AttackScript],
+        world.put(goblin,
+            [PhysicsData, Mesh, Goblin, Health, AttackScript],
             [body, mesh, gbln, health, attack]);
     }
 }

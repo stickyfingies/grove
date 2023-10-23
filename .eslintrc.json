@@ -1,11 +1,13 @@
 {
+    "root": true,
     "env": {
         "browser": true,
         "es2021": true,
         "worker": true
     },
     "extends": [
-        "airbnb-base"
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended"
     ],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
@@ -13,6 +15,7 @@
         "sourceType": "module"
     },
     "plugins": [
+        "import",
         "@typescript-eslint"
     ],
     "settings": {

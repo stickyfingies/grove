@@ -13,7 +13,7 @@ import { SphereShape } from '@grove/engine/lib/load';
 const [log] = LogService('slime');
 
 /** Basically tags entities as being slimes */
-class Slime {
+export class Slime {
     speed = 0.75;
 
     lastHop = performance.now();
@@ -32,10 +32,10 @@ export default class SlimeScript extends GameSystem {
 
     every_frame() {
         const player = world.getTag(PLAYER_TAG);
-        const [playerBody] = world.getComponent(player, [PhysicsData]);
+        const [playerBody] = world.get(player, [PhysicsData]);
 
         // handle dead slimes
-        world.executeQuery([MeshData, Slime, Death], ([mesh], entity) => {
+        world.do_with([MeshData, Slime, Death], ([mesh], entity) => {
             world.events.emit('enemyDied', entity);
             graphics.removeObjectFromScene(mesh);
             world.deleteEntity(entity);
@@ -72,7 +72,7 @@ export default class SlimeScript extends GameSystem {
                 for (const [_, other] of slimes) {
                     if (other === entity) return;
 
-                    const [otherBody] = world.getComponent(other, [PhysicsData]);
+                    const [otherBody] = world.get(other, [PhysicsData]);
                     const otherPos = physics.getBodyPosition(otherBody);
 
                     const distanceToOther = distance(otherPos, slimePos) as number;
@@ -215,7 +215,7 @@ export default class SlimeScript extends GameSystem {
         //     console.log(world.getEntityComponentSignature(entity));
         // })
 
-        world.setComponent(slime,
+        world.put(slime,
             [Mesh, PhysicsData, Slime, Health],
             [mesh, body, slimeData, health]
         );

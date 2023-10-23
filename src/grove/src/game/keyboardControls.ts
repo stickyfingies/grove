@@ -110,7 +110,7 @@ export default class KeyboardControlScript extends GameSystem {
         //     }
         // });
 
-        world.executeQuery([Movement], ([mvmt]) => {
+        world.do_with([Movement], ([mvmt]) => {
             mvmt.moveForward = this.moveForward;
             mvmt.moveBackward = this.moveBackward;
             mvmt.moveLeft = this.moveLeft;
@@ -125,7 +125,7 @@ export default class KeyboardControlScript extends GameSystem {
      * @event(window, 'mousemove')
      */
     private onMouseMove({ movementX, movementY }: MouseEvent) {
-        const [{ object: camdata }] = world.getComponent(smoothCamera, [SmoothCamera]);
+        const [{ object: camdata }] = world.get(smoothCamera, [SmoothCamera]);
         this.euler.setFromQuaternion(camdata.quaternion);
 
         const sensitivity = 0.002;
@@ -147,7 +147,7 @@ export default class KeyboardControlScript extends GameSystem {
 
         this.keyState.set(key, true);
 
-        world.executeQuery([KeyboardControls], ([kbControls]) => {
+        world.do_with([KeyboardControls], ([kbControls]) => {
             kbControls.process_keyboard_event(e.key, 'down');
         });
 
@@ -191,7 +191,7 @@ export default class KeyboardControlScript extends GameSystem {
 
         this.keyState.set(key, false);
 
-        world.executeQuery([KeyboardControls], ([kbControls]) => {
+        world.do_with([KeyboardControls], ([kbControls]) => {
             kbControls.process_keyboard_event(key, 'up');
         });
 

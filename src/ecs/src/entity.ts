@@ -28,7 +28,7 @@ export class Entity {
     }
 
     setComponent<T>(type: ComponentType<T>, data: T) {
-        this.manager.setComponent(this.id, [type], [data]);
+        this.manager.put(this.id, [type], [data]);
         return this;
     }
 
@@ -38,11 +38,11 @@ export class Entity {
     }
 
     getComponent<T>(type: ComponentType<T>): T {
-        return this.manager.getComponent(this.id, [type])[0];
+        return this.manager.get(this.id, [type])[0];
     }
 
     hasComponent(type: ComponentType): boolean {
-        return this.manager.hasComponent(this.id, type);
+        return this.manager.has(this.id, type);
     }
 
     addTag(tag: symbol) {

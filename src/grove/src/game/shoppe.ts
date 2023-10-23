@@ -24,12 +24,12 @@ const body = physics.createSphere(rigidBodyDescription, {
     scale: [1, 1, 1],
     quat: [0, 0, 0, 1]
 }, sphereShape);
-world.setComponent(shoppe, [Mesh, PhysicsData], [mesh, body]);
+world.put(shoppe, [Mesh, PhysicsData], [mesh, body]);
 
 // 'e' to interact
 document.addEventListener('keydown', async (e) => {
     if (e.key === "e") {
-        const [camera] = world.getComponent(world.getTag(CAMERA_TAG), [CameraData]);
+        const [camera] = world.get(world.getTag(CAMERA_TAG), [CameraData]);
         const direction = camera.getWorldDirection(new Vector3()).multiplyScalar(30);
         const final_point = camera.position.clone().add(direction);
         const raycastInfo = await physics.raycast(camera.position.toArray(), final_point.toArray());
@@ -38,7 +38,7 @@ document.addEventListener('keydown', async (e) => {
         if (raycastInfo) {
             const { entityID } = raycastInfo;
             if (entityID === shoppe) {
-                const [score] = world.getComponent(player, [Score]);
+                const [score] = world.get(player, [Score]);
                 const ITEM_PRICE = 5;
 
                 if (score.score >= ITEM_PRICE) {
