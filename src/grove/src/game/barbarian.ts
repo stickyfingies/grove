@@ -8,9 +8,11 @@ export class BarbarianData { };
 
 export default class BarbarianScript extends GameSystem {
     initialize() {
-        window.webApi.onmessage('barbarian', () => {
-            this.spawnBarbarian();
-        });
+        if (window.webApi) {
+            window.webApi.onmessage('barbarian', () => {
+                this.spawnBarbarian();
+            });
+        }
 
         this.spawnBarbarian();
     }

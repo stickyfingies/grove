@@ -1,159 +1,159 @@
-import { MeshData } from '@grove/graphics';
-import { assetLoader, graphics, world } from '@grove/engine';
-import { PhysicsData } from '@grove/physics';
-import { Mesh } from 'three';
-import { CreateEntityEvent, DeleteComponentEvent, DeleteEntityEvent, SetComponentEvent, SignatureChangedEvent } from '@grove/ecs/lib/entity-manager';
-import { AssetsLoadedEvent } from '@grove/engine/lib/load';
+// import { AssetsLoadedEvent } from '@grove/engine/lib/load';
+// import { Mesh } from 'three';
+// import { PhysicsData } from '@grove/physics';
+// import { CreateEntityEvent, DeleteComponentEvent, DeleteEntityEvent, SetComponentEvent, SignatureChangedEvent } from '@grove/ecs/lib/entity-manager';
+// import { assetLoader, graphics, world } from '@grove/engine';
 
-/**
- * This is defined in `grove/app/preload.cjs`
- */
-declare const webApi: any;
+// /**
+//  * This is defined in `grove/app/preload.cjs`
+//  */
+// declare const webApi: any;
 
-type GraphData = {
-    assets: any[],
-    components: any[]
-};
+// type GraphData = {
+//     assets: any[],
+//     components: any[]
+// };
 
-interface MessageData {
-    type: 'do' | 'undo' | 'redo' | 'meta',
-    action: string,
-    args: any[]
-};
+// interface MessageData {
+//     type: 'do' | 'undo' | 'redo' | 'meta',
+//     action: string,
+//     args: any[]
+// }
 
-///////////////////////
-/// FRAMEWORK STUFF ///
-///////////////////////
+// ///////////////////////
+// /// FRAMEWORK STUFF ///
+// ///////////////////////
 
-function connectToServer(): Promise<WebSocket> {
-    return new Promise((resolve, reject) => {
-        const server = new WebSocket('ws://localhost:3334/?name=Grove');
-        server.onopen = () => resolve(server);
-        server.onerror = reject;
-    });
-}
-const socket = await connectToServer();
+// function connectToServer(): Promise<WebSocket> {
+//     return new Promise((resolve, reject) => {
+//         const server = new WebSocket('ws://localhost:3334/?name=Grove');
+//         server.onopen = () => resolve(server);
+//         server.onerror = reject;
+//     });
+// }
 
-function defineBatchAction(action: string, func: Function) {
-    socket.addEventListener('message', (event) => {
-        const data: MessageData = JSON.parse(event.data);
-        if (data.action === action) func(data.args);
-    });
-}
+// const socket = await connectToServer().catch(() => console.warn('oops'));
 
-function defineAction(action: string, func: (value: any) => void) {
-    socket.addEventListener('message', (event) => {
-        const data: MessageData = JSON.parse(event.data);
-        if (data.action === action) data.args.forEach(func);
-    });
-}
+// function defineBatchAction(action: string, func: Function) {
+//     socket.addEventListener('message', (event) => {
+//         const data: MessageData = JSON.parse(event.data);
+//         if (data.action === action) func(data.args);
+//     });
+// }
 
-function commit(action: string, args: any) {
-    socket.send(JSON.stringify({ type: 'do', action, args }));
-}
+// function defineAction(action: string, func: (value: any) => void) {
+//     socket.addEventListener('message', (event) => {
+//         const data: MessageData = JSON.parse(event.data);
+//         if (data.action === action) data.args.forEach(func);
+//     });
+// }
 
-///////////////////////////
-/// INTERACTIVITY STUFF ///
-///////////////////////////
+// function commit(action: string, args: any) {
+//     socket.send(JSON.stringify({ type: 'do', action, args }));
+// }
 
-world.events.on('createEntity', ({ entity_id }: CreateEntityEvent) => {
-    commit('createEntity', { entity_id });
-});
+// ///////////////////////////
+// /// INTERACTIVITY STUFF ///
+// ///////////////////////////
 
-world.events.on('deleteEntity', ({ entity_id }: DeleteEntityEvent) => {
-    commit('deleteEntity', { entity_id });
-});
+// world.events.on('createEntity', ({ entity_id }: CreateEntityEvent) => {
+//     commit('createEntity', { entity_id });
+// });
 
-world.events.on('signatureChanged', ({ old_signature, new_signature, added_components, removed_components }: SignatureChangedEvent) => {
-    commit('signatureChanged', {
-        old_signature: Array.from(old_signature).map((e) => e.name),
-        new_signature: Array.from(new_signature).map((e) => e.name),
-        added_components: Array.from(added_components).map((e) => e.name),
-        removed_components: Array.from(removed_components).map((e) => e.name)
-    });
-});
+// world.events.on('deleteEntity', ({ entity_id }: DeleteEntityEvent) => {
+//     commit('deleteEntity', { entity_id });
+// });
 
-world.events.on('deleteMeshComponent', ({ data: mesh }: DeleteComponentEvent) => {
-    commit('removeMesh', { mesh_id: mesh.id });
-});
+// world.events.on('signatureChanged', ({ old_signature, new_signature, added_components, removed_components }: SignatureChangedEvent) => {
+//     commit('signatureChanged', {
+//         old_signature: Array.from(old_signature).map((e) => e.name),
+//         new_signature: Array.from(new_signature).map((e) => e.name),
+//         added_components: Array.from(added_components).map((e) => e.name),
+//         removed_components: Array.from(removed_components).map((e) => e.name)
+//     });
+// });
 
-assetLoader.events.on('assetsLoaded', (event: AssetsLoadedEvent) => {
-    commit('assetsLoaded', event);
-});
+// world.events.on('deleteMeshComponent', ({ data: mesh }: DeleteComponentEvent) => {
+//     commit('removeMesh', { mesh_id: mesh.id });
+// });
 
-const dataMappers = new Map<string, Function>();
+// assetLoader.events.on('assetsLoaded', (event: AssetsLoadedEvent) => {
+//     commit('assetsLoaded', event);
+// });
 
-dataMappers.set('Mesh', (entity_id: number, data: Mesh) => {
-    const meshes: object[] = [];
-    data.traverse((mesh: any) => {
-        const parent = mesh.parent.isScene ? undefined : mesh.parent.id;
-        meshes.push({ mesh_id: mesh.id, entity_id, name: mesh.name, parent });
-    });
-    return meshes;
-})
+// const dataMappers = new Map<string, Function>();
 
-world.events.on('setComponent', ({ entity_id, name, data }: SetComponentEvent) => {
-    if (dataMappers.has(name)) {
-        const mapper = dataMappers.get(name)!;
-        data = mapper(entity_id, data);
-    }
-    commit(`add${name}`, { entity_id, data });
-});
+// dataMappers.set('Mesh', (entity_id: number, data: Mesh) => {
+//     const meshes: object[] = [];
+//     data.traverse((mesh: any) => {
+//         const parent = mesh.parent.isScene ? undefined : mesh.parent.id;
+//         meshes.push({ mesh_id: mesh.id, entity_id, name: mesh.name, parent });
+//     });
+//     return meshes;
+// });
 
-defineAction('removeMesh', ({ id }: { id: string }) => {
-    const mesh = graphics.scene.getObjectById(Number(id));
-    if (!mesh) return console.error('(remote) -> (local): Cannot Delete non-existent mesh');
-    graphics.removeObjectFromScene(mesh);
-});
+// world.events.on('setComponent', ({ entity_id, name, data }: SetComponentEvent) => {
+//     if (dataMappers.has(name)) {
+//         const mapper = dataMappers.get(name)!;
+//         data = mapper(entity_id, data);
+//     }
+//     commit(`add${name}`, { entity_id, data });
+// });
 
-/*
- * This is for when a user presses 'export' on an entity in the graph editor.
- */
-webApi.handleGraphData((data: GraphData) => {
-    const { assets, components } = data;
-    if (!assets) return console.log(data);
-    const assetTable: Record<string, any> = {};
-    assets.forEach(async ({ id, src }) => {
-        let asset = src;
-        // optimized in-place
-        if (src !== 'sphere') {
-            asset = assetLoader.loadModel({ uri: src });
-        }
-        assetTable[id] = asset;
-    })
-    console.log(assetTable);
+// defineAction('removeMesh', ({ id }: { id: string }) => {
+//     const mesh = graphics.scene.getObjectById(Number(id));
+//     if (!mesh) return console.error('(remote) -> (local): Cannot Delete non-existent mesh');
+//     graphics.removeObjectFromScene(mesh);
+// });
 
-    const entity = world.createEntity();
+// /*
+//  * This is for when a user presses 'export' on an entity in the graph editor.
+//  */
+// webApi.handleGraphData((data: GraphData) => {
+//     const { assets, components } = data;
+//     if (!assets) return console.log(data);
+//     const assetTable: Record<string, any> = {};
+//     assets.forEach(async ({ id, src }) => {
+//         let asset = src;
+//         // optimized in-place
+//         if (src !== 'sphere') {
+//             asset = assetLoader.loadModel({ uri: src });
+//         }
+//         assetTable[id] = asset;
+//     })
+//     console.log(assetTable);
 
-    components.forEach(async (data) => {
-        if (data.type === 'component.mesh') {
-            // assumes 'asset' is 'model'
-            const asset = await assetTable[data.asset_id];
-            graphics.addObjectToScene(asset);
-            world.put(entity, [MeshData], [asset]);
-        }
-        if (data.type === 'component.body') {
-            const asset = await assetTable[data.asset_id];
-            const body = (function parseShape(asset: string) {
-                switch (asset) {
-                    case 'sphere': {
-                        // return physics.createSphere({
-                        //     mass: 100,
-                        //     pos: [0, 120, 0],
-                        //     shouldRotate: false,
-                        //     radius: 1
-                        // });
-                    }
-                    default: {
-                        console.error(`${asset} is not a recognized asset source`);
-                        return null;
-                    }
-                }
-            })(asset);
-            if (body) world.put(entity, [PhysicsData], [body]);
-        }
-        return null;
-    });
+//     const entity = world.createEntity();
 
-    console.log(components);
-});
+//     components.forEach(async (data) => {
+//         if (data.type === 'component.mesh') {
+//             // assumes 'asset' is 'model'
+//             const asset = await assetTable[data.asset_id];
+//             graphics.addObjectToScene(asset);
+//             world.put(entity, [MeshData], [asset]);
+//         }
+//         if (data.type === 'component.body') {
+//             const asset = await assetTable[data.asset_id];
+//             const body = (function parseShape(asset: string) {
+//                 switch (asset) {
+//                     case 'sphere': {
+//                         // return physics.createSphere({
+//                         //     mass: 100,
+//                         //     pos: [0, 120, 0],
+//                         //     shouldRotate: false,
+//                         //     radius: 1
+//                         // });
+//                     }
+//                     default: {
+//                         console.error(`${asset} is not a recognized asset source`);
+//                         return null;
+//                     }
+//                 }
+//             })(asset);
+//             if (body) world.put(entity, [PhysicsData], [body]);
+//         }
+//         return null;
+//     });
+
+//     console.log(components);
+// });

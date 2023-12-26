@@ -21,11 +21,13 @@ export class Slime {
 
 export default class SlimeScript extends GameSystem {
     initialize() {
-        window.webApi.onmessage('slime', () => {
-            log('spawn enemy');
-            for (let i = 0; i < 20; i++)
-                this.createSlime();
-        });
+        if (window.webApi) {
+            window.webApi.onmessage('slime', () => {
+                log('spawn enemy');
+                for (let i = 0; i < 20; i++)
+                    this.createSlime();
+            });
+        }
 
         setInterval(this.createSlime, 5000);
     }

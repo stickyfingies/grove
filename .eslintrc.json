@@ -65,12 +65,9 @@
             "error",
             "always"
         ],
-        "no-unused-vars": [
-            "error",
-            {
-                "args": "none"
-            }
-        ],
+        "no-unused-vars": "off",
+        "@typescript-eslint/no-unused-vars": "warn",
+        "no-explicit-any": "off",
         "no-useless-constructor": "off",
         "no-empty-function": [
             "error",
@@ -94,21 +91,6 @@
                 "js": "never",
                 "ts": "never",
                 "css": "never"
-            }
-        ],
-        "sort-imports": [
-            "error",
-            {
-                "ignoreCase": false,
-                "ignoreDeclarationSort": false,
-                "ignoreMemberSort": false,
-                "allowSeparatedGroups": true,
-                "memberSyntaxSortOrder": [
-                    "none",
-                    "all",
-                    "single",
-                    "multiple"
-                ]
             }
         ]
     }

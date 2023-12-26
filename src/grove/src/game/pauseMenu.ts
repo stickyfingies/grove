@@ -42,8 +42,8 @@ export default class PauseMenuScript {
 
         document.addEventListener('pointerlockchange', pointerlockchange);
 
-        const click = () => {
-            document.body.requestFullscreen();
+        const click = async () => {
+            await document.body.requestFullscreen();
             document.body.requestPointerLock();
         };
 
