@@ -33,6 +33,7 @@ for (const workspace of workspaces) {
 
 
 export default defineConfig({
+    base: './',
     resolve: {
         alias
     },

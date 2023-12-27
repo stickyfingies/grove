@@ -1,1 +1,0 @@
-import{w as a}from"./game.2c5cd34a.js";class i{}class s{constructor(t=1,h=2){this.hp=t,this.max=h}update(t){this.hp=Math.min(this.hp,this.max),this.hp<=0&&a.swapComponent(t,[s],[i],[{}])}}export{i as Death,s as default};
