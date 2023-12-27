@@ -11,7 +11,7 @@ import { shoot } from "../game/shooting";
 
 const HIT_VOLUME = 0.5;
 
-const HIT_AUDIO_PATH = '/audio/hit.mp3';
+const HIT_AUDIO_PATH = 'audio/hit.mp3';
 
 /**
  * physicsSystem = world.match([Physics]).run_all(() => { ... physics code ... });

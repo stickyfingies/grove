@@ -4,7 +4,7 @@ import { Graphics } from '@grove/graphics';
 import { Physics, PhysicsData, Vec3 } from '@grove/physics';
 import { world } from '@grove/engine';
 
-const sound = new Audio('/audio/pop.wav');
+const sound = new Audio('audio/pop.wav');
 
 /** Shoots a ball outwards from an entity in an indicated direction */
 export function shoot(

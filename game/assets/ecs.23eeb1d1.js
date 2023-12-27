@@ -1,0 +1,1 @@
+import{w as e}from"./game.aa77d7bc.js";function r(){return e.createEntity()}function u(t){e.deleteEntity(t)}function c(t){return e.entityExists(t)}function f(t,n,o){e.put(t,n,o)}function p(t,n){e.deleteComponent(t,n)}function m(t,n){return e.get(t,n)}export{r as createEntity,p as deleteComponent,u as deleteEntity,c as entityExists,m as getComponent,f as setComponent};

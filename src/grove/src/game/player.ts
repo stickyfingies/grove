@@ -66,7 +66,7 @@ graphics.loadModel().then((model) => {
 
     const DELAY_BETWEEN_SWINGS = 800; // milliseconds
     const DAMAGE = 10; // ???
-    const hit_sound = new Audio('/audio/squelch.mp3');
+    const hit_sound = new Audio('audio/squelch.mp3');
     let lastSwung = 0;
     document.addEventListener('mousedown', async (e) => {
         if (e.button !== 0) return;
@@ -213,7 +213,7 @@ graphics.loadModel().then((model) => {
     // });
 
     // handle enemy deaths
-    const sound = new Audio('/audio/boop.wav');
+    const sound = new Audio('audio/boop.wav');
     sound.volume = 0.5;
     world.events.on('enemyDied', async () => {
         // const position = world.getComponent(entity, MeshData).position;
