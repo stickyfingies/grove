@@ -74,7 +74,7 @@ html, body {
   height: 90px;
   padding-left: 30px;
   padding-top: 20px;
-  background-image: url(/img/QuestBar.png);
+  background-image: url(./img/QuestBar.png);
   color: white;
 }
 
@@ -97,7 +97,7 @@ html, body {
   height: 70%;
   left: 15%;
   top: 15%;
-  background-image: url(/img/gui.png);
+  background-image: url(./img/gui.png);
   background-size: cover;
   padding-left: 5%;
   padding-top: 3%;

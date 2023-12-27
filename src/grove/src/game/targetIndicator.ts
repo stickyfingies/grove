@@ -11,9 +11,9 @@ import { Goblin } from "./goblin";
 
 export const TARGET_TAG = Symbol("Target");
 
-const ABILITY_TEXTURE_PATH = '/img/icons.jpg';
+const ABILITY_TEXTURE_PATH = 'img/icons.jpg';
 
-const INDICATOR_TEXTURE_PATH = '/img/fire.png';
+const INDICATOR_TEXTURE_PATH = 'img/fire.png';
 
 //
 
@@ -46,7 +46,7 @@ export function makeTargetIndicator(): TargetIndicator {
 export function addAbilityToTargetIndicator(target: TargetIndicator) {
     target.abilities++;
 
-    // const ability_texture = new TextureLoader().load('/img/glow.png');
+    // const ability_texture = new TextureLoader().load('./img/glow.png');
     const ability_texture = new TextureLoader().load(ABILITY_TEXTURE_PATH);
     ability_texture.offset = new Vector2((1 / 10), 1 - (1 / 12));
     // ability_texture.repeat = new Vector2(10, 12);
