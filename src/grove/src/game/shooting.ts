@@ -70,4 +70,4 @@ export function shoot(
     physics.registerCollisionCallback(body, collideCb);
 
     return ball;
-};
+}

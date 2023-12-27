@@ -1,0 +1,1 @@
+var s=Object.defineProperty;var a=(e,c,o)=>c in e?s(e,c,{enumerable:!0,configurable:!0,writable:!0,value:o}):e[c]=o;var r=(e,c,o)=>(a(e,typeof c!="symbol"?c+"":c,o),o);class p{constructor(){r(this,"score",0)}}export{p as Score};

@@ -1,0 +1,1 @@
+const e=[];let t=0;e.push({name:"Fists",damage:3});function u(n,i=!1){e.push(n),i&&(t=e.length-1)}function o(n){t=n}function p(){return e[t]}export{u as addToInventory,o as equip,p as getEquippedItem};

@@ -43,6 +43,7 @@ world.events.on(`set${UserInterface.name}Component`, createUIElement);
 
 export default class UserInteraceSystem {
     every_frame() {
+        // TODO - dirty flag
         world.do_with([UserInterface], ([uiData]) => {
             uiData._DOMElement!.innerText = uiData.text;
         });

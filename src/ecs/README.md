@@ -27,3 +27,45 @@ could be just storing some kind of pointer in the list, and the components are
 really scattered all throughout memory anyway.  I don't have any benchmarks to
 say for-sure whether the linear representation of data is truly faster for
 running behaviors.
+
+## Operations that Preserve Structure
+
+```mermaid
+flowchart LR
+    subgraph World
+        Entity -->|"entityExists()"| EntityExists[Boolean]
+
+        Entity -->|"get()"| Data
+
+        Entity -->|"getArchetype()"| Archetype
+
+        Archetype -->|"getComponent()"| Data
+    end
+```
+
+## Operations that Modify Structure
+
+Adding or removing a component changes the mapping from entities to archetypes.
+
+```mermaid
+
+flowchart LR
+    subgraph World
+        ABC["(A, B, C)"]
+        BC[Archetype B, C]
+
+        X --> ABC
+        Y --> BC
+    end
+
+    subgraph World'
+        ABC'[Archetype A, B, C]
+        BC'[Archetype B, C]
+
+        X'[X] --> ABC'
+        Y'[Y] --> ABC'
+    end
+
+    World ===>|"add(Y, A)"| World'
+
+```

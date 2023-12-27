@@ -79,6 +79,7 @@ export function addAbilityToTargetIndicator(target: TargetIndicator) {
 
 //
 
+// Expensive function call
 export function updateTargetIndicator(player: number, camera: CameraData) {
     const [body_player] = world.get(player, [PhysicsData]);
     const [px, py, pz] = physics.getBodyPosition(body_player);

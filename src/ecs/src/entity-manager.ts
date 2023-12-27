@@ -39,7 +39,7 @@ export interface SignatureChangedEvent {
 type Query<T extends ComponentTypeList> = {
     match: T;
     callback: (c: ComponentDataFromSignature<T>, id: number) => void;
-}
+};
 
 class QueryCache {
     #queries: Query<any>[] = [];
@@ -53,7 +53,9 @@ type ArchetypeIndex = number;
  */
 type EntityRecord = {
     archetype_idx: ArchetypeIndex,
-}
+};
+
+// (A, +, B) -> (AB)
 
 /** Takes a `signature` and produces a `hash` */
 function hashSignature(signature: ComponentSignature): SignatureHash {
@@ -122,6 +124,7 @@ export class EntityManager {
         if (!archetype) {
             return console.error(`'EntityManager::deleteEntity(${entity_id})' - entity ${entity_id} not found!`);
         }
+        
         // emit 'delete' events for every component in this entity
         for (const type of archetype.signature) {
             const [data] = this.get(entity_id, [type]) as any;
@@ -142,11 +145,13 @@ export class EntityManager {
 
     /** Set a component for an entity */
     put<T extends ComponentTypeList>(entity_id: number, types: T, data: ComponentDataFromSignature<T>) {
-        const delta: SignatureDelta = { added: new Set(types), removed: new Set() }
-        // move entity to a different archetype matching its new signature
+
+        const delta: SignatureDelta = { added: new Set(types), removed: new Set() };
+
         const old_signature = this.getEntityComponentSignature(entity_id);
-        const new_signature = this.calculateNewSignature(old_signature, delta)
-        const archetype = this.updateEntityArchetype(entity_id, delta);
+        const new_signature = this.constructSignatureFromDelta(old_signature, delta);
+        
+        const archetype: Archetype = this.updateEntityArchetype(entity_id, delta);
 
         // set the component (BEFORE event)
         archetype.setComponent(entity_id, types, data);
@@ -162,7 +167,7 @@ export class EntityManager {
         this.events.emit('signatureChanged', event);
 
         // emit a `set` event
-        for (let i = 0; (i < types.length) && (i < (data.length as number)); i++) {
+        for (let i = 0; (i < types.length) && (i < (data.length)); i++) {
             const type = types[i];
             const datum = data[i];
             const event: SetComponentEvent = {
@@ -182,7 +187,7 @@ export class EntityManager {
 
         // calculate new signature
         const old_signature = this.getEntityComponentSignature(entity_id);
-        const new_signature = this.calculateNewSignature(old_signature, delta);
+        const new_signature = this.constructSignatureFromDelta(old_signature, delta);
 
         // Emit `signatureChanged` event
         const event: SignatureChangedEvent = {
@@ -203,7 +208,7 @@ export class EntityManager {
             this.events.emit(`deleteComponent`, event);
         });
 
-        if ('destroy' in data) data.destroy();
+        if ('destroy' in data) { data.destroy(); }
     }
 
     /** Get a component from an entity */
@@ -213,7 +218,7 @@ export class EntityManager {
         // Check ID
         if (!archetype) {
             const typeNames = types.map(type => type.name).join(', ');
-            throw new Error(`getComponent(id: ${entity_id}, type: ${typeNames}): ID does not exist!`)
+            throw new Error(`getComponent(id: ${entity_id}, type: ${typeNames}): ID does not exist!`);
         }
 
         // Check Types
@@ -235,7 +240,7 @@ export class EntityManager {
         const delta: SignatureDelta = { added: new Set(addTypes), removed: new Set(removeTypes) };
         // compute new entity signature
         const old_signature = this.getEntityComponentSignature(entity_id);
-        const new_signature = this.calculateNewSignature(old_signature, delta);
+        const new_signature = this.constructSignatureFromDelta(old_signature, delta);
 
         // emit a `delete` event
         removeTypes.forEach((type) => {
@@ -278,10 +283,10 @@ export class EntityManager {
 
     hasTag(tag: symbol) {
         if (!this.#tagList.has(tag)) { return false; }
-        const entity_id = this.#tagList.get(tag)!
+        const entity_id = this.#tagList.get(tag)!;
         const archetype = this.getArchetype(entity_id);
         if (!archetype) {
-           return false;
+            return false;
         }
         return true;
     }
@@ -363,8 +368,8 @@ export class EntityManager {
         return this.#archetypes[archetype_idx];
     }
 
-    private calculateNewSignature(old_signature: ComponentSignature, delta: SignatureDelta) {
-        const new_signature = new Set(old_signature);
+    private constructSignatureFromDelta(old_signature: ComponentSignature, delta: SignatureDelta) {
+        const new_signature: ComponentSignature = new Set(old_signature);
         delta.added.forEach((type) => new_signature.add(type));
         delta.removed.forEach((type) => new_signature.delete(type));
         return new_signature;
@@ -383,8 +388,9 @@ export class EntityManager {
      * from the old archetype, and its component data will be copied into the new one.
     */
     private updateEntityArchetype(entity_id: number, delta: SignatureDelta) {
-        const old_signature = this.getEntityComponentSignature(entity_id)
-        const new_signature = this.calculateNewSignature(old_signature, delta);
+
+        const old_signature = this.getEntityComponentSignature(entity_id);
+        const new_signature = this.constructSignatureFromDelta(old_signature, delta);
         const hash = hashSignature(new_signature);
 
         // Create a new archetype if needed.
@@ -395,7 +401,7 @@ export class EntityManager {
             // update query cache to include this new archetype
             // ! it's not "execute query".
             // ! it's 'query'->'execute function'
-            // ! frog = $(Mesh, Data); //
+            // ! frog = $(Mesh, Data);
             // foreach query
             // if arch.has(query)
             // #(query) -> add arch

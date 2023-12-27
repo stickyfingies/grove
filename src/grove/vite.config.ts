@@ -20,28 +20,41 @@ const README = readFileSync('../../README.md', { encoding: 'utf8' });
 const pattern = /\[(.*?)\]\((?:.*\/)?SETTINGS\.md#(.*?)\)/g;
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/reduce
 [...README.matchAll(pattern)]
-  .reduce((list, [_, value, setting]) => list.set(setting, value), settings);
+    .reduce((list, [_, value, setting]) => list.set(setting, value), settings);
 
 
 // During development, "@grove/package" imports are resolved to "/src/package/src/*"
 // This is so we can live-reload across modules without having to rebuild each time.
 const alias: AliasOptions = {};
 for (const workspace of workspaces) {
-  const moduleName = workspace.split('/')[1];
-  alias['@grove/' + moduleName] = path.resolve(__dirname, '../../', workspace, 'src');  // TODO - hard coupling
+    const moduleName = workspace.split('/')[1];
+    alias['@grove/' + moduleName] = path.resolve(__dirname, '../../', workspace, 'src');  // TODO - hard coupling
 }
 
 
 export default defineConfig({
-  resolve: {
-    alias
-  },
-  optimizeDeps: {
-    exclude: ['firearm', '3-AD']
-  },
-  build: {
-    emptyOutDir: true,
-    outDir: settings.get('build-output-location') ?? '../app/build',
-    target: 'esnext',
-  }
+    resolve: {
+        alias
+    },
+    optimizeDeps: {
+        exclude: ['firearm', '3-AD']
+    },
+    build: {
+        emptyOutDir: true,
+        outDir: path.resolve(__dirname, '../..', settings.get('build-output-location') ?? 'dist'),
+        rollupOptions: {
+            input: {
+                main: path.resolve(__dirname, 'index.html'),
+                game: path.resolve(__dirname, 'game.html')
+            },
+        },
+    },
+    esbuild: {
+        supported: {
+            'top-level-await': true //browsers can handle top-level-await features
+        },
+    },
+    worker: {
+        format: 'es'
+    }
 });

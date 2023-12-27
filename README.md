@@ -1,10 +1,12 @@
 # **The Grove**
 
-> **Note** This document is also a config file!  Links with ⚙️ after them can be changed to affect project behavior.
+[Play Online](https://stickyfingies.github.io/grove/game)
 
-This game is the longest hobby project I ever have - and likely ever will - have worked on.  Born in 2017 as a browser-based RPG akin to TESV: Skyrim, the game has been rebuilt from the ground-up several times over the years, and now is a sort of sandbox for testing new web technologies and applying them in a game context.
+This game is my longest-ever hobby project.  Concieved way back in 2017 as a Skyrim-like browser RPG, the game is now a tech sandbox for trying new web technologies and applying them in a game context.
 
-> I encourage you to explore the [Software Architecture](#chapter-1), and then familiarize yourself with the [Technologies](#chapter-2) used.  The [Instructions](#chapter-3) can help you build the game on your PC.
+I encourage you to explore the [Software Architecture](#chapter-1), and then familiarize yourself with the [Technologies](#chapter-2) used.  The [Instructions](#chapter-3) can help you build the game on your PC.
+
+> **This document is a config file.** Links annotated with **⚙️** will affect system behavior based on their text.
 
 ## **Software Architecture** <a name="chapter-1"></a>
 
@@ -77,7 +79,7 @@ The Grove uses the [Vite](https://vitejs.dev/guide/features.html#hot-module-repl
 <summary><b>(3) — Building</b></summary>
 
 Run the following command to bundle the entire game up into a package. The resulting binaries + distributables will go in
-[app/build](SETTINGS.md#build-output-location)<sup>⚙️</sup>.
+the [game/](SETTINGS.md#build-output-location)<sup>⚙️</sup> directory.
 
 ```sh
 $ yarn build    # bundle source files
