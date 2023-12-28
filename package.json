@@ -16,7 +16,7 @@
     "src/ecs",
     "src/engine",
     "src/graphics",
-    "src/physics",
+    "src/physics", 
     "src/grove",
     "src/editor"
   ],
