@@ -2,4 +2,4 @@
 
 # The Grove
 
-[About](?id=the-grove) [Play](game/ ':ignore')
+[Docs](/?id=the-grove) [Play](game/ ':ignore')

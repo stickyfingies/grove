@@ -9,18 +9,33 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta charset="UTF-8" />
   <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/themes/vue.css" />
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.css">
+  <script src="//cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <style>
+    h1.app-name a.app-name-link img {
+      width: 20%;
+    }
+  </style>
 </head>
 
 <body>
-  <div id="app"></div>
+  <div id="app">Please wait...</div>
   <script>
+    window.mermaid.initialize({ startOnLoad: true, theme: 'forest' });
     window.$docsify = {
+      name: 'The Grove',
       logo: 'grove.png',
       icon: 'grove.png',
       coverpage: 'docs/_coverpage.md',
+      loadSidebar: 'index.md',
+      subMaxLevel: 2,
+      mermaidConfig: {
+        querySelector: '.mermaid'
+      }
     };
   </script>
   <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+  <script src="//unpkg.com/docsify-mermaid@2.0.1/dist/docsify-mermaid.js"></script>
 </body>
 
 </html>

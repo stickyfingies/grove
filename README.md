@@ -1,6 +1,7 @@
 # **The Grove**
 
-[Play Online](https://stickyfingies.github.io/grove/game)
+[Play Online](https://stickyfingies.github.io/grove/game) | 
+[Docs](https://stickyfingies.github.io/grove/#/?id=the-grove)
 
 This game is my longest-ever hobby project.  Concieved way back in 2017 as a Skyrim-like browser RPG, the game is now a tech sandbox for trying new web technologies and applying them in a game context.
 
@@ -8,7 +9,7 @@ I encourage you to explore the [Software Architecture](#chapter-1), and then fam
 
 > **This document is a config file.** Links annotated with **⚙️** will affect system behavior based on their text.
 
-## **Software Architecture** <a name="chapter-1"></a>
+## Software Architecture <a name="chapter-1"></a>
 
 - **ECS**: All game objects ("entities") and their behaviors are logically represented using the [ECS paradigm](https://en.wikipedia.org/wiki/Entity_component_system).  Yeah, the game runs on Javascript and the performance benefits of this are negligable.  On the flip side, building this system has taught me a lot about cache locality and some of the architectural benefits of composition-over-inheritance.
 - **Graphics**: This game uses [Three.js](https://github.com/mrdoob/three.js) to both order game objects into a heirarchical scene graph _(main thread)_, and then draw those objects _(render thread)_.  Every frame, the main thread computes individual object transforms, and communicates them to the render thread using [shared memory](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer), which uses WebGL to draw the objects.
@@ -19,7 +20,7 @@ them all talking to eachother.  It also includes utilities for logging, asset lo
 and so we can use GameScripts to decide what actually happens in the sumulation.  There are GameScripts for the player,
 for the camera, for enemies and health bars, and basically everything which exists in the world.
 
-## **Technologies** <a name="chapter-2"></a>
+## Technologies <a name="chapter-2"></a>
 
 > Click any of the fancy badges to open that technology's website.
 
@@ -32,7 +33,7 @@ for the camera, for enemies and health bars, and basically everything which exis
 | [![Vite](https://img.shields.io/badge/Vite-646CFF.svg?style=flat-square&logo=vite&logoColor=yellow)](https://vitejs.dev/) | A build tool that powerfully combines all our source files. | ✗  |
 | [![Electron](https://shields.io/badge/Electron-47848F?style=flat-square&logo=electron&logoColor=FFFFFF)](https://www.electronjs.org/) | "Enables web developers to make desktop applications." | ✗
 
-## **Instructions** <a name="chapter-3"></a>
+## Instructions <a name="chapter-3"></a>
 
 > **Note** This section requires a basic familiarity with computer terminal emulator programs, like `cmd.exe` on Windows.
 
@@ -89,13 +90,13 @@ $ yarn build    # bundle source files
 
 ---
 
-## **License**
+## License
 
 - The Grove is copyright 2022 by Hybrid Alpaca Game Studios. All images¹, story, and game are copyright of Hybrid Alapca Game Studios. Copying or redistributing this game or content without the consent of Hybrid Alpaca Game Studios is illegal and unlawful.
 
  - ¹ Most images are not owned by Hybrid Alpaca Game Studios.
  
-## **Credits**
+## Credits
 
 **3D Models**
 

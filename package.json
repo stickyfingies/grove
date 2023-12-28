@@ -7,6 +7,7 @@
   "author": "Seth Traman",
   "license": "MIT",
   "scripts": {
+    "docs": "npx docsify-cli serve",
     "test": "yarn workspaces foreach -ptvi run test",
     "build": "yarn workspaces foreach -ptvi run build",
     "dev": "concurrently -k 'yarn workspace @grove/grove run dev' 'yarn workspace @grove/editor run dev'"
