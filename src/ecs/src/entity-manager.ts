@@ -49,6 +49,7 @@ export interface ComponentEffect<T extends ComponentType> {
  * A system rule applies every frame to entities with a matching signature.
  */
 export interface SystemRule<T extends ComponentTypeList> {
+    name: string,
     types: T;
     fn(data: ComponentDataFromSignature<T>, entity: number): void;
 }
@@ -122,6 +123,14 @@ export class EntityManager {
 
     #rules: SystemRule<ComponentTypeList>[] = [];
 
+    #mermaidChart: string = 'flowchart LR\n';
+
+    #mermaidSubgraphs = new Map<string, string[]>;
+
+    get mermaid(): string {
+        return this.#mermaidChart;
+    }
+
     constructor() {
         // @ts-ignore - Useful for debugging
         if (typeof window !== 'undefined') { window.archetypes = this.#archetypes; }
@@ -139,15 +148,32 @@ export class EntityManager {
     useEffect<T extends ComponentType>(effect: ComponentEffect<T>) {
         if (typeof (effect.add) !== 'undefined') {
             this.events.on(`set${effect.type.name}Component`, ({entity_id, data}: SetComponentEvent<T>) => effect.add(entity_id, data));
+            this.#mermaidChart += effect.type.name + ' -.->|add| ' + effect.type.name + '\n';
         }
         
         if (typeof effect.remove !== 'undefined') {
             this.events.on(`delete${effect.type.name}Component`, ({entity_id, data}: DeleteComponentEvent<T>) => effect.remove(entity_id, data));
+            this.#mermaidChart += effect.type.name + ' -.->|remove| ' + effect.type.name + '\n';
         }
     }
 
     addRule<T extends ComponentTypeList>(rule: SystemRule<T>) {
         this.#rules.push(rule);
+
+        /** Mermaid */
+        {
+            const signatureHash = hashSignature(new Set(rule.types)).replaceAll(':', '_');
+            if (!this.#mermaidSubgraphs.has(signatureHash)) {
+                this.#mermaidSubgraphs.set(signatureHash, rule.types.map(type => type.name));
+                this.#mermaidChart += `
+                    subgraph ${signatureHash}
+                    direction LR
+                        ${rule.types.map(type => signatureHash + type.name + "[" + type.name + "]").join('\n')}
+                    end
+                `;
+            }
+            this.#mermaidChart += rule.name.replaceAll(' ', '_') + '[' + rule.name + ']' + '-->' + signatureHash + '\n';
+        }
     }
 
     /** Allocate an ID for a new entity */

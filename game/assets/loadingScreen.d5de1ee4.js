@@ -1,1 +1,0 @@
-import{e as s}from"./game.86b6fc01.js";class r{initialize(){s.events.on("assetsLoaded",()=>{var e,t;(e=document.querySelector("#spinner"))==null||e.setAttribute("style","display:none"),(t=document.querySelector("#load-play-btn"))==null||t.setAttribute("style","display:block")})}}export{r as default};

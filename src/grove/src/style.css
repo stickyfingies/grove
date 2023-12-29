@@ -12,6 +12,11 @@ html, body {
   height: 100%;
 }
 
+.dg.ac {
+  /** dat.gui */
+  z-index: 6 !important;
+}
+
 .hotbar {
   border: 1px solid #eee;
   margin-left: 4px;

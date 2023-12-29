@@ -37,6 +37,7 @@ export class Movement {
 }
 
 world.addRule({
+    name: 'Movement affects physical objects',
     types: [PhysicsData, MeshData, Movement],
     fn([body, mesh, mvmt]) {
         const direction = new Vector3(0, 0, 0);

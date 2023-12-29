@@ -48,6 +48,7 @@ world.useEffect({
 });
 
 world.addRule({
+    name: 'Update UI',
     types: [UserInterface],
     fn([uiData]) {
         uiData._DOMElement!.innerText = uiData.text;

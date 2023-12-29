@@ -1,1 +1,0 @@
-import{a as t}from"./game.86b6fc01.js";function r(e){t.changeCamera(e)}function n(e,a){t.updateMaterial(e,a)}function o(e,a=!1){t.addObjectToScene(e,a)}function i(e){t.removeObjectFromScene(e)}function m(e){t.createParticleEmitter(e)}export{o as addObjectToScene,r as changeCamera,m as createParticleEmitter,i as removeObjectFromScene,n as updateMaterial};

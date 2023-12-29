@@ -19,6 +19,7 @@ export class Goblin { }
 // });
 
 world.addRule({
+    name: 'Dead goblins disappear',
     types: [MeshData, Goblin, Death],
     fn([mesh], entity) {
         world.events.emit('enemyDied', { entity });

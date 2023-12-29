@@ -85,6 +85,12 @@ export default class Engine {
         // this.#graphicsStats.dom.style.cssText = 'position:absolute;top:0px;left:260px;';
         // document.body.appendChild(this.#graphicsStats.dom);
 
+        gui.add({
+            copyMermaid() {
+                navigator.clipboard.writeText(world.mermaid);
+            }
+        }, 'copyMermaid');
+
         requestAnimationFrame(this.update);
     }
 

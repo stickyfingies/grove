@@ -7,6 +7,7 @@ import Health, { Death } from "./health";
 export class BarbarianData { }
 
 world.addRule({
+    name: 'Dead barbarians disappear',
     types: [MeshData, BarbarianData, Death],
     fn([mesh], entity) {
         graphics.removeObjectFromScene(mesh);

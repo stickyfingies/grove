@@ -1,0 +1,1 @@
+import{w as s,P as r,e as y,o as l,p,V as m,a as u}from"./game.e9cd2ea9.js";const i=([t,e],n)=>{var o;const[d,a,c]=p.getBodyPosition(t),f=(o=e.userData.offset)!=null?o:new m;e.position.set(d,a,c).add(f),a<-20&&(p.removeBody(t),u.removeObjectFromScene(e),s.deleteEntity(n))};s.addRule({types:[r,y],fn:i});s.addRule({types:[r,l],fn:i});

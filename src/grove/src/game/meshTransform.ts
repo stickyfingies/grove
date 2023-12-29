@@ -32,11 +32,13 @@ const updateTransform = ([body, mesh]: S, entity: number) => {
 };
 
 world.addRule({
+    name: 'Physics affects meshes',
     types: [PhysicsData, MeshData],
     fn: updateTransform
 });
 
 world.addRule({
+    name: 'Physics affects sprites',
     types: [PhysicsData, SpriteData],
     fn: updateTransform
 });

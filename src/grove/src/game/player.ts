@@ -251,6 +251,7 @@ addAbilityToTargetIndicator(target_sprite);
 addAbilityToTargetIndicator(target_sprite);
 
 world.addRule({
+    name: 'Game-over',
     types: [Score, Death],
     fn([score]) {
         document.querySelector('#blocker')?.setAttribute('style', 'display:block');
