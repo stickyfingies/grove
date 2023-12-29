@@ -11,10 +11,6 @@ import { Goblin } from "./goblin";
 
 export const TARGET_TAG = Symbol("Target");
 
-const ABILITY_TEXTURE_PATH = 'img/icons.jpg';
-
-const INDICATOR_TEXTURE_PATH = 'img/fire.png';
-
 //
 
 type AbilityList = number;
@@ -22,11 +18,12 @@ type AbilityList = number;
 export type TargetIndicator = {
     sprite: Sprite,
     abilities: AbilityList
-}
+};
 
 //
 
 export function makeTargetIndicator(): TargetIndicator {
+    const INDICATOR_TEXTURE_PATH = 'img/fire.png';
     const target_sprite = new Sprite(new SpriteMaterial({
         color: 0xff0000,
         transparent: true,
@@ -44,8 +41,9 @@ export function makeTargetIndicator(): TargetIndicator {
 //
 
 export function addAbilityToTargetIndicator(target: TargetIndicator) {
-    target.abilities++;
+    target.abilities += 1;
 
+    const ABILITY_TEXTURE_PATH = 'img/icons.jpg';
     // const ability_texture = new TextureLoader().load('./img/glow.png');
     const ability_texture = new TextureLoader().load(ABILITY_TEXTURE_PATH);
     ability_texture.offset = new Vector2((1 / 10), 1 - (1 / 12));

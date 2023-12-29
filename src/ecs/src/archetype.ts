@@ -78,7 +78,7 @@ export class Archetype {
     }
 
     setComponent<T extends ComponentTypeList>
-        (id: number, types: T, data: ComponentDataFromSignature<T>) {
+    (id: number, types: T, data: ComponentDataFromSignature<T>) {
         const index = this.entityIdToIndex[id];
         for (let i = 0; (i < types.length) && (i < (data.length as number)); i++) {
             this.components.get(types[i])![index] = data[i];
@@ -87,9 +87,9 @@ export class Archetype {
     }
 
     getComponent<T extends ComponentTypeList>
-        (entity_id: number, types: T): ComponentDataFromSignature<T> {
+    (entity_id: number, types: T): ComponentDataFromSignature<T> {
         const index = this.entityIdToIndex[entity_id];
-        return types.map((type) => { return this.components.get(type)![index] }) as ComponentDataFromSignature<T>;
+        return types.map((type) => { return this.components.get(type)![index]; }) as ComponentDataFromSignature<T>;
     }
 
     hasComponent(id: number, types: ComponentTypeList) {

@@ -11,29 +11,32 @@ import { graphics, physics, world } from '@grove/engine';
 /// signature
 type S = [PhysicsData, MeshData | SpriteData];
 
-export default class MeshTransformScript {
-    every_frame() {
-        const updateTransform = ([body, mesh]: S, entity: number) => {
-            const [px, py, pz] = physics.getBodyPosition(body);
-            const offset: Vector3 = mesh.userData.offset ?? new Vector3();
-            mesh.position.set(px, py, pz).add(offset);
+const updateTransform = ([body, mesh]: S, entity: number) => {
+    const [px, py, pz] = physics.getBodyPosition(body);
+    const offset: Vector3 = mesh.userData.offset ?? new Vector3();
+    mesh.position.set(px, py, pz).add(offset);
 
-            // handle when an entity falls off the map
-            if (py < -20) {
-                physics.removeBody(body);
-                graphics.removeObjectFromScene(mesh);
-                world.deleteEntity(entity);
-            }
-
-            // @todo - Firearm doesn't sync body quaternions yet
-            // const {
-            //     x: qx, y: qy, z: qz, w: qw,
-            // } = body.quaternion;
-            // @todo document `mesh.userData.norotate`
-            // if (!mesh.userData.norotate) mesh.quaternion.set(qx, qy, qz, qw);
-        }
-
-        world.do_with([PhysicsData, MeshData], updateTransform);
-        world.do_with([PhysicsData, SpriteData], updateTransform);
+    // handle when an entity falls off the map
+    if (py < -20) {
+        physics.removeBody(body);
+        graphics.removeObjectFromScene(mesh);
+        world.deleteEntity(entity);
     }
-}
+
+    // @todo - Firearm doesn't sync body quaternions yet
+    // const {
+    //     x: qx, y: qy, z: qz, w: qw,
+    // } = body.quaternion;
+    // @todo document `mesh.userData.norotate`
+    // if (!mesh.userData.norotate) mesh.quaternion.set(qx, qy, qz, qw);
+};
+
+world.addRule({
+    types: [PhysicsData, MeshData],
+    fn: updateTransform
+});
+
+world.addRule({
+    types: [PhysicsData, SpriteData],
+    fn: updateTransform
+});

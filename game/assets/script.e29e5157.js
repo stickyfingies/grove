@@ -1,1 +1,0 @@
-var r=Object.defineProperty;var a=(e,t,s)=>t in e?r(e,t,{enumerable:!0,configurable:!0,writable:!0,value:s}):e[t]=s;var i=(e,t,s)=>(a(e,typeof t!="symbol"?t+"":t,s),s);import{w as o,b as c}from"./game.c6b7d49d.js";class f{constructor(t,s){i(this,"id");this.id=t!=null?t:o.createEntity(),s&&Object.assign(this,s),c(this)}initialize(){}every_frame(t){}}export{f as G};

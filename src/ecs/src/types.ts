@@ -18,13 +18,13 @@ export type ComponentDataFromSignature<T> = {
     [P in keyof T]: T[P] extends ComponentType
     ? InstanceType<T[P]>
     : never
-}
+};
 
 // https://dev.t-matix.com/blog/platform/eimplementing-a-type-saf-ecs-with-typescript/
 export type ComponentArrayFromSignature<T> = {
     [P in keyof T]: T[P] extends ComponentType
     ? InstanceType<T[P]>[]
     : never
-}
+};
 
 export type ComponentList = InstanceType<ComponentType>[];

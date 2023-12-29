@@ -27,4 +27,4 @@ export const dealDamage = (ecs: EntityManager) => (dmg: number) => (entity: numb
             cb();
         }
     }
-}
+};

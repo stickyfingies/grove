@@ -8,7 +8,6 @@ import { Score } from "./score";
 import { SphereShape } from '@grove/engine/lib/load';
 
 // data (mostly json)
-const shoppe = world.createEntity();
 const rigidBodyDescription: RigidBodyDescription = {
     mass: 0,
     isGhost: false,
@@ -24,7 +23,8 @@ const body = physics.createSphere(rigidBodyDescription, {
     scale: [1, 1, 1],
     quat: [0, 0, 0, 1]
 }, sphereShape);
-world.put(shoppe, [Mesh, PhysicsData], [mesh, body]);
+
+const shoppe = world.spawn([Mesh, PhysicsData], [mesh, body]);
 
 // 'e' to interact
 document.addEventListener('keydown', async (e) => {

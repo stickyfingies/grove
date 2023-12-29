@@ -1,0 +1,1 @@
+import{w as t,P as i,d as m,o as y,p,V as h,a as w}from"./game.86b6fc01.js";class u{every_frame(){const a=([e,s],c)=>{var r;const[d,o,f]=p.getBodyPosition(e),n=(r=s.userData.offset)!=null?r:new h;s.position.set(d,o,f).add(n),o<-20&&(p.removeBody(e),w.removeObjectFromScene(s),t.deleteEntity(c))};t.do_with([i,m],a),t.do_with([i,y],a)}}export{u as default};

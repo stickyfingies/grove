@@ -4,7 +4,7 @@ import { MeshData } from '@grove/graphics';
 import { PhysicsData, RigidBodyDescription } from '@grove/physics';
 import { PLAYER_TAG } from './player';
 import { assetLoader, graphics, physics, world } from '@grove/engine';
-import AttackScript from '../components/attack';
+import {Attacker} from './attack';
 import { Mesh } from 'three';
 import { CapsuleShape } from '@grove/engine/lib/load';
 
@@ -18,6 +18,15 @@ export class Goblin { }
 //     this.createGoblin();
 // });
 
+world.addRule({
+    types: [MeshData, Goblin, Death],
+    fn([mesh], entity) {
+        world.events.emit('enemyDied', { entity });
+        graphics.removeObjectFromScene(mesh);
+        world.deleteEntity(entity);
+    }
+});
+
 export default class GoblinScript extends GameSystem {
     shootTimer?: NodeJS.Timer;
 
@@ -25,17 +34,7 @@ export default class GoblinScript extends GameSystem {
         setInterval(this.createGoblin, 15_000);
     }
 
-    every_frame() {
-        world.do_with([MeshData, Goblin, Death], ([mesh], entity_id) => {
-            world.events.emit('enemyDied', { entity_id });
-            graphics.removeObjectFromScene(mesh);
-            world.deleteEntity(entity_id);
-        });
-    }
-
     async createGoblin() {
-
-        const goblin = world.createEntity();
 
         const modelShape = { uri: './models/villager-male/villager-male.glb' };
         const rigidBodyDescription: RigidBodyDescription = {
@@ -48,11 +47,9 @@ export default class GoblinScript extends GameSystem {
             height: 1.7
         };
         const health = new Health(3, 3);
-        const attack = new AttackScript(goblin, world.getTag(PLAYER_TAG));
         const gbln = {};
 
         const mesh = await assetLoader.loadModel(modelShape);
-        mesh.traverse(node => node.userData.entityId = goblin); // create relationship between mesh->entity
         graphics.addObjectToScene(mesh);
 
         const body = physics.createCapsule(rigidBodyDescription, {
@@ -61,8 +58,15 @@ export default class GoblinScript extends GameSystem {
             quat: [0, 0, 0, 1]
         }, capsuleShape);
 
-        world.put(goblin,
-            [PhysicsData, Mesh, Goblin, Health, AttackScript],
-            [body, mesh, gbln, health, attack]);
+        const goblin = world.spawn(
+            [PhysicsData, Mesh, Goblin, Health],
+            [body, mesh, gbln, health]
+        );
+
+        mesh.traverse(node => { node.userData.entityId = goblin; }); // create relationship between mesh->entity
+
+        const attack = new Attacker(world.getTag(PLAYER_TAG));
+        world.put(goblin, [Attacker], [attack]);
+
     }
 }

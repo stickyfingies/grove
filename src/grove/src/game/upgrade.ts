@@ -17,7 +17,6 @@ export default class UpgradeScript {
         const upgradeTexture = await new TextureLoader().loadAsync('./img/HealthUpgrade.png');
 
         const makeUpgrade = async () => {
-            const upgrade = world.createEntity();
 
             const upgradeBody = physics.createSphere({
                 mass: 1000,
@@ -37,7 +36,7 @@ export default class UpgradeScript {
             sprite.material.map = upgradeTexture;
             graphics.addObjectToScene(sprite);
 
-            world.put(upgrade, [PhysicsData, Sprite], [upgradeBody, sprite]);
+            world.spawn([PhysicsData, Sprite], [upgradeBody, sprite]);
 
             // const collideCb = ({ body }: { body: PhysicsData }) => {
             //     const player = Entity.getTag(PLAYER_TAG);

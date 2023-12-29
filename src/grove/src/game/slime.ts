@@ -167,13 +167,12 @@ export default class SlimeScript extends GameSystem {
             });
         instancedMeshes.forEach((mesh) => {
             mesh.scale.set(0.7, 0.7, 0.7);
-            graphics.addObjectToScene(mesh)
+            graphics.addObjectToScene(mesh);
         });
         return instancedMeshes;
     }
 
     async createSlime() {
-        const slime = world.createEntity();
 
         // data (json, more or less)
         const slimeData = { speed: 0.75, lastHop: performance.now() };
@@ -191,7 +190,6 @@ export default class SlimeScript extends GameSystem {
         const mesh = await assetLoader.loadModel(modelShape);
         const model = await assetLoader.loadModelData(modelShape);
         // const instancedMeshes = this.createInstancedSlime(model);
-        mesh.traverse(node => node.userData.entityId = slime); // create relationship between mesh->entity
         // @ts-ignore
         mesh.children[1].material = mesh.children[1].material.clone();
         mesh.scale.set(0.7, 0.7, 0.7);
@@ -217,11 +215,12 @@ export default class SlimeScript extends GameSystem {
         //     console.log(world.getEntityComponentSignature(entity));
         // })
 
-        world.put(slime,
+        const slime = world.spawn(
             [Mesh, PhysicsData, Slime, Health],
             [mesh, body, slimeData, health]
         );
 
+        mesh.traverse(node => node.userData.entityId = slime); // create relationship between mesh->entity
         physics.registerCollisionCallback(body, dealDamage(world)(3));
     }
 }

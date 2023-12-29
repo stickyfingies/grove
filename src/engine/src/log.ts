@@ -6,7 +6,7 @@
  */
 
 function getFontColor(string: string) {
-    let stringUniqueHash = [...string].reduce((accumulator, char) => {
+    const stringUniqueHash = [...string].reduce((accumulator, char) => {
         return char.charCodeAt(0) + ((accumulator << 5) - accumulator);
     }, 69);
     return `hsl(${stringUniqueHash % 360}, 95%, 35%)`;
@@ -27,13 +27,13 @@ function getFontColor(string: string) {
 export default function LogService(logName: string) {
     const logCategory = logName.split(':')[0];
 
-    const makePrettyPrinter = (fn: Function) => {
+    const makePrettyPrinter = (fn: (...data: unknown[]) => void) => {
         return (payload: unknown) => {
             if (typeof payload === 'object') { payload = JSON.stringify(payload, undefined, 2); }
             const color = getFontColor(logCategory);
             fn(`%c[${logName}]\n%c${payload}`, `color:${color};font-weight:bold;`, 'color:#333333;font-weight:bold;');
-        }
-    }
+        };
+    };
     const log = makePrettyPrinter(console.log);
     const report = makePrettyPrinter(console.error);
 

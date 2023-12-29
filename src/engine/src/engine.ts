@@ -33,12 +33,6 @@ export default class Engine {
 
     #stats = new Stats();
 
-    #physicsStats = new Stats();
-
-    #scriptStats = new Stats();
-
-    #graphicsStats = new Stats();
-
     constructor() {
         autoBind(this);
     }
@@ -55,40 +49,41 @@ export default class Engine {
         events.on('startLoop', () => { this.#running = true; });
         events.on('stopLoop', () => { this.#running = false; });
 
-        const physics_ready = physics.init(world.events, LogService('physics'), LogService('physics:worker'));
+        physics.init(world.events);
         graphics.init();
         assetLoader.init(LogService('load'));
-        // await physics_ready;
-        world.events.on(`set${PhysicsData.name}Component`, ({ entity_id, data }) => {
-            // ! using `physics.ts` internals inside `engine.ts` ? preposterous !
-            // Move this down to the physics API surface
-            data.setUserIndex(entity_id);
-        });
-        world.events.on(`delete${PhysicsData.name}Component`, ({ data }) => {
-            physics.removeBody(data);
+        
+        world.useEffect({
+            type: PhysicsData,
+            add(entity, data) {
+                data.setUserIndex(entity);
+            },
+            remove(entity, data) {
+                physics.removeBody(data);
+            }
         });
 
         // create camera
-        new Entity(world)
-            .addTag(CAMERA_TAG)
-            .setComponent(CameraData, graphics.camera);
+        const camera = world.spawn([CameraData], [graphics.camera]);
+        world.addTag(camera, CAMERA_TAG);
 
         // between the game scripts and the map, we probably just created a bunch of renderables.
         // run backend work now, so it isn't being done right when the first frame starts rendering.
         graphics.update();
 
         // show performance statistics
-        this.#stats.showPanel(2);
+        this.#stats.showPanel(1);
+        this.#stats.dom.style.cssText = 'position:absolute;top:0px;left:100px;';
         document.body.appendChild(this.#stats.dom);
-        this.#physicsStats.showPanel(1);
-        this.#physicsStats.dom.style.cssText = 'position:absolute;top:0px;left:100px;';
-        document.body.appendChild(this.#physicsStats.dom);
-        this.#scriptStats.showPanel(1);
-        this.#scriptStats.dom.style.cssText = 'position:absolute;top:0px;left:180px;';
-        document.body.appendChild(this.#scriptStats.dom);
-        this.#graphicsStats.showPanel(1);
-        this.#graphicsStats.dom.style.cssText = 'position:absolute;top:0px;left:260px;';
-        document.body.appendChild(this.#graphicsStats.dom);
+        // this.#physicsStats.showPanel(1);
+        // this.#physicsStats.dom.style.cssText = 'position:absolute;top:0px;left:100px;';
+        // document.body.appendChild(this.#physicsStats.dom);
+        // this.#scriptStats.showPanel(1);
+        // this.#scriptStats.dom.style.cssText = 'position:absolute;top:0px;left:180px;';
+        // document.body.appendChild(this.#scriptStats.dom);
+        // this.#graphicsStats.showPanel(1);
+        // this.#graphicsStats.dom.style.cssText = 'position:absolute;top:0px;left:260px;';
+        // document.body.appendChild(this.#graphicsStats.dom);
 
         requestAnimationFrame(this.update);
     }
@@ -101,7 +96,7 @@ export default class Engine {
      */
     attachModules(scripts: GameSystem[]) {
         this.#gameScripts = this.#gameScripts.concat(scripts);
-        scripts.forEach(script => { if ('initialize' in script) script.initialize() });
+        scripts.forEach(script => { if ('initialize' in script) script.initialize(); });
     }
 
     update(now: number) {
@@ -110,22 +105,18 @@ export default class Engine {
         this.#stats.begin();
 
         if (this.#running) {
-            this.#physicsStats.begin();
             physics.update(delta);
-            this.#physicsStats.end();
 
-            this.#scriptStats.begin();
             for (const script of this.#gameScripts as any[]) {
                 // script is being used as a component
                 if ('update' in script) world.do_with([script.constructor], ([instance], e) => instance.update(e));
                 // this is on everything
                 if (script.every_frame) script.every_frame(delta);
             }
-            this.#scriptStats.end();
 
-            this.#graphicsStats.begin();
-            graphics.update();
-            this.#graphicsStats.end();
+            world.executeRules();
+            
+            graphics.update();    
         }
 
         this.#stats.end();
@@ -148,7 +139,7 @@ export default class Engine {
         for (const glob of scriptConfig.typescript) {
             console.groupCollapsed('typescript');
             const modules = await loadModules(glob);
-            const systems = modules.map(({ module }) => new (module as any).default() as GameSystem)
+            const systems = modules.map(({ module }) => new (module as any).default() as GameSystem);
             systems.forEach((system) => gameSystems.push(system));
             console.groupEnd();
         }
@@ -184,15 +175,15 @@ async function loadModules(glob: ImportMetaGlob) {
         .map(async ([path, loadModule]) => {
 
             const filepath = path.split('/').pop();
-            const filename = filepath?.split('.')[0]!;
+            const filename = filepath!.split('.')[0]!;
 
             try {
                 const module = await loadModule();
-                console.log(filename + ' - ' + Object.keys(module).join(', '));
+                // console.log(filename + ' - ' + Object.keys(module).join(', '));
                 return { filename, module } as const;
             } catch (err) {
-                console.error("Failed to load file " + filename);
-                console.warn(err);
+                console.error("Failed to load file " + filepath);
+                console.trace(err);
                 return { filename, module: {} } as const;
             }
 

@@ -20,7 +20,7 @@ export class UserInterface {
     _DOMElement?: HTMLParagraphElement;
 }
 
-function createUIElement({ data }: { data: UserInterface }) {
+function createUIElement(data: UserInterface) {
     const div = document.createElement('div');
     const text = document.createElement('p');
 
@@ -39,13 +39,17 @@ function createUIElement({ data }: { data: UserInterface }) {
     document.body.appendChild(div);
 }
 
-world.events.on(`set${UserInterface.name}Component`, createUIElement);
+world.useEffect({
+    type: UserInterface,
 
-export default class UserInteraceSystem {
-    every_frame() {
-        // TODO - dirty flag
-        world.do_with([UserInterface], ([uiData]) => {
-            uiData._DOMElement!.innerText = uiData.text;
-        });
+    add(entity, ui) {
+        createUIElement(ui);
+    },
+});
+
+world.addRule({
+    types: [UserInterface],
+    fn([uiData]) {
+        uiData._DOMElement!.innerText = uiData.text;
     }
-}
+});

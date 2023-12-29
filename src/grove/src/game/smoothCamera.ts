@@ -16,5 +16,4 @@ export class SmoothCamera {
     }
 }
 
-export const smoothCamera = world.createEntity();
-world.put(smoothCamera, [SmoothCamera], [new SmoothCamera()]);
+export const smoothCamera = world.spawn([SmoothCamera], [new SmoothCamera()]);

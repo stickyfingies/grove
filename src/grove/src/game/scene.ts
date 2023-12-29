@@ -32,6 +32,12 @@ export default class SceneSetupScript {
             skyboxMesh.name = 'Skybox';
             graphics.addObjectToScene(skyboxMesh);
             world.put(this.skybox, [MeshData], [skyboxMesh]);
+
+            // create sun
+            const sunlight = new DirectionalLight(0xffffff);
+            sunlight.position.set(10, 30, 20);
+            sunlight.name = 'Sunlight';
+            graphics.addObjectToScene(sunlight);
         });
         const loader = new ImageBitmapLoader(loadingManager);
         for (let i = 0; i < 6; i++) {
@@ -45,18 +51,12 @@ export default class SceneSetupScript {
                 materialArray[i] = mat;
             });
         }
-
-        // create sun
-        const sunlight = new DirectionalLight(0xffffff);
-        sunlight.position.set(10, 30, 20);
-        sunlight.name = 'Sunlight';
-        graphics.addObjectToScene(sunlight);
     }
 
     every_frame() {
         // center skybox around camera
         const [camera] = world.get(world.getTag(CAMERA_TAG), [CameraData]);
-        const [mesh] = world.get(this.skybox, [MeshData])
-        camera?.position.copy(camera.position);
+        const [mesh] = world.get(this.skybox, [MeshData]);
+        mesh?.position.copy(camera.position);
     }
 }

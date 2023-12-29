@@ -173,14 +173,11 @@ graphics.loadModel().then((model) => {
         [mesh, body, health, score, mvmtData, kbControl, hud]
     );
 
-    const crosshair = world.createEntity();
-    {
-        const crosshairSprite = new Sprite(new SpriteMaterial({ color: 'black' }));
-        crosshairSprite.scale.set(10, 10, 1);
-        crosshairSprite.position.set(0, 0, -1);
-        graphics.addObjectToScene(crosshairSprite, true);
-        world.put(crosshair, [SpriteData], [crosshairSprite]);
-    }
+    const crosshairSprite = new Sprite(new SpriteMaterial({ color: 'black' }));
+    crosshairSprite.scale.set(10, 10, 1);
+    crosshairSprite.position.set(0, 0, -1);
+    graphics.addObjectToScene(crosshairSprite, true);
+    const crosshair = world.spawn([SpriteData], [crosshairSprite]);
 
     const shootTowardsCrosshair = (e: MouseEvent) => {
         if (e.button !== 2) return;
@@ -253,18 +250,21 @@ addAbilityToTargetIndicator(target_sprite);
 addAbilityToTargetIndicator(target_sprite);
 addAbilityToTargetIndicator(target_sprite);
 
+world.addRule({
+    types: [Score, Death],
+    fn([score]) {
+        document.querySelector('#blocker')?.setAttribute('style', 'display:block');
+        const loadText = document.querySelector('#load')! as HTMLElement;
+        loadText.setAttribute('style', 'display:block');
+        loadText.innerHTML = `<h1>You Have Perished. Score... ${score}</h1>`;
+        world.deleteEntity(player);
+    }
+});
+
 export default class PlayerScript extends GameSystem {
     every_frame() {
 
         drawHUD();
-
-        world.do_with([Score, Death], ([{ score }]) => {
-            document.querySelector('#blocker')?.setAttribute('style', 'display:block');
-            const loadText = document.querySelector('#load')! as HTMLElement;
-            loadText.setAttribute('style', 'display:block');
-            loadText.innerHTML = `<h1>You Have Perished. Score... ${score}</h1>`;
-            world.deleteEntity(player);
-        });
 
         if (Math.random() < 0.5) {
             updateTargetIndicator(player, frustumCamera);

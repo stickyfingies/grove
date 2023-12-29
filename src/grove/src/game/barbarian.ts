@@ -4,7 +4,15 @@ import { assetLoader, graphics, physics, world, GameSystem } from "@grove/engine
 
 import Health, { Death } from "./health";
 
-export class BarbarianData { };
+export class BarbarianData { }
+
+world.addRule({
+    types: [MeshData, BarbarianData, Death],
+    fn([mesh], entity) {
+        graphics.removeObjectFromScene(mesh);
+        world.deleteEntity(entity);
+    }
+});
 
 export default class BarbarianScript extends GameSystem {
     initialize() {
@@ -17,18 +25,10 @@ export default class BarbarianScript extends GameSystem {
         this.spawnBarbarian();
     }
 
-    every_frame() {
-        world.do_with([MeshData, BarbarianData, Death], ([mesh], entity) => {
-            graphics.removeObjectFromScene(mesh);
-            world.deleteEntity(entity);
-        });
-    }
-
     async spawnBarbarian() {
         const radius = 0.7;
         const height = 1.7;
 
-        const capsule = world.createEntity();
         const capsuleBody = physics.createCapsule({
             mass: 10,
             isGhost: false,
@@ -48,7 +48,7 @@ export default class BarbarianScript extends GameSystem {
         const health = new Health(1, 1);
         const barbarian = {};
 
-        world.put(capsule,
+        world.spawn(
             [MeshData, PhysicsData, Health, BarbarianData],
             [mesh, capsuleBody, health, barbarian]
         );

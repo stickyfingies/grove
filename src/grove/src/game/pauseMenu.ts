@@ -47,6 +47,8 @@ export default class PauseMenuScript {
             document.body.requestPointerLock();
         };
 
-        for (const btn of document.querySelectorAll('.play-btn')) btn.addEventListener('click', click);
+        for (const btn of document.querySelectorAll('.play-btn')) {
+            btn.addEventListener('click', click);
+        }
     }
 }

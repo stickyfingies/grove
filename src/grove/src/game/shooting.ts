@@ -14,7 +14,6 @@ export function shoot(
     shootDir: Vector3,
     cb?: (e: number, b: number) => void,
 ): number {
-    const ball = world.createEntity();
 
     const [px, py, pz] = origin.toArray();
     const { x: sdx, y: sdy, z: sdz } = shootDir.normalize();
@@ -53,7 +52,8 @@ export function shoot(
     const mesh = new Mesh(geometry, material);
     mesh.name = 'Bullet';
     graphics.addObjectToScene(mesh);
-    world.put(ball, [Mesh, PhysicsData], [mesh, body]);
+
+    const ball = world.spawn([Mesh, PhysicsData], [mesh, body]);
 
     const collideCb = (entity: number) => {
         physics.removeCollisionCallback(body);

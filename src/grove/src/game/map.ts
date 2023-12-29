@@ -13,7 +13,6 @@ export default class MapScript extends GameSystem {
         // });
 
         const mapData = maps.testArena;
-        const map = world.createEntity();
         const mapMesh = await assetLoader.loadModel({ uri: mapData.path });
         mapMesh.name = 'Map';
         mapMesh.traverse((node) => {
@@ -31,11 +30,10 @@ export default class MapScript extends GameSystem {
                     quat: worldQuat.toArray() as Quat,
                 }, _threejs_geometry_to_buffer(node.geometry));
 
-                const mapFragment = world.createEntity();
-                world.put(mapFragment, [PhysicsData], [body]);
+                world.spawn([PhysicsData], [body]);
             }
         });
         graphics.addObjectToScene(mapMesh);
-        world.put(map, [MeshData], [mapMesh]);
+        world.spawn([MeshData], [mapMesh]);
     }
 }

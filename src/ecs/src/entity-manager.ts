@@ -10,16 +10,16 @@ export interface DeleteEntityEvent {
     entity_id: number
 }
 
-export interface SetComponentEvent {
+export interface SetComponentEvent<T extends ComponentType> {
     entity_id: number,
     name: string,
-    data: any
+    data: InstanceType<T>
 }
 
-export interface DeleteComponentEvent {
+export interface DeleteComponentEvent<T extends ComponentType> {
     entity_id: number,
     name: string,
-    data: any
+    data: InstanceType<T>
 }
 
 export interface SignatureDelta {
@@ -34,6 +34,23 @@ export interface SignatureChangedEvent {
     new_signature: ComponentSignature,
     added_components: ComponentSignature,
     removed_components: ComponentSignature
+}
+
+/**
+ * An effect happens when components are added or removed.
+ */
+export interface ComponentEffect<T extends ComponentType> {
+    type: T,
+    add?(entity: number, data: InstanceType<T>): void;
+    remove?(entity: number, data: InstanceType<T>): void;
+}
+
+/**
+ * A system rule applies every frame to entities with a matching signature.
+ */
+export interface SystemRule<T extends ComponentTypeList> {
+    types: T;
+    fn(data: ComponentDataFromSignature<T>, entity: number): void;
 }
 
 type Query<T extends ComponentTypeList> = {
@@ -103,9 +120,34 @@ export class EntityManager {
      **/
     #queryHashToArchetypes = new Map<SignatureHash, Archetype[]>();
 
+    #rules: SystemRule<ComponentTypeList>[] = [];
+
     constructor() {
         // @ts-ignore - Useful for debugging
         if (typeof window !== 'undefined') { window.archetypes = this.#archetypes; }
+    }
+
+    spawn<T extends ComponentTypeList>(types: T, data: ComponentDataFromSignature<T>): number {
+        const entity = this.createEntity();
+        this.put(entity, types, data);
+        return entity;
+    }
+
+    /**
+     * useEffect registers behavior for when a component is added / removed.
+     */
+    useEffect<T extends ComponentType>(effect: ComponentEffect<T>) {
+        if (typeof (effect.add) !== 'undefined') {
+            this.events.on(`set${effect.type.name}Component`, ({entity_id, data}: SetComponentEvent<T>) => effect.add(entity_id, data));
+        }
+        
+        if (typeof effect.remove !== 'undefined') {
+            this.events.on(`delete${effect.type.name}Component`, ({entity_id, data}: DeleteComponentEvent<T>) => effect.remove(entity_id, data));
+        }
+    }
+
+    addRule<T extends ComponentTypeList>(rule: SystemRule<T>) {
+        this.#rules.push(rule);
     }
 
     /** Allocate an ID for a new entity */
@@ -127,7 +169,7 @@ export class EntityManager {
         
         // emit 'delete' events for every component in this entity
         for (const type of archetype.signature) {
-            const [data] = this.get(entity_id, [type]) as any;
+            const [data] = this.get(entity_id, [type]) as [unknown];
             this.events.emit(`delete${type.name}Component`, { entity_id, name: type.name, data } as DeleteComponentEvent);
             if ('destroy' in data) data.destroy();
         }
@@ -183,7 +225,7 @@ export class EntityManager {
     /** Delete a component for an entity.  Returns whether the component was deleted */
     deleteComponent<T extends ComponentTypeList>(entity_id: number, types: T) {
         const delta: SignatureDelta = { added: new Set(), removed: new Set(types) };
-        const data = this.get(entity_id, types) as any;
+        const data = this.get(entity_id, types) as unknown;
 
         // calculate new signature
         const old_signature = this.getEntityComponentSignature(entity_id);
@@ -236,7 +278,7 @@ export class EntityManager {
      * This should eliminate archetype hopping in some instances.
      */
     swapComponent<T extends ComponentTypeList>
-        (entity_id: number, removeTypes: ComponentTypeList, addTypes: T, addData: ComponentDataFromSignature<T>) {
+    (entity_id: number, removeTypes: ComponentTypeList, addTypes: T, addData: ComponentDataFromSignature<T>) {
         const delta: SignatureDelta = { added: new Set(addTypes), removed: new Set(removeTypes) };
         // compute new entity signature
         const old_signature = this.getEntityComponentSignature(entity_id);
@@ -310,6 +352,15 @@ export class EntityManager {
     }
 
     /**
+     * Usage is restricted to the engine.
+     */
+    executeRules() {
+        this.#rules.forEach(({types, fn}) => {
+            this.do_with(types, fn);
+        });
+    }
+
+    /**
      * Get a list of all entity id's which match a component signature
      * @example
      * ```ts
@@ -332,7 +383,7 @@ export class EntityManager {
     }
 
     do_with<T extends ComponentTypeList>
-        (query: T, callback: (c: ComponentDataFromSignature<T>, id: number) => void) {
+    (query: T, callback: (c: ComponentDataFromSignature<T>, id: number) => void) {
         const hash = hashSignature(new Set(query));
 
         // look for cached queries

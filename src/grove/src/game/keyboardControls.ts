@@ -32,11 +32,10 @@ export class KeyboardControls extends EventEmitter {
         for (const effect in eventMapping) {
             const keyboardActions = eventMapping[effect];
             for (const kbAction of keyboardActions) {
-                console.log(kbAction);
                 this.#eventMap.set(kbAction, effect);
             }
         }
-    };
+    }
 
     public process_keyboard_event(key: string, type: 'up' | 'down') {
         const eventName = this.#eventMap.get(`${key}_${type}`);
@@ -152,35 +151,35 @@ export default class KeyboardControlScript extends GameSystem {
         });
 
         switch (key) {
-            case 'ArrowUp':
-            case 'w':
-                this.moveForward = true;
-                break;
-            case 'ArrowLeft':
-            case 'a':
-                this.moveLeft = true;
-                break;
-            case 'ArrowDown':
-            case 's':
-                this.moveBackward = true;
-                break;
-            case 'ArrowRight':
-            case 'd':
-                this.moveRight = true;
-                break;
-            case ' ':
-                this.wantsToJump = true;
-                break;
-            case 'Shift':
-                this.sprint = true;
-                break;
-            case 'Escape':
-                document.exitPointerLock();
-                break;
-            case 'Delete':
-                location.reload();
-                break;
-            default:
+        case 'ArrowUp':
+        case 'w':
+            this.moveForward = true;
+            break;
+        case 'ArrowLeft':
+        case 'a':
+            this.moveLeft = true;
+            break;
+        case 'ArrowDown':
+        case 's':
+            this.moveBackward = true;
+            break;
+        case 'ArrowRight':
+        case 'd':
+            this.moveRight = true;
+            break;
+        case ' ':
+            this.wantsToJump = true;
+            break;
+        case 'Shift':
+            this.sprint = true;
+            break;
+        case 'Escape':
+            document.exitPointerLock();
+            break;
+        case 'Delete':
+            location.reload();
+            break;
+        default:
         }
     }
 
@@ -196,29 +195,29 @@ export default class KeyboardControlScript extends GameSystem {
         });
 
         switch (key) {
-            case 'ArrowUp':
-            case 'w':
-                this.moveForward = false;
-                break;
-            case 'ArrowLeft':
-            case 'a':
-                this.moveLeft = false;
-                break;
-            case 'ArrowDown':
-            case 's':
-                this.moveBackward = false;
-                break;
-            case 'ArrowRight':
-            case 'd':
-                this.moveRight = false;
-                break;
-            case ' ':
-                this.wantsToJump = false;
-                break;
-            case 'Shift':
-                this.sprint = false;
-                break;
-            default:
+        case 'ArrowUp':
+        case 'w':
+            this.moveForward = false;
+            break;
+        case 'ArrowLeft':
+        case 'a':
+            this.moveLeft = false;
+            break;
+        case 'ArrowDown':
+        case 's':
+            this.moveBackward = false;
+            break;
+        case 'ArrowRight':
+        case 'd':
+            this.moveRight = false;
+            break;
+        case ' ':
+            this.wantsToJump = false;
+            break;
+        case 'Shift':
+            this.sprint = false;
+            break;
+        default:
         }
     }
 }

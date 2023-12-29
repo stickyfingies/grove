@@ -9,7 +9,7 @@
     "cucumber": "npx cucumber-js test/features/**/*.feature --import test/world/world.ts --import test/src/**/health.test.ts --require-module ts-node/register --format summary --format @cucumber/pretty-formatter --format cucumber-console-formatter --publish-quiet",
     "test": "vitest",
     "start": "yarn build && yarn electron:prod",
-    "dev": "concurrently -k 'vite --force' 'yarn electron:dev'",
+    "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "electron:prod": "electron-forge start",

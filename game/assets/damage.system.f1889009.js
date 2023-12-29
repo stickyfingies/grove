@@ -1,1 +1,0 @@
-import l from"./health.2e633d5f.js";import"./game.c6b7d49d.js";const o=new Map;function m(a,h){o.has(a)||o.set(a,[]),o.get(a).push(h)}const r=a=>h=>s=>{var c;if(a.has(s,l)){const[t]=a.get(s,[l]);t.hp-=h;for(const e of(c=o.get(s))!=null?c:[])e()}};export{m as addDamageCallback,r as dealDamage};
