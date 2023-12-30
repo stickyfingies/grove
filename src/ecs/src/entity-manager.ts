@@ -40,8 +40,11 @@ export interface SignatureChangedEvent {
  * An effect happens when components are added or removed.
  */
 export interface ComponentEffect<T extends ComponentType> {
+    /** The component to watch */
     type: T,
+    /** Called when component T is ADDED to an entity */
     add?(entity: number, data: InstanceType<T>): void;
+    /** Called when component T is REMOVED from an entity */
     remove?(entity: number, data: InstanceType<T>): void;
 }
 
@@ -162,7 +165,7 @@ export class EntityManager {
 
         /** Mermaid */
         {
-            const signatureHash = hashSignature(new Set(rule.types)).replaceAll(':', '_');
+            const signatureHash = 'SIG_' + hashSignature(new Set(rule.types)).replaceAll(':', '_');
             if (!this.#mermaidSubgraphs.has(signatureHash)) {
                 this.#mermaidSubgraphs.set(signatureHash, rule.types.map(type => type.name));
                 this.#mermaidChart += `

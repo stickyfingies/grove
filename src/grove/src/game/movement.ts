@@ -36,6 +36,9 @@ export class Movement {
     euler = new Euler(0, 0, 0, 'YXZ');
 }
 
+/**
+ * Delta: ()
+ */
 world.addRule({
     name: 'Movement affects physical objects',
     types: [PhysicsData, MeshData, Movement],

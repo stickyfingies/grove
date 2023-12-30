@@ -1,5 +1,5 @@
 import { EntityManager } from "@grove/ecs";
-import Health from "./health";
+import {Health} from "./health";
 
 const callbackMap = new Map<number, Function[]>();
 

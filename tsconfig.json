@@ -41,10 +41,13 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "allowJs": false,
+    "allowJs": false
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.test.ts"
   ],
+  "exclude": [
+    "node_modules"
+  ]
 }

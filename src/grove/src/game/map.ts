@@ -33,7 +33,7 @@ export default class MapScript extends GameSystem {
                 world.spawn([PhysicsData], [body]);
             }
         });
-        graphics.addObjectToScene(mapMesh);
+        
         world.spawn([MeshData], [mapMesh]);
     }
 }

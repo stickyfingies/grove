@@ -19,82 +19,11 @@ For example, a `QuackWhenHungry` behavior would be implemented by finding every
 entity that has a `DuckComponent` and a `HungryComponent`, and then playing a
 quack sound.
 
-## Setup
+## World
 
-This package stores components in linear memory so that it's very fast to run
-code repeatedly on all components of a type.  In reality, this is V8 JS, so it
-could be just storing some kind of pointer in the list, and the components are
-really scattered all throughout memory anyway.  I don't have any benchmarks to
-say for-sure whether the linear representation of data is truly faster for
-running behaviors.
+An `EntityManager` stores components in linear memory so that it's very fast to run code repeatedly on all components of a type.
 
-## Variables
-
-A variable is a labelled arrow from a Type to a piece of data in memory.
-
-```js
-const foo: number = 3;
-```
-
-```mermaid
-flowchart LR
-    number -->|foo| 3
-```
-
-## Functions and Signatures
-
-A function signature is a labelled arrow from one set of types to another.
-
-```js
-type PhysicsFn = (input: [Velocity, Position]) => [Velocity, Position]
-```
-
-```mermaid
-flowchart LR
-
-    subgraph Left [ ]
-    direction LR
-        Velocity
-        Position
-    end
-
-    subgraph Right [ ]
-    direction LR
-        Velocity'
-        Position'
-    end
-
-    Left ===>|PhysicsFn| Right
-```
-
-A function is a labelled arrow from one set of data towards another.
-
-```js
-const simulateWorld: PhysicsFn = function([vel, pos]) {
-    pos.x += vel.x;
-    pos.y += vel.y;
-    return [vel, pos];
-}
-```
-
-```mermaid
-flowchart LR
-
-    subgraph Left [ ]
-    direction LR
-        a["vel { x: 1, y: 2 }"]
-        b["pos { x: 3, y: 4 }"]
-    end
-
-    subgraph Right [ ]
-    direction LR
-        a'["vel { x: 1, y: 2 }"]
-        b'["pos { x: 4, y: 6 }"]
-    end
-
-    Left ===>|2D Physics Behavior| Right
-
-```
+> In reality, the V8 JavaScript Engine might be storing an array of pointers, which defeats the performance benefit.
 
 ## Entity
 
@@ -106,104 +35,114 @@ flowchart LR
 
     subgraph Types
     direction LR
-        Foo
-        Bar
-        Baz
+        Velocity
+        Position
     end
 
     subgraph Data
     direction LR
-        foo["''string''"]
-        bar["456"]
-        baz["{ data: is_cool }"]
+        vel["{ x: 0, y: 1 }"]
+        pos["{ x: 3, y: 4 }"]
     end
 
     Types ===>|entity| Data
 ```
 
-We can use `world.put(entity, types, data)` to make an entity.
+We can use `world.spawn(types, data)` to make an entity.
 
-```js
-// (1) Create an entity
-const entity = world.createEntity();
-// (2) Create a mapping from types to data
-world.put(
-    entity,
-    [Foo, Bar, Baz],
-    [new Foo(), new Bar(), new Baz()]
+```ts
+import { EntityManager } from '@grove/ecs';
+
+class Velocity {
+    x: number = 0;
+    y: number = 0;
+};
+
+class Position {
+    x: number = 0;
+    y: number = 0;
+};
+
+const world = new EntityManager();
+
+const entity = world.spawn(
+    [Position, Velocity],
+    [{ x: 0, y: 1}, { x: 3, y: 4 }]
 );
 ```
 
-Multiple entities are allowed to map `(Foo, Bar, Baz)` to some data.
+## Rules
+
+Rules are behaviors that get executed every frame.
+
+Rules have a **name**, a set of **types**, and a **function** to execute.
+
+- The **types** specify what kind of information this rule should apply to.
+
+- The **function** will be applied to each entity matching that set of types.
+
+For example, imagine a rule that synchronizes renderable objects with their physically simulated positions.
 
 ```mermaid
 flowchart LR
-
-    subgraph Types
-    direction LR
-        Foo
-        Bar
-        Baz
-    end
-
-    Types ===>|entity 1| A[Data A]
-    Types ===>|entity 2| B[Data B]
+Physics -->|copy_position| Mesh
 ```
 
-What if entities are higher-ordered functions?
+This rule operates on the `Physics` and `Mesh` types, and the function is `copy_position`.  Here's how it looks in code:
 
-```js
-const makeGoblin = world.entity({
-    types: [Physics, Mesh, Health, Archer],
-    data() {
-        const body = capsule({ height: 3 });
-        const mesh = loadModel('goblin.gltf');
-        const health = { hp: 3 };
-        const archer = true;
+```ts
+/**
+ * @example demonstrating a rule which applies
+ * a physically-simulable entity's position
+ * onto its mesh, thus visually moving it
+ * across the screen.
+ **/
 
-        return [body, mesh, health, archer];
-    }
-});
+import { EntityManager } from '@grove/ecs';
+import { PhysicsData, PhysicsEngine } from '@grove/physics';
+import { MeshData } from '@grove/graphics';
 
-const goblinOne = makeGoblin();
-const goblinTwo = makeGoblin();
-```
+declare let physics: PhysicsEngine<unknown>;
+declare let world: EntityManager;
 
-## Behavior
-
-We can make rules and behaviors using the `world` api.
-
-```js
-const physicsBehavior = world.createBehavior({
-
-    // Rule
-    from: [Velocity, Position],
-    to:   [Velocity, Position],
-
-    // Behavior
-    update([vel, pos]) {
-        pos.x += vel.x;
-        pos.y += vel.y;
+world.addRule({
+    name: 'Physics affects graphics',
+    types: [PhysicsData, MeshData],
+    fn([body, mesh]) {
+        const [px, py, pz] = physics.getBodyPosition(body);
+        mesh.position.set(px, py, pz);
     }
 });
 
 ```
 
-Here's an example of some graphics code that runs when an entity gains the `Mesh` component.
+## Effects
 
-```js
-const createMesh = world.createBehavior({
-    from: [],
-    to: [Mesh],
-    update([mesh]) {
-        gpu.upload(mesh.vertices);
-    }
-});
-const destroyMesh = world.createBehavior({
-    from: [Mesh],
-    to: [],
-    update([mesh]) {
-        gpu.upload(mesh.vertices);
+Effects happen when a component is added to, or removed from, an entity.
+
+Here's an example that uses effects to automate some boring work, like adding or removing a mesh from the scene graph.
+
+```ts
+/**
+ * @example demonstrating an effect which
+ * adds newly created meshes to the scene
+ * and removes recently removed meshes
+ * from the scene.
+ **/
+
+import { EntityManager } from '@grove/ecs';
+import { Mesh, Scene } from 'three';
+
+const world = new EntityManager();
+const scene = new Scene();
+
+world.useEffect({
+    type: Mesh,
+    add(entity, mesh) {
+        scene.add(mesh);
+    },
+    remove(entity, mesh) {
+        scene.remove(mesh);
     }
 });
 ```

@@ -2,15 +2,17 @@ import { MeshData } from '@grove/graphics';
 import { PhysicsData } from "@grove/physics";
 import { assetLoader, graphics, physics, world, GameSystem } from "@grove/engine";
 
-import Health, { Death } from "./health";
+import { Health, Death } from "./health";
 
 export class BarbarianData { }
 
+/**
+ * Delta: (-Entity)
+ */
 world.addRule({
     name: 'Dead barbarians disappear',
     types: [MeshData, BarbarianData, Death],
     fn([mesh], entity) {
-        graphics.removeObjectFromScene(mesh);
         world.deleteEntity(entity);
     }
 });
@@ -44,7 +46,6 @@ export default class BarbarianScript extends GameSystem {
         });
 
         const mesh = await assetLoader.loadModel({ uri: './models/villager-male/villager-male.glb' });
-        graphics.addObjectToScene(mesh);
 
         const health = new Health(1, 1);
         const barbarian = {};

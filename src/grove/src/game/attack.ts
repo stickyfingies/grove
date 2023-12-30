@@ -15,6 +15,9 @@ export class Attacker {
     sound = new Audio(HIT_AUDIO_PATH);
 }
 
+/**
+ * Delta: (+Entity)
+ */
 world.useEffect({
     type: Attacker,
 

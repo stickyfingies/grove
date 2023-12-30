@@ -11,6 +11,8 @@ import {
     CAMERA_TAG,
     CameraData,
     Graphics,
+    MeshData,
+    SpriteData,
 } from '@grove/graphics';
 import { PhysicsData, start_physics_engine } from '@grove/physics';
 
@@ -53,6 +55,9 @@ export default class Engine {
         graphics.init();
         assetLoader.init(LogService('load'));
         
+        /**
+         * Delta: ()
+         */
         world.useEffect({
             type: PhysicsData,
             add(entity, data) {
@@ -60,6 +65,32 @@ export default class Engine {
             },
             remove(entity, data) {
                 physics.removeBody(data);
+            }
+        });
+
+        /**
+         * Delta: ()
+         */
+        world.useEffect({
+            type: MeshData,
+            add(entity, mesh) {
+                graphics.addObjectToScene(mesh);
+            },
+            remove(entity, mesh) {
+                graphics.removeObjectFromScene(mesh);
+            }
+        });
+
+        /**
+         * Delta: ()
+         */
+        world.useEffect({
+            type: SpriteData,
+            add(entity, sprite) {
+                graphics.addObjectToScene(sprite);
+            },
+            remove(entity, sprite) {
+                graphics.removeObjectFromScene(sprite);
             }
         });
 

@@ -30,7 +30,6 @@ export default class SceneSetupScript {
         const loadingManager = new LoadingManager(() => {
             const skyboxMesh = new Mesh(skyGeometry, materialArray);
             skyboxMesh.name = 'Skybox';
-            graphics.addObjectToScene(skyboxMesh);
             world.put(this.skybox, [MeshData], [skyboxMesh]);
 
             // create sun

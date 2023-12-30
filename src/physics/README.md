@@ -12,11 +12,13 @@ the worker file - and this cannot happen inside Vite's cache dir.
 Your `vite.config.ts` file should look like this:
 
 ```typescript
+import { defineConfig } from 'vite';
+
 export default defineConfig({
-    ...
+    // ...
     optimizeDeps: {
         exclude: ['firearm']
     },
-    ...
+    // ...
 });
 ```

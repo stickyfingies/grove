@@ -51,7 +51,6 @@ export function shoot(
     const material = new MeshPhongMaterial({ color: 0x00CCFF });
     const mesh = new Mesh(geometry, material);
     mesh.name = 'Bullet';
-    graphics.addObjectToScene(mesh);
 
     const ball = world.spawn([Mesh, PhysicsData], [mesh, body]);
 
@@ -60,10 +59,10 @@ export function shoot(
         cb?.(entity, ball);
         // setTimeout(() => {
         physics.removeBody(body);
-        graphics.removeObjectFromScene(mesh);
+        // graphics.removeObjectFromScene(mesh);
         world.deleteEntity(ball);
         // sound.currentTime = 0;
-        // sound.play();
+        // sound.play();removeObjectFromScene
         // }, 1500);
     };
 

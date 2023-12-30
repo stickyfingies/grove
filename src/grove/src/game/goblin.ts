@@ -1,12 +1,12 @@
 import { GameSystem } from '@grove/engine';
-import Health, { Death } from './health';
+import { Health, Death } from './health';
 import { MeshData } from '@grove/graphics';
 import { PhysicsData, RigidBodyDescription } from '@grove/physics';
 import { PLAYER_TAG } from './player';
 import { assetLoader, graphics, physics, world } from '@grove/engine';
 import {Attacker} from './attack';
 import { Mesh } from 'three';
-import { CapsuleShape } from '@grove/engine/lib/load';
+import { CapsuleShape } from 'engine/src/load';
 
 export class Goblin { }
 
@@ -18,12 +18,14 @@ export class Goblin { }
 //     this.createGoblin();
 // });
 
+/**
+ * Delta: (-Entity)
+ */
 world.addRule({
     name: 'Dead goblins disappear',
-    types: [MeshData, Goblin, Death],
-    fn([mesh], entity) {
+    types: [Goblin, Death],
+    fn(_, entity) {
         world.events.emit('enemyDied', { entity });
-        graphics.removeObjectFromScene(mesh);
         world.deleteEntity(entity);
     }
 });
@@ -51,7 +53,6 @@ export default class GoblinScript extends GameSystem {
         const gbln = {};
 
         const mesh = await assetLoader.loadModel(modelShape);
-        graphics.addObjectToScene(mesh);
 
         const body = physics.createCapsule(rigidBodyDescription, {
             pos: [10, 50, 0],
@@ -59,15 +60,14 @@ export default class GoblinScript extends GameSystem {
             quat: [0, 0, 0, 1]
         }, capsuleShape);
 
+        const attack = new Attacker(world.getTag(PLAYER_TAG));
+
         const goblin = world.spawn(
-            [PhysicsData, Mesh, Goblin, Health],
-            [body, mesh, gbln, health]
+            [PhysicsData, Mesh, Goblin, Health, Attacker],
+            [body, mesh, gbln, health, attack]
         );
 
         mesh.traverse(node => { node.userData.entityId = goblin; }); // create relationship between mesh->entity
-
-        const attack = new Attacker(world.getTag(PLAYER_TAG));
-        world.put(goblin, [Attacker], [attack]);
 
     }
 }

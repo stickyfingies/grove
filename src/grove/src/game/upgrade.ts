@@ -7,7 +7,8 @@ import {
 
 import { PLAYER_TAG } from './player';
 import { PhysicsData } from '@grove/physics';
-import { graphics, physics, world } from '@grove/engine';
+import { physics, world } from '@grove/engine';
+import { SpriteData } from '@grove/graphics';
 
 /**
  * Spawns hearts which heal the player for 15 hp each upon contact.
@@ -34,9 +35,8 @@ export default class UpgradeScript {
             sprite.material = new SpriteMaterial();
             sprite.material.color = new Color(0xff00ff);
             sprite.material.map = upgradeTexture;
-            graphics.addObjectToScene(sprite);
 
-            world.spawn([PhysicsData, Sprite], [upgradeBody, sprite]);
+            world.spawn([PhysicsData, SpriteData], [upgradeBody, sprite]);
 
             // const collideCb = ({ body }: { body: PhysicsData }) => {
             //     const player = Entity.getTag(PLAYER_TAG);

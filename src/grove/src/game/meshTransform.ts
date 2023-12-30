@@ -18,8 +18,6 @@ const updateTransform = ([body, mesh]: S, entity: number) => {
 
     // handle when an entity falls off the map
     if (py < -20) {
-        physics.removeBody(body);
-        graphics.removeObjectFromScene(mesh);
         world.deleteEntity(entity);
     }
 
@@ -31,12 +29,18 @@ const updateTransform = ([body, mesh]: S, entity: number) => {
     // if (!mesh.userData.norotate) mesh.quaternion.set(qx, qy, qz, qw);
 };
 
+/**
+ * Delta: (-Entity)
+ */
 world.addRule({
     name: 'Physics affects meshes',
     types: [PhysicsData, MeshData],
     fn: updateTransform
 });
 
+/**
+ * Delta: (-Entity)
+ */
 world.addRule({
     name: 'Physics affects sprites',
     types: [PhysicsData, SpriteData],

@@ -10,7 +10,6 @@ import { readFileSync } from 'fs';
 import path from 'path';
 import { workspaces } from '../../package.json'; // TODO - hard coupling
 
-
 // We get configurable build parameters from README.md
 // by scanning for links to SETTINGS.md#setting_name // TODO - hard coupling
 // and reading the value of the linked text.
@@ -57,5 +56,5 @@ export default defineConfig({
     },
     worker: {
         format: 'es'
-    }
+    },
 });

@@ -1,5 +1,5 @@
 import { GameSystem, Model, ModelShape } from '@grove/engine';
-import Health, { Death } from './health';
+import {Health, Death } from './health';
 import { MeshData } from '@grove/graphics';
 import { PLAYER_TAG } from './player';
 import { PhysicsData, RigidBodyDescription } from '@grove/physics';
@@ -39,7 +39,6 @@ export default class SlimeScript extends GameSystem {
         // handle dead slimes
         world.do_with([MeshData, Slime, Death], ([mesh], entity) => {
             world.events.emit('enemyDied', entity);
-            graphics.removeObjectFromScene(mesh);
             world.deleteEntity(entity);
         });
 
@@ -194,7 +193,6 @@ export default class SlimeScript extends GameSystem {
         mesh.children[1].material = mesh.children[1].material.clone();
         mesh.scale.set(0.7, 0.7, 0.7);
         mesh.name = 'Slime';
-        graphics.addObjectToScene(mesh);
 
         const randomPos = () => Math.random() * 50 - 25;
 

@@ -1,0 +1,1 @@
+import{w as s,P as o,e as r,o as y,p as h,V as m}from"./game.d0ad9aae.js";const f=([i,t],n)=>{var a;const[p,e,c]=h.getBodyPosition(i),d=(a=t.userData.offset)!=null?a:new m;t.position.set(p,e,c).add(d),e<-20&&s.deleteEntity(n)};s.addRule({name:"Physics affects meshes",types:[o,r],fn:f});s.addRule({name:"Physics affects sprites",types:[o,y],fn:f});

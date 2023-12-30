@@ -10,7 +10,7 @@ import {
 } from 'three';
 
 import { GameSystem } from '@grove/engine';
-import Health, { Death } from './health';
+import {Health, Death } from './health';
 import { KeyboardControls } from './keyboardControls';
 import { Movement } from './movement';
 import { PhysicsData } from '@grove/physics';
@@ -58,10 +58,9 @@ graphics.loadModel().then((model) => {
     animate(model, 'Idle');
 
     mesh.add(frustumCamera);
+
     // const helper = new CameraHelper(frustumCamera);
     // frustumCamera.add(helper);
-
-    graphics.addObjectToScene(mesh);
     // graphics.changeCamera(frustumCamera); // for testing
 
     const DELAY_BETWEEN_SWINGS = 800; // milliseconds
@@ -176,7 +175,6 @@ graphics.loadModel().then((model) => {
     const crosshairSprite = new Sprite(new SpriteMaterial({ color: 'black' }));
     crosshairSprite.scale.set(10, 10, 1);
     crosshairSprite.position.set(0, 0, -1);
-    graphics.addObjectToScene(crosshairSprite, true);
     const crosshair = world.spawn([SpriteData], [crosshairSprite]);
 
     const shootTowardsCrosshair = (e: MouseEvent) => {
@@ -250,6 +248,9 @@ addAbilityToTargetIndicator(target_sprite);
 addAbilityToTargetIndicator(target_sprite);
 addAbilityToTargetIndicator(target_sprite);
 
+/**
+ * Delta: (-Entity)
+ */
 world.addRule({
     name: 'Game-over',
     types: [Score, Death],

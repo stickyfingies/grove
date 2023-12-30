@@ -39,6 +39,9 @@ function createUIElement(data: UserInterface) {
     document.body.appendChild(div);
 }
 
+/**
+ * Delta: ()
+ */
 world.useEffect({
     type: UserInterface,
 
@@ -47,6 +50,9 @@ world.useEffect({
     },
 });
 
+/**
+ * Delta: ()
+ */
 world.addRule({
     name: 'Update UI',
     types: [UserInterface],

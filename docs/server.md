@@ -13,5 +13,6 @@ function do_thing() {
     // this code runs when localhost:3333/FOO is reached
     console.warn('unleashing the foo');
 }
+// @ts-ignore
 window.webApi.onmessage('FOO', do_thing);
 ```

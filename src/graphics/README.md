@@ -21,7 +21,7 @@ This is the renderer used in [The Grove](https://github.com/stickyfingies/grove)
 
 ```ts
 import * as THREE from 'three';
-import { Graphics } from '/lib/';
+import { Graphics } from '@grove/graphics';
 
 //////////
 // init //
@@ -49,7 +49,7 @@ graphics.addObjectToScene(mesh);
 
 requestAnimationFrame(animate);
 
-function animate(time) {
+function animate(time: number) {
 
     mesh.rotation.x = time / 2000;
     mesh.rotation.y = time / 1000;
@@ -98,7 +98,7 @@ scene.add(mesh);
 
 requestAnimationFrame(animate);
 
-function animate(time) {
+function animate(time: number) {
 
     mesh.rotation.x = time / 2000;
     mesh.rotation.y = time / 1000;

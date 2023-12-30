@@ -7,6 +7,7 @@
   "author": "Seth Traman",
   "license": "MIT",
   "scripts": {
+    "check": "yarn typescript-docs-verifier --input-files ./src/*/README.md",
     "docs": "npx docsify-cli serve",
     "test": "yarn workspaces foreach -ptvi run test",
     "build": "yarn workspaces foreach -ptvi run build",
@@ -17,7 +18,7 @@
     "src/ecs",
     "src/engine",
     "src/graphics",
-    "src/physics", 
+    "src/physics",
     "src/grove",
     "src/editor"
   ],
@@ -34,6 +35,7 @@
     "@typescript-eslint/eslint-plugin": "^6.9.0",
     "@typescript-eslint/parser": "^6.9.0",
     "eslint": "^8.52.0",
-    "eslint-plugin-import": "^2.29.0"
+    "eslint-plugin-import": "^2.29.0",
+    "typescript-docs-verifier": "^2.5.0"
   }
 }
