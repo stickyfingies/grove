@@ -53,8 +53,8 @@ export interface ComponentEffect<T extends ComponentType> {
  */
 export interface SystemRule<T extends ComponentTypeList> {
     name: string,
-    types: T;
-    fn(data: ComponentDataFromSignature<T>, entity: number): void;
+    group: T;
+    each_frame(data: ComponentDataFromSignature<T>, entity: number): void;
 }
 
 type Query<T extends ComponentTypeList> = {
@@ -67,6 +67,26 @@ class QueryCache {
     #hashes: SignatureHash[] = [];
 }
 
+export interface WorldFunc<
+    I extends ComponentTypeList, 
+    A extends ComponentTypeList, 
+    R extends ComponentTypeList
+> {
+    subject: I,
+    adds?: A,
+    removes?: R,
+    action(data: ComponentDataFromSignature<I>): ComponentDataFromSignature<A>;
+}
+
+export function worldFunc<
+I extends ComponentTypeList, 
+A extends ComponentTypeList, 
+R extends ComponentTypeList
+>(wf: WorldFunc<I, A, R>) {
+    //
+}
+
+
 type ArchetypeIndex = number;
 
 /**
@@ -75,8 +95,6 @@ type ArchetypeIndex = number;
 type EntityRecord = {
     archetype_idx: ArchetypeIndex,
 };
-
-// (A, +, B) -> (AB)
 
 /** Takes a `signature` and produces a `hash` */
 function hashSignature(signature: ComponentSignature): SignatureHash {
@@ -124,19 +142,52 @@ export class EntityManager {
      **/
     #queryHashToArchetypes = new Map<SignatureHash, Archetype[]>();
 
+    #effects: ComponentEffect<ComponentType>[] = [];
     #rules: SystemRule<ComponentTypeList>[] = [];
 
-    #mermaidChart: string = 'flowchart LR\n';
-
     #mermaidSubgraphs = new Map<string, string[]>;
-
-    get mermaid(): string {
-        return this.#mermaidChart;
-    }
 
     constructor() {
         // @ts-ignore - Useful for debugging
         if (typeof window !== 'undefined') { window.archetypes = this.#archetypes; }
+    }
+
+    generateMermaidDiagram(): string {
+        let mermaid = 'flowchart LR\n';
+
+        function insertMermaidLine(indents: number, line: string) {
+            for (let i = 0; i <= indents; i++) {
+                mermaid += '\t';
+            }
+            mermaid += line + '\n';
+        }
+
+        for (const archetype of this.#archetypes) {
+            const signatureHash = hashSignature(archetype.signature).replaceAll(':', '_');
+            if (!this.#mermaidSubgraphs.has(signatureHash)) {
+                this.#mermaidSubgraphs.set(signatureHash, Array.from(archetype.signature).map(type => type.name));
+                insertMermaidLine(0, `subgraph ${signatureHash} ["(${signatureHash.split('_').join(', ')})"]`);
+                insertMermaidLine(0, 'direction LR');
+                insertMermaidLine(1, signatureHash + '_entitiy_count[' + archetype.entities.size + ' entities]');
+                insertMermaidLine(0, 'end');
+
+                for (const rule of this.#rules) {
+                    if (archetype.containsSignature(new Set(rule.group))) {
+                        const mermaidRule = rule.name.replaceAll(' ', '_') + '((' + rule.name + '))';
+                        insertMermaidLine(0, signatureHash + ' --> ' + mermaidRule);
+                    }
+                }
+            }
+        }
+
+        for (const [tag, entity] of this.#tagList) {
+            const archetype = this.getArchetype(entity);
+            if (!archetype) { continue; }
+            const signatureHash = hashSignature(archetype.signature).replaceAll(':', '_');
+            insertMermaidLine(0, tag.description + ' --> ' + signatureHash);
+        }
+
+        return mermaid;
     }
 
     spawn<T extends ComponentTypeList>(types: T, data: ComponentDataFromSignature<T>): number {
@@ -149,34 +200,19 @@ export class EntityManager {
      * useEffect registers behavior for when a component is added / removed.
      */
     useEffect<T extends ComponentType>(effect: ComponentEffect<T>) {
+        this.#effects.push(effect);
+
         if (typeof (effect.add) !== 'undefined') {
             this.events.on(`set${effect.type.name}Component`, ({entity_id, data}: SetComponentEvent<T>) => effect.add(entity_id, data));
-            this.#mermaidChart += effect.type.name + ' -.->|add| ' + effect.type.name + '\n';
         }
         
         if (typeof effect.remove !== 'undefined') {
             this.events.on(`delete${effect.type.name}Component`, ({entity_id, data}: DeleteComponentEvent<T>) => effect.remove(entity_id, data));
-            this.#mermaidChart += effect.type.name + ' -.->|remove| ' + effect.type.name + '\n';
         }
     }
 
     addRule<T extends ComponentTypeList>(rule: SystemRule<T>) {
         this.#rules.push(rule);
-
-        /** Mermaid */
-        {
-            const signatureHash = 'SIG_' + hashSignature(new Set(rule.types)).replaceAll(':', '_');
-            if (!this.#mermaidSubgraphs.has(signatureHash)) {
-                this.#mermaidSubgraphs.set(signatureHash, rule.types.map(type => type.name));
-                this.#mermaidChart += `
-                    subgraph ${signatureHash}
-                    direction LR
-                        ${rule.types.map(type => signatureHash + type.name + "[" + type.name + "]").join('\n')}
-                    end
-                `;
-            }
-            this.#mermaidChart += rule.name.replaceAll(' ', '_') + '[' + rule.name + ']' + '-->' + signatureHash + '\n';
-        }
     }
 
     /** Allocate an ID for a new entity */
@@ -384,7 +420,7 @@ export class EntityManager {
      * Usage is restricted to the engine.
      */
     executeRules() {
-        this.#rules.forEach(({types, fn}) => {
+        this.#rules.forEach(({group: types, each_frame: fn}) => {
             this.do_with(types, fn);
         });
     }

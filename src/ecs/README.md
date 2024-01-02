@@ -4,20 +4,13 @@ This package contains code for logically representing the game world.
 
 ## Theory
 
-Every "thing" in the real world _has_ properties, and _does_ behaviors.
+Everythihg
+- has **properties**
+- enacts **behaviors**
 
-A duck _is_ yellow, and it _does_ quack when it's hungry.
+A duck **is** yellow, and it **does** quack when it's hungry.
 
-Similarly, every "thing" which exists in the video game is composed of properties
-and behaviors, too.
-These "things" are called **entities**.
-Their properties are called **components**.  These are just small chunks of data.
-Different behaviors are implemented by running a chunk of code on every entity
-which contains the relevant components (think: data) for that behavior.
-
-For example, a `QuackWhenHungry` behavior would be implemented by finding every
-entity that has a `DuckComponent` and a `HungryComponent`, and then playing a
-quack sound.
+The ECS allows you to express behaviors as relationships between properties, and surprisingly, this is a very powerful mechanism for game developers.
 
 ## World
 
@@ -28,7 +21,6 @@ An `EntityManager` stores components in linear memory so that it's very fast to 
 ## Entity
 
 An entity is a unique map between a set of types and a set of data.
-
 
 ```mermaid
 flowchart LR
@@ -75,11 +67,11 @@ const entity = world.spawn(
 
 Rules are behaviors that get executed every frame.
 
-Rules have a **name**, a set of **types**, and a **function** to execute.
+Rules have a **name**, and **each frame** they act upon a **group** of entities.
 
-- The **types** specify what kind of information this rule should apply to.
+- The **group** is a set of component types this rule applies to.
 
-- The **function** will be applied to each entity matching that set of types.
+- The **each_frame** function is called once each frame, for each entity that falls within the group.
 
 For example, imagine a rule that synchronizes renderable objects with their physically simulated positions.
 
@@ -88,7 +80,7 @@ flowchart LR
 Physics -->|copy_position| Mesh
 ```
 
-This rule operates on the `Physics` and `Mesh` types, and the function is `copy_position`.  Here's how it looks in code:
+This rule operates on the (`Physics`, `Mesh`) group, and the function is `copy_position`.  Here's how it looks in code:
 
 ```ts
 /**
@@ -107,13 +99,12 @@ declare let world: EntityManager;
 
 world.addRule({
     name: 'Physics affects graphics',
-    types: [PhysicsData, MeshData],
-    fn([body, mesh]) {
+    group: [PhysicsData, MeshData],
+    each_frame([body, mesh]) {
         const [px, py, pz] = physics.getBodyPosition(body);
         mesh.position.set(px, py, pz);
     }
 });
-
 ```
 
 ## Effects
@@ -134,6 +125,7 @@ import { EntityManager } from '@grove/ecs';
 import { Mesh, Scene } from 'three';
 
 const world = new EntityManager();
+
 const scene = new Scene();
 
 world.useEffect({

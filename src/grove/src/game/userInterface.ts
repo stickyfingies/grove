@@ -55,8 +55,8 @@ world.useEffect({
  */
 world.addRule({
     name: 'Update UI',
-    types: [UserInterface],
-    fn([uiData]) {
+    group: [UserInterface],
+    each_frame([uiData]) {
         uiData._DOMElement!.innerText = uiData.text;
     }
 });

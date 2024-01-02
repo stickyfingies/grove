@@ -3,7 +3,7 @@ import Backend from './worker?worker';
 import { PhysicsEngine, Vec3, Workload, Transform, RigidBodyDescription, SphereShapeDescription, CapsuleShapeDescription, TriangleMeshShapeDescription, CollisionCallback, VelocityRaycast, Velocity, ForceRaycast, Force, Raycast } from './header';
 import EventEmitter from 'events';
 
-export { PhysicsEngine };
+export type { PhysicsEngine };
 
 export { start as start_physics_engine } from './ammoshell';
 

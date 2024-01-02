@@ -232,17 +232,19 @@ graphics.loadModel().then((model) => {
 
 });
 
-function drawHUD() {
-    const [score, health, hud] = world.get(player, [Score, Health, UserInterface]);
-    hud.text = `${health.hp}/${health.max}HP\n${score.score} points`;
-}
+world.addRule({
+    name: 'Redraw HUD',
+    group: [Score, Health, UserInterface],
+    each_frame([score, health, hud]) {
+        hud.text = `${health.hp}/${health.max}HP\n${score.score} points`;
+    }
+});
 
-export function animatePlayer(anim_name: string) {
+function animatePlayer(anim_name: string) {
     animate(g_model, anim_name);
 }
 
 const target_sprite = makeTargetIndicator();
-
 addAbilityToTargetIndicator(target_sprite);
 addAbilityToTargetIndicator(target_sprite);
 addAbilityToTargetIndicator(target_sprite);
@@ -253,8 +255,8 @@ addAbilityToTargetIndicator(target_sprite);
  */
 world.addRule({
     name: 'Game-over',
-    types: [Score, Death],
-    fn([score]) {
+    group: [Score, Death],
+    each_frame([score]) {
         document.querySelector('#blocker')?.setAttribute('style', 'display:block');
         const loadText = document.querySelector('#load')! as HTMLElement;
         loadText.setAttribute('style', 'display:block');
@@ -265,8 +267,6 @@ world.addRule({
 
 export default class PlayerScript extends GameSystem {
     every_frame() {
-
-        drawHUD();
 
         if (Math.random() < 0.5) {
             updateTargetIndicator(player, frustumCamera);

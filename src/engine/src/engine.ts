@@ -118,7 +118,7 @@ export default class Engine {
 
         gui.add({
             copyMermaid() {
-                navigator.clipboard.writeText(world.mermaid);
+                navigator.clipboard.writeText(world.generateMermaidDiagram());
             }
         }, 'copyMermaid');
 

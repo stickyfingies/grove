@@ -11,8 +11,8 @@ export class BarbarianData { }
  */
 world.addRule({
     name: 'Dead barbarians disappear',
-    types: [MeshData, BarbarianData, Death],
-    fn([mesh], entity) {
+    group: [MeshData, BarbarianData, Death],
+    each_frame([mesh], entity) {
         world.deleteEntity(entity);
     }
 });

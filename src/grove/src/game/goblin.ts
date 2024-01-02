@@ -1,12 +1,12 @@
 import { GameSystem } from '@grove/engine';
 import { Health, Death } from './health';
-import { MeshData } from '@grove/graphics';
 import { PhysicsData, RigidBodyDescription } from '@grove/physics';
 import { PLAYER_TAG } from './player';
-import { assetLoader, graphics, physics, world } from '@grove/engine';
+import { assetLoader, physics, world } from '@grove/engine';
 import {Attacker} from './attack';
 import { Mesh } from 'three';
 import { CapsuleShape } from 'engine/src/load';
+import { MeshData } from '@grove/graphics';
 
 export class Goblin { }
 
@@ -23,8 +23,8 @@ export class Goblin { }
  */
 world.addRule({
     name: 'Dead goblins disappear',
-    types: [Goblin, Death],
-    fn(_, entity) {
+    group: [Goblin, Death],
+    each_frame(_, entity) {
         world.events.emit('enemyDied', { entity });
         world.deleteEntity(entity);
     }

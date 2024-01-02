@@ -41,8 +41,8 @@ export class Movement {
  */
 world.addRule({
     name: 'Movement affects physical objects',
-    types: [PhysicsData, MeshData, Movement],
-    fn([body, mesh, mvmt]) {
+    group: [PhysicsData, MeshData, Movement],
+    each_frame([body, mesh, mvmt]) {
         const direction = new Vector3(0, 0, 0);
         if (mvmt.moveForward) {
             direction.z = -1;

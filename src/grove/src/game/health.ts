@@ -29,8 +29,8 @@ export class Death { }
  */
 world.addRule({
     name: 'Dead things die',
-    types: [Health],
-    fn([health], entity) {
+    group: [Health],
+    each_frame([health], entity) {
         health.hp = Math.min(health.hp, health.max);
         if (health.hp <= 0) {
             world.swapComponent(entity, [Health], [Death], [{}]);
