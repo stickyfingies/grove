@@ -49,13 +49,13 @@ export const frustumCamera = new PerspectiveCamera(30, 1, 0.1, 100)
 let g_model: Model = null;
 
 // const mesh = await assetLoader.loadModel({ uri: './models/villager-male/villager-male.glb' });
-graphics.loadModel().then((model) => {
+graphics.loadModel('Adventurers/Characters/gltf/Barbarian.glb').then((model) => {
 
     g_model = model;
 
     const mesh = model.mesh;
-    console.log(model.animations);
-    animate(model, 'Idle');
+    console.log(model.animationData.animations);
+    animate(model.animationData, 'Idle');
 
     mesh.add(frustumCamera);
 
@@ -98,7 +98,7 @@ graphics.loadModel().then((model) => {
         });
     });
 
-    const health = new Health(250, 250);
+    const health = new Health(5, 5);
     const score = {
         score: 0
     };
@@ -241,7 +241,7 @@ world.addRule({
 });
 
 function animatePlayer(anim_name: string) {
-    animate(g_model, anim_name);
+    animate(g_model.animationData, anim_name);
 }
 
 const target_sprite = makeTargetIndicator();
@@ -254,13 +254,20 @@ addAbilityToTargetIndicator(target_sprite);
  * Delta: (-Entity)
  */
 world.addRule({
-    name: 'Game-over',
+    name: 'Game over when the player dies',
     group: [Score, Death],
     each_frame([score]) {
         document.querySelector('#blocker')?.setAttribute('style', 'display:block');
         const loadText = document.querySelector('#load')! as HTMLElement;
         loadText.setAttribute('style', 'display:block');
         loadText.innerHTML = `<h1>You Have Perished. Score... ${score}</h1>`;
+
+        // create "play again" button
+        const playAgainButton = document.createElement('button');
+        playAgainButton.innerText = 'Play Again';
+        playAgainButton.addEventListener('click', location.reload);
+        loadText.appendChild(playAgainButton);
+
         world.deleteEntity(player);
     }
 });

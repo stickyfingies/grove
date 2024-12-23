@@ -22,6 +22,8 @@ import {
     Group,
     InstancedMesh,
     Light,
+    LoopOnce,
+    LoopRepeat,
     Material,
     Mesh,
     Object3D,
@@ -60,29 +62,37 @@ export const CAMERA_TAG = Symbol('camera');
 type LogFn = (payload: object | string | number) => void;
 let [log, report]: LogFn[] = [console.log, console.error];
 
+export class AnimationData {
+
+    constructor(
+        public mixer: AnimationMixer,
+        public animations = new Map<string, AnimationAction>(),
+        public current_animation?: AnimationAction,
+    ) {}
+}
+
 export type Model = {
 
-    current_animation?: AnimationAction;
-    animations: Map<string, AnimationAction>,
-    mixer: AnimationMixer,
+    animationData: AnimationData,
     mesh: Object3D,
 
 };
 
-export function animate(model: Model, animation: string) {
-    
+export function animate(animationData: AnimationData, animation: string, count: number = Infinity) {
+
     // Get
-    const new_animation = model.animations.get(animation);
+    const new_animation = animationData.animations.get(animation);
     if (!new_animation) { return console.error('No such animation called ' + animation); }
     // Check
-    if (new_animation == model.current_animation) return;
+    if (new_animation == animationData.current_animation) return;
     // Fade
-    if (new_animation != model.current_animation) {
-        if (model.current_animation) model.current_animation.fadeOut(1)
-        model.current_animation = new_animation;
-        model.current_animation.reset()
-        model.current_animation.fadeIn(1)
-        model.current_animation.play()
+    if (new_animation != animationData.current_animation) {
+        if (animationData.current_animation) animationData.current_animation.fadeOut(1);
+        animationData.current_animation = new_animation;
+        animationData.current_animation.reset();
+        animationData.current_animation.setLoop(count == 1 ? LoopOnce : LoopRepeat, count);
+        animationData.current_animation.fadeIn(1);
+        animationData.current_animation.play();
     }
 
 }
@@ -122,7 +132,7 @@ export class Graphics {
         this.#scene.add(this.#camera);
 
         // find (or create) canvas element
-        let canvas = document.getElementById(canvasID) as HTMLCanvasElement;
+        const canvas = document.getElementById(canvasID) as HTMLCanvasElement;
         this.#renderer = new WebGLRenderer({
             canvas,
             antialias: true,
@@ -138,17 +148,18 @@ export class Graphics {
         });
     }
 
-    async loadModel() {
+    async loadModel(path: string) {
         
         // model.gltf
-        const loader = new GLTFLoader().setPath('models/Adventurers/Characters/gltf/');
-        const gltf = await loader.loadAsync('Mage.glb');
+        const loader = new GLTFLoader().setPath('models/');
+        const gltf = await loader.loadAsync(path);
         
         // anim_name -> anim_action
         const mixer = new AnimationMixer(gltf.scene);
-        const model: Model = { animations: new Map(), mixer, mesh: gltf.scene };
+        const animationData = new AnimationData(mixer, new Map());
+        const model: Model = { animationData, mesh: gltf.scene };
         for (const animation of gltf.animations) {
-            model.animations.set(animation.name, mixer.clipAction(animation));
+            model.animationData.animations.set(animation.name, mixer.clipAction(animation));
         }
         
         // ref tracking
@@ -161,7 +172,7 @@ export class Graphics {
         const delta = this.#clock.getDelta();
 
         for (const model of this.#models) {
-            model.mixer.update(delta);
+            model.animationData.mixer.update(delta);
         }
         this.#renderer.render(this.#scene, this.#camera);
     }

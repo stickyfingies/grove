@@ -18,6 +18,20 @@ An `EntityManager` stores components in linear memory so that it's very fast to 
 
 > In reality, the V8 JavaScript Engine might be storing an array of pointers, which defeats the performance benefit.
 
+A world is a set of entities, components, rules, and effects.
+
+$\mathbb{W} := \langle E, C, R, F\rangle$
+
+Let $\mathbb{E}$ be the set of all entities in the game.
+
+Let $\mathbb{C}$ be the set of every component type in the game.
+
+The power set $\mathcal{P}(\mathbb{C})$ contains every combination of these components.
+
+$ S:\text{component_set} \in \mathcal{P}(C) $
+
+$\forall \mathbb{E} $
+
 ## Entity
 
 An entity is a unique map between a set of types and a set of data.

@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.3.0",
   "main": "./grove/app/index.cjs",
-  "description": "Typescipt RPG",
+  "description": "Typescript RPG",
   "author": "Seth Traman",
   "license": "MIT",
   "scripts": {

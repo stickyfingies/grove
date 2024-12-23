@@ -1,4 +1,4 @@
-/* @import 'https://fonts.googleapis.com/css?family=Megrim'; */
+@import 'https://fonts.googleapis.com/css?family=Megrim';
 
 :root {
   --font-stack: Megrim, sans-serif;
@@ -15,6 +15,17 @@ html, body {
 .dg.ac {
   /** dat.gui */
   z-index: 6 !important;
+}
+
+button {
+  border-color: rgb(46, 14, 7);
+  background: rgb(77, 25, 13);
+  padding: 20px 30px 20px 30px;
+  font-size: 2em;
+  font-family: var(--font-stack);
+  font-weight: bolder;
+  color: darkgreen;
+  text-shadow: green 0px 0px 3px;
 }
 
 .hotbar {
